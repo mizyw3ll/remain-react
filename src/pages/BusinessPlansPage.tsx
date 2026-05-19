@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus, LayoutTemplate, Loader2, Upload } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { ru } from "../i18n/ru";
 import {
   createBusinessPlanApi,
   getBusinessPlansApi,
+  getTemplatesApi,
+  createPlanFromTemplateApi,
+  importBusinessPlanApi,
   type BusinessPlan,
+  type Template,
 } from "../api";
 import { cardStyle, cardHoverStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { ExpandableText } from "../components/ExpandableText";
@@ -20,10 +25,16 @@ const emptyForm: FormState = { title: "", description: "" };
 
 export function BusinessPlansPage() {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const isDark = theme === "dark";
   const [plans, setPlans] = useState<BusinessPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [openForm, setOpenForm] = useState(false);
+  const [openTemplates, setOpenTemplates] = useState(false);
+  const [openImport, setOpenImport] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
 
   async function fetchData() {
@@ -31,7 +42,7 @@ export function BusinessPlansPage() {
       setLoading(true);
       setPlans(await getBusinessPlansApi());
     } catch {
-      toast.error("Ошибка загрузки бизнес-планов");
+      toast.error(ru.toasts.plansLoadError);
     } finally {
       setLoading(false);
     }
@@ -52,11 +63,52 @@ export function BusinessPlansPage() {
     if (!valid) return;
     try {
       await createBusinessPlanApi(form);
-      toast.success("План создан");
+      toast.success(ru.toasts.planCreated);
       setOpenForm(false);
       await fetchData();
     } catch {
-      toast.error("Ошибка сохранения плана");
+      toast.error(ru.toasts.planSaveError);
+    }
+  }
+
+  async function loadTemplates() {
+    try {
+      setTemplatesLoading(true);
+      const data = await getTemplatesApi();
+      setTemplates(data);
+    } catch {
+      toast.error(ru.toasts.templatesLoadError);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }
+
+  async function useTemplate(templateId: number) {
+    try {
+      setTemplatesLoading(true);
+      await createPlanFromTemplateApi(templateId);
+      toast.success(ru.toasts.planFromTemplate);
+      setOpenTemplates(false);
+      await fetchData();
+    } catch {
+      toast.error(ru.toasts.planFromTemplateError);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }
+
+  async function handleImport(file: File) {
+    try {
+      setImportLoading(true);
+      const importedPlan = await importBusinessPlanApi(file);
+      toast.success(ru.toasts.planImported);
+      setOpenImport(false);
+      await fetchData();
+      navigate(`/business-plans/${importedPlan.id}`);
+    } catch {
+      toast.error(ru.toasts.planImportError);
+    } finally {
+      setImportLoading(false);
     }
   }
 
@@ -64,23 +116,45 @@ export function BusinessPlansPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>Бизнес-планы</h1>
-        <button
-          onClick={startCreate}
-          className={`${tw.buttonPrimary} flex items-center gap-1.5`}
-          style={{
-            background: v("text-primary"),
-            color: v("bg-body"),
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = "0.9";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = "1";
-          }}
-        >
-          <Plus size={16} />
-          <span className="hidden sm:inline whitespace-nowrap">Создать</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setOpenImport(true)}
+            className={`${tw.buttonSecondary} flex items-center gap-1.5`}
+            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <Upload size={16} />
+            <span className="hidden sm:inline whitespace-nowrap">Импорт</span>
+          </button>
+          <button
+            onClick={() => { setOpenTemplates(true); void loadTemplates(); }}
+            className={`${tw.buttonSecondary} flex items-center gap-1.5`}
+            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <LayoutTemplate size={16} />
+            <span className="hidden sm:inline whitespace-nowrap">Из шаблона</span>
+          </button>
+          <button
+            onClick={startCreate}
+            className={`${tw.buttonPrimary} flex items-center gap-1.5`}
+            style={{
+              background: v("text-primary"),
+              color: v("bg-body"),
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1";
+            }}
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline whitespace-nowrap">Создать</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -195,6 +269,105 @@ export function BusinessPlansPage() {
                   Сохранить
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {openTemplates && (
+        <div
+          className={tw.modalOverlay}
+          style={{ background: "rgba(0,0,0,0.6)" }}
+        >
+          <div
+            className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-2xl sm:p-5"
+            style={{
+              background: v("bg-sidebar"),
+              borderColor: v("border-primary"),
+            }}
+          >
+            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>Выберите шаблон</h3>
+            {templatesLoading ? (
+              <div className="flex h-40 items-center justify-center">
+                <Loader2 className="animate-spin" size={32} style={{ color: v("text-muted") }} />
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {templates.map((t) => (
+                  <button
+                    key={t.id}
+                    className="rounded-xl border p-4 text-left transition hover:opacity-90"
+                    style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+                    onClick={() => void useTemplate(t.id)}
+                  >
+                    <p className="text-sm font-semibold capitalize" style={{ color: v("text-primary") }}>{t.title}</p>
+                    <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>{t.description || "Без описания"}</p>
+                    <p className="mt-2 text-xs font-medium uppercase tracking-wide" style={{ color: v("text-secondary") }}>{t.category}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 flex justify-end">
+              <button
+                className={tw.buttonSecondary}
+                style={buttonStyle("secondary", isDark)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onClick={() => setOpenTemplates(false)}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {openImport && (
+        <div
+          className={tw.modalOverlay}
+          style={{ background: "rgba(0,0,0,0.6)" }}
+        >
+          <div
+            className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5"
+            style={{
+              background: v("bg-sidebar"),
+              borderColor: v("border-primary"),
+            }}
+          >
+            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>Импорт бизнес-плана</h3>
+            <div className="space-y-3">
+              <p className="text-sm" style={{ color: v("text-muted") }}>
+                Загрузите файл в формате CSV или XLSX, экспортированный из этого приложения.
+              </p>
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleImport(file);
+                }}
+                disabled={importLoading}
+                className="w-full text-sm"
+                style={inputStyle(isDark)}
+              />
+              {importLoading && (
+                <div className="flex items-center gap-2 text-sm" style={{ color: v("text-muted") }}>
+                  <Loader2 className="animate-spin" size={16} />
+                  Импорт...
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                className={tw.buttonSecondary}
+                style={buttonStyle("secondary", isDark)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onClick={() => setOpenImport(false)}
+                disabled={importLoading}
+              >
+                Отмена
+              </button>
             </div>
           </div>
         </div>

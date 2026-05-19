@@ -16,6 +16,8 @@ export type BusinessPlan = {
   title: string;
   description?: string | null;
   blocks?: PlanBlock[];
+  is_public?: boolean;
+  share_token?: string | null;
   created_at: string;
   updated_at?: string;
 };
@@ -40,12 +42,23 @@ export type Currency = {
   is_active: boolean;
 };
 
+export type Template = {
+  id: number;
+  title: string;
+  description?: string | null;
+  category: string;
+  blocks?: object[];
+  is_public: boolean;
+};
+
 export type PlanBlock = {
   id: number;
   business_plan_id: number;
   title: string;
   content: string;
   block_type: string;
+  rich_content?: object | null;
+  media_attachments?: object[];
   linked_financial_chart_ids: number[];
   has_unpublished_draft: boolean;
   draft_saved_at?: string | null;
@@ -141,10 +154,11 @@ export async function getPlanBlocksApi(planId: number) {
 
 export async function createPlanBlockApi(
   planId: number,
-  payload: { title: string; content: string; block_type: string; linked_financial_chart_ids?: number[] },
+  payload: { title: string; content?: string; block_type: string; rich_content?: object; linked_financial_chart_ids?: number[] },
 ) {
   const { data } = await api.post<PlanBlock>(`/business/plans/${planId}/blocks`, {
-    rich_content: {},
+    content: payload.content ?? "",
+    rich_content: payload.rich_content ?? {},
     media_attachments: [],
     linked_financial_chart_ids: payload.linked_financial_chart_ids ?? [],
     ...payload,
@@ -155,7 +169,7 @@ export async function createPlanBlockApi(
 export async function updatePlanBlockApi(
   planId: number,
   blockId: number,
-  payload: { title?: string; content?: string; block_type?: string; linked_financial_chart_ids?: number[] },
+  payload: { title?: string; content?: string; block_type?: string; rich_content?: object; linked_financial_chart_ids?: number[] },
 ) {
   const { data } = await api.patch<PlanBlock>(`/business/plans/${planId}/blocks/${blockId}`, payload);
   return data;
@@ -230,4 +244,90 @@ export async function deleteChartPointApi(chartId: number, pointId: number) {
 export async function getCurrenciesApi() {
   const { data } = await api.get<Currency[]>("/financial/currencies");
   return data;
+}
+
+export async function getTemplatesApi() {
+  const { data } = await api.get<Template[]>("/business/templates");
+  return data;
+}
+
+export async function createPlanFromTemplateApi(templateId: number) {
+  const { data } = await api.post<BusinessPlan>(`/business/plans/from-template/${templateId}`);
+  return data;
+}
+
+export async function exportFinancialChartApi(chartId: number, format: "xlsx" | "csv") {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const response = await api.get(`/financial/charts/${chartId}/export`, {
+    params: { format },
+    responseType: "blob",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return response.data as Blob;
+}
+
+export async function exportBusinessPlanApi(planId: number, format: "html" | "xlsx" | "csv" = "html") {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const response = await api.get(`/business/plans/${planId}/export`, {
+    params: { format },
+    responseType: "blob",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return response.data as Blob;
+}
+
+export async function importBusinessPlanApi(file: File) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post<BusinessPlan>("/business/plans/import", formData, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return data;
+}
+
+export async function saveSnapshotApi(planId: number, note?: string) {
+  const { data } = await api.post<{ detail: string; snapshot_id: number }>(`/business/plans/${planId}/snapshots`, null, {
+    params: note ? { note } : {},
+  });
+  return data;
+}
+
+export async function getSnapshotsApi(planId: number) {
+  const { data } = await api.get<{ id: number; title: string; note: string | null; created_at: string; created_by_id: number }[]>(`/business/plans/${planId}/snapshots`);
+  return data;
+}
+
+export async function restoreSnapshotApi(planId: number, snapshotId: number) {
+  const { data } = await api.post<BusinessPlan>(`/business/plans/${planId}/snapshots/${snapshotId}/restore`);
+  return data;
+}
+
+export async function sharePlanApi(planId: number) {
+  const { data } = await api.post<{ share_token: string; is_public: boolean }>(`/business/plans/${planId}/share`);
+  return data;
+}
+
+export async function unsharePlanApi(planId: number) {
+  const { data } = await api.post<{ is_public: boolean }>(`/business/plans/${planId}/unshare`);
+  return data;
+}
+
+export async function getCommentsApi(planId: number, blockId: number) {
+  const { data } = await api.get<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number }[]>(`/business/plans/${planId}/blocks/${blockId}/comments`);
+  return data;
+}
+
+export async function createCommentApi(planId: number, blockId: number, content: string) {
+  const { data } = await api.post<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number }>(`/business/plans/${planId}/blocks/${blockId}/comments`, { content });
+  return data;
+}
+
+export async function updateCommentApi(planId: number, blockId: number, commentId: number, payload: { content?: string; resolved?: boolean }) {
+  const { data } = await api.patch<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number }>(`/business/plans/${planId}/blocks/${blockId}/comments/${commentId}`, payload);
+  return data;
+}
+
+export async function deleteCommentApi(planId: number, blockId: number, commentId: number) {
+  await api.delete(`/business/plans/${planId}/blocks/${blockId}/comments/${commentId}`);
 }

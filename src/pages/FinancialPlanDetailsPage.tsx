@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Download } from "lucide-react";
 import { ExpandableText } from "../components/ExpandableText";
 import { CartesianGrid, Line, Area, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import toast from "react-hot-toast";
@@ -13,6 +13,7 @@ import {
   getFinancialPlanApi,
   updateFinancialPlanApi,
   updateChartPointApi,
+  exportFinancialChartApi,
   type ChartPoint,
   type Currency,
   type FinancialPlan,
@@ -293,6 +294,24 @@ export function FinancialPlanDetailsPage() {
     }
   }
 
+  async function handleExport(format: "xlsx" | "csv") {
+    if (!chartId) return;
+    try {
+      const blob = await exportFinancialChartApi(chartId, format);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chart_${chartId}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Exported as ${format.toUpperCase()}`);
+    } catch {
+      toast.error("Export failed");
+    }
+  }
+
   if (loading) return <div className="h-48 animate-pulse rounded-2xl" style={{ background: v("bg-hover") }} />;
   if (!chart) return <div style={{ color: v("text-secondary") }}>График не найден</div>;
 
@@ -434,7 +453,7 @@ export function FinancialPlanDetailsPage() {
           background: v("bg-secondary"),
         }}
       >
-        <div className="relative mb-3 flex flex-wrap gap-2">
+        <div className="relative mb-3 flex flex-wrap items-center gap-2">
           {(["1H", "1D", "1M", "3M", "1Y"] as Timeframe[]).map((tf) => (
             <button
               key={tf}
@@ -448,6 +467,24 @@ export function FinancialPlanDetailsPage() {
               {tf === "1H" ? "1 час" : tf === "1D" ? "День" : tf === "1M" ? "Месяц" : tf === "3M" ? "3 месяца" : "Год"}
             </button>
           ))}
+          <div className="ml-auto flex gap-2">
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+              style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              onClick={() => void handleExport("csv")}
+            >
+              <Download size={14} /> CSV
+            </button>
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+              style={buttonStyle("primary", isDark)}
+              onClick={() => void handleExport("xlsx")}
+            >
+              <Download size={14} /> Excel
+            </button>
+          </div>
         </div>
         {/* Chart with horizontal scroll on mobile */}
         {points.length < 2 ? (

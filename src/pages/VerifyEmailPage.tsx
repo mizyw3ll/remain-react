@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { verifyEmail } from "../features/auth/authApi";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 
