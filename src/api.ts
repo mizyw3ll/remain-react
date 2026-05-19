@@ -166,13 +166,43 @@ export async function createPlanBlockApi(
   return data;
 }
 
+export type MediaAttachment = {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+  mime_type: string;
+};
+
 export async function updatePlanBlockApi(
   planId: number,
   blockId: number,
-  payload: { title?: string; content?: string; block_type?: string; rich_content?: object; linked_financial_chart_ids?: number[] },
+  payload: {
+    title?: string;
+    content?: string;
+    block_type?: string;
+    rich_content?: object;
+    media_attachments?: MediaAttachment[];
+    linked_financial_chart_ids?: number[];
+  },
 ) {
   const { data } = await api.patch<PlanBlock>(`/business/plans/${planId}/blocks/${blockId}`, payload);
   return data;
+}
+
+export async function uploadBlockAttachmentApi(planId: number, blockId: number, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<MediaAttachment>(
+    `/business/plans/${planId}/blocks/${blockId}/attachments`,
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return data;
+}
+
+export async function deleteBlockAttachmentApi(planId: number, blockId: number, attachmentId: string) {
+  await api.delete(`/business/plans/${planId}/blocks/${blockId}/attachments/${attachmentId}`);
 }
 
 export async function deletePlanBlockApi(planId: number, blockId: number) {

@@ -1,9 +1,12 @@
+import { useRef } from "react";
+import toast from "react-hot-toast";
 import { RichTextEditor } from "./RichTextEditor";
 import { SwotEditor, TimelineEditor, MetricsEditor, MarkdownEditor, ChecklistEditor } from "./SmartBlockEditors";
 import { isRichTextBlockType } from "../lib/blockDefaults";
 import { ru } from "../i18n/ru";
 import { v, tw, inputStyle, buttonStyle } from "../shared/theme";
-import type { FinancialPlan } from "../api";
+import type { FinancialPlan, MediaAttachment } from "../api";
+import { uploadBlockAttachmentApi, deleteBlockAttachmentApi } from "../api";
 
 interface BlockModalProps {
   open: boolean;
@@ -13,8 +16,11 @@ interface BlockModalProps {
     content: string;
     block_type: string;
     rich_content: object;
+    media_attachments: MediaAttachment[];
     linked_financial_chart_ids: number[];
   };
+  planId: number | null;
+  editingBlockId: number | null;
   financialCharts: FinancialPlan[];
   isDark: boolean;
   onFormChange: (field: string, value: string | number[] | object) => void;
@@ -74,15 +80,46 @@ export function BlockModal({
   open,
   title,
   form,
+  planId,
+  editingBlockId,
   financialCharts,
   isDark,
   onFormChange,
   onSave,
   onCancel,
 }: BlockModalProps) {
+  const attachInputRef = useRef<HTMLInputElement>(null);
+
   if (!open) return null;
 
   const canSave = canSaveBlock(form);
+  const uploadContext = planId && editingBlockId ? { planId, blockId: editingBlockId } : null;
+
+  async function handleBlockAttachment(file: File) {
+    if (!planId || !editingBlockId) {
+      toast.error(ru.editor.saveBlockFirst);
+      return;
+    }
+    try {
+      const meta = await uploadBlockAttachmentApi(planId, editingBlockId, file);
+      onFormChange("media_attachments", [...form.media_attachments, meta]);
+    } catch {
+      toast.error(ru.editor.fileUploadError);
+    }
+  }
+
+  async function removeAttachment(id: string) {
+    if (!planId || !editingBlockId) return;
+    try {
+      await deleteBlockAttachmentApi(planId, editingBlockId, id);
+      onFormChange(
+        "media_attachments",
+        form.media_attachments.filter((a) => a.id !== id),
+      );
+    } catch {
+      toast.error(ru.editor.fileUploadError);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[120] grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
@@ -116,12 +153,57 @@ export function BlockModal({
           </select>
 
           {isRichBlock(form.block_type) && (
-            <RichTextEditor
-              content={form.rich_content}
-              onChange={(json) => onFormChange("rich_content", json)}
-              isDark={isDark}
-              placeholder={ru.editor.placeholder}
-            />
+            <>
+              <RichTextEditor
+                content={form.rich_content}
+                onChange={(json) => onFormChange("rich_content", json)}
+                isDark={isDark}
+                placeholder={ru.editor.placeholder}
+                uploadContext={uploadContext}
+              />
+              {editingBlockId && (
+                <div className="space-y-2 rounded-xl border p-3" style={{ borderColor: v("border-secondary") }}>
+                  <p className="text-sm font-medium" style={{ color: v("text-secondary") }}>{ru.editor.attachments}</p>
+                  {form.media_attachments.length > 0 && (
+                    <ul className="space-y-1">
+                      {form.media_attachments.map((a) => (
+                        <li key={a.id} className="flex items-center justify-between gap-2 text-xs">
+                          <a href={a.url} target="_blank" rel="noreferrer" className="truncate" style={{ color: v("text-primary") }}>
+                            {a.name}
+                          </a>
+                          <button
+                            type="button"
+                            className="shrink-0 rounded border px-2 py-0.5"
+                            style={buttonStyle("danger", isDark)}
+                            onClick={() => void removeAttachment(a.id)}
+                          >
+                            {ru.editor.removeFile}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <button
+                    type="button"
+                    className="rounded-lg border px-3 py-1.5 text-xs"
+                    style={buttonStyle("primary", isDark)}
+                    onClick={() => attachInputRef.current?.click()}
+                  >
+                    {ru.editor.uploadFile}
+                  </button>
+                  <input
+                    ref={attachInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (f) void handleBlockAttachment(f);
+                    }}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {form.block_type === "swot" && (

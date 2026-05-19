@@ -26,6 +26,7 @@ import {
   getBusinessPlanApi,
   getPlanBlocksApi,
   getFinancialPlansApi,
+  type MediaAttachment,
   reorderPlanBlocksApi,
   updateBusinessPlanApi,
   updatePlanBlockApi,
@@ -186,11 +187,19 @@ export function BusinessPlanDetailsPage() {
   // Block modal state (for create and edit)
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<number | null>(null);
-  const [blockForm, setBlockForm] = useState<{ title: string; content: string; block_type: string; rich_content: object; linked_financial_chart_ids: number[] }>({
+  const [blockForm, setBlockForm] = useState<{
+    title: string;
+    content: string;
+    block_type: string;
+    rich_content: object;
+    media_attachments: MediaAttachment[];
+    linked_financial_chart_ids: number[];
+  }>({
     title: "",
     content: "",
     block_type: "general",
     rich_content: {},
+    media_attachments: [],
     linked_financial_chart_ids: [],
   });
   const [financialCharts, setFinancialCharts] = useState<FinancialPlan[]>([]);
@@ -253,7 +262,7 @@ export function BusinessPlanDetailsPage() {
 
   function openCreateBlockModal() {
     setEditingBlockId(null);
-    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, linked_financial_chart_ids: [] });
+    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [] });
     setBlockModalOpen(true);
   }
 
@@ -266,6 +275,7 @@ export function BusinessPlanDetailsPage() {
           content: blockForm.content.trim(),
           block_type: blockForm.block_type,
           rich_content: blockForm.rich_content,
+          media_attachments: blockForm.media_attachments,
           linked_financial_chart_ids: blockForm.linked_financial_chart_ids,
         });
         toast.success(ru.toasts.blockUpdated);
@@ -281,7 +291,7 @@ export function BusinessPlanDetailsPage() {
       }
       setBlockModalOpen(false);
       setEditingBlockId(null);
-      setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, linked_financial_chart_ids: [] });
+      setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [] });
       await fetchData();
     } catch {
       toast.error(isEditingBlock ? ru.toasts.blockUpdateError : ru.toasts.blockCreateError);
@@ -295,6 +305,7 @@ export function BusinessPlanDetailsPage() {
       content: block.content,
       block_type: block.block_type,
       rich_content: normalizeRichContentForBlockType(block.block_type, block.rich_content),
+      media_attachments: (block.media_attachments ?? []) as MediaAttachment[],
       linked_financial_chart_ids: block.linked_financial_chart_ids || [],
     });
     setBlockModalOpen(true);
@@ -303,7 +314,7 @@ export function BusinessPlanDetailsPage() {
   function handleCancelBlockEdit() {
     setBlockModalOpen(false);
     setEditingBlockId(null);
-    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, linked_financial_chart_ids: [] });
+    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [] });
   }
 
   async function onDragEnd(event: DragEndEvent) {
@@ -368,6 +379,7 @@ export function BusinessPlanDetailsPage() {
           ...prev,
           block_type: value,
           rich_content: getDefaultRichContent(value),
+          media_attachments: [],
           linked_financial_chart_ids: value === "chart_embed" ? prev.linked_financial_chart_ids : [],
         };
       }
@@ -696,6 +708,8 @@ export function BusinessPlanDetailsPage() {
         open={blockModalOpen}
         title={isEditingBlock ? ru.modals.editBlock : ru.modals.newBlock}
         form={blockForm}
+        planId={planId ?? null}
+        editingBlockId={editingBlockId}
         financialCharts={financialCharts}
         isDark={isDark}
         onFormChange={handleBlockFormChange}

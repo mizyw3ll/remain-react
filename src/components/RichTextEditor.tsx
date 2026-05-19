@@ -1,17 +1,47 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useEditor, EditorContent, type Content } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
-import ListItem from "@tiptap/extension-list-item";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
-import { Bold, Italic, List, ListOrdered, Heading2, Quote, Code, Undo, Redo, Table as TableIcon, Rows3 } from "lucide-react";
+import { Strike } from "@tiptap/extension-strike";
+import { Highlight } from "@tiptap/extension-highlight";
+import { Subscript } from "@tiptap/extension-subscript";
+import { Image } from "@tiptap/extension-image";
+import { Link } from "@tiptap/extension-link";
+import {
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Heading2,
+  Quote,
+  Code,
+  FileCode,
+  Undo,
+  Redo,
+  Table as TableIcon,
+  Rows3,
+  Columns3,
+  Trash2,
+  SquareX,
+  Strikethrough,
+  Highlighter,
+  Subscript as SubscriptIcon,
+  Paperclip,
+  ImageIcon,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import { ru } from "../i18n/ru";
+import { uploadBlockAttachmentApi } from "../api";
 import { inputStyle, tw, v } from "../shared/theme";
+
+export interface RichTextEditorUploadContext {
+  planId: number;
+  blockId: number;
+}
 
 interface RichTextEditorProps {
   content: object | null;
@@ -19,18 +49,29 @@ interface RichTextEditorProps {
   isDark: boolean;
   placeholder?: string;
   readOnly?: boolean;
+  uploadContext?: RichTextEditorUploadContext | null;
 }
 
-export function RichTextEditor({ content, onChange, isDark, placeholder, readOnly }: RichTextEditorProps) {
+export function RichTextEditor({
+  content,
+  onChange,
+  isDark,
+  placeholder,
+  readOnly,
+  uploadContext,
+}: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        bulletList: false,
-        orderedList: false,
+        heading: { levels: [1, 2, 3] },
       }),
-      BulletList,
-      OrderedList,
-      ListItem,
+      Strike,
+      Highlight.configure({ multicolor: false }),
+      Subscript,
+      Link.configure({ openOnClick: false }),
+      Image.configure({ inline: true, allowBase64: false }),
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -39,6 +80,11 @@ export function RichTextEditor({ content, onChange, isDark, placeholder, readOnl
     ],
     content: (content as Content) ?? undefined,
     editable: !readOnly,
+    editorProps: {
+      attributes: {
+        class: "tiptap-editor focus:outline-none",
+      },
+    },
     onUpdate: ({ editor: ed }) => {
       if (!readOnly) {
         onChange(ed.getJSON());
@@ -55,14 +101,36 @@ export function RichTextEditor({ content, onChange, isDark, placeholder, readOnl
     }
   }, [editor, content]);
 
+  async function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !editor) return;
+    if (!uploadContext) {
+      toast.error(ru.editor.saveBlockFirst);
+      return;
+    }
+    try {
+      const meta = await uploadBlockAttachmentApi(uploadContext.planId, uploadContext.blockId, file);
+      const url = meta.url;
+      if (file.type.startsWith("image/")) {
+        editor.chain().focus().setImage({ src: url, alt: meta.name }).run();
+      } else {
+        editor.chain().focus().insertContent(`<a href="${url}">${meta.name}</a> `).run();
+      }
+    } catch {
+      toast.error(ru.editor.fileUploadError);
+    }
+  }
+
   if (!editor) return null;
 
-  const btn = (active: boolean, onClick: () => void, icon: React.ReactNode, title: string) => (
+  const btn = (active: boolean, onClick: () => void, icon: React.ReactNode, title: string, disabled = false) => (
     <button
       type="button"
       title={title}
+      disabled={disabled}
       onClick={onClick}
-      className="rounded-md border p-1.5 text-xs transition-colors"
+      className="rounded-md border p-1.5 text-xs transition-colors disabled:opacity-40"
       style={{
         borderColor: active ? v("border-secondary") : "transparent",
         background: active ? v("bg-hover") : "transparent",
@@ -82,21 +150,31 @@ export function RichTextEditor({ content, onChange, isDark, placeholder, readOnl
         <div className="flex flex-wrap gap-1 border-b px-2 py-1.5" style={{ borderColor: v("border-primary") }}>
           {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), <Bold size={14} />, ru.editor.bold)}
           {btn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), <Italic size={14} />, ru.editor.italic)}
+          {btn(editor.isActive("strike"), () => editor.chain().focus().toggleStrike().run(), <Strikethrough size={14} />, ru.editor.strike)}
+          {btn(editor.isActive("highlight"), () => editor.chain().focus().toggleHighlight().run(), <Highlighter size={14} />, ru.editor.highlight)}
+          {btn(editor.isActive("subscript"), () => editor.chain().focus().toggleSubscript().run(), <SubscriptIcon size={14} />, ru.editor.subscript)}
           {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), <Heading2 size={14} />, ru.editor.heading)}
           {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <List size={14} />, ru.editor.bulletList)}
           {btn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered size={14} />, ru.editor.orderedList)}
           {btn(editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Quote size={14} />, ru.editor.quote)}
           {btn(editor.isActive("code"), () => editor.chain().focus().toggleCode().run(), <Code size={14} />, ru.editor.code)}
-          <div className="mx-1 w-px" style={{ background: v("border-primary") }} />
+          {btn(editor.isActive("codeBlock"), () => editor.chain().focus().toggleCodeBlock().run(), <FileCode size={14} />, ru.editor.codeBlock)}
+          <div className="mx-1 w-px self-stretch" style={{ background: v("border-primary") }} />
           {btn(false, () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), <TableIcon size={14} />, ru.editor.table)}
           {btn(false, () => editor.chain().focus().addRowAfter().run(), <Rows3 size={14} />, ru.editor.addRow)}
-          {btn(false, () => editor.chain().focus().deleteRow().run(), <Rows3 size={14} />, ru.editor.deleteRow)}
-          <div className="mx-1 w-px" style={{ background: v("border-primary") }} />
+          {btn(false, () => editor.chain().focus().deleteRow().run(), <Trash2 size={14} />, ru.editor.deleteRow)}
+          {btn(false, () => editor.chain().focus().addColumnAfter().run(), <Columns3 size={14} />, ru.editor.addColumn)}
+          {btn(false, () => editor.chain().focus().deleteColumn().run(), <SquareX size={14} />, ru.editor.deleteColumn)}
+          <div className="mx-1 w-px self-stretch" style={{ background: v("border-primary") }} />
+          {btn(false, () => fileInputRef.current?.click(), <Paperclip size={14} />, ru.editor.attachFile, !uploadContext)}
+          {btn(false, () => fileInputRef.current?.click(), <ImageIcon size={14} />, ru.editor.insertImage, !uploadContext)}
+          <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => void handleFilePick(e)} />
+          <div className="mx-1 w-px self-stretch" style={{ background: v("border-primary") }} />
           {btn(false, () => editor.chain().focus().undo().run(), <Undo size={14} />, ru.editor.undo)}
           {btn(false, () => editor.chain().focus().redo().run(), <Redo size={14} />, ru.editor.redo)}
         </div>
       )}
-      <div className={`p-3 text-sm tiptap ${readOnly ? "" : tw.inputBase}`} style={readOnly ? {} : inputStyle(isDark)}>
+      <div className={`p-3 text-sm tiptap ${readOnly ? "" : tw.inputBase}`} style={readOnly ? { minHeight: 120 } : inputStyle(isDark)}>
         <EditorContent editor={editor} />
       </div>
     </div>
