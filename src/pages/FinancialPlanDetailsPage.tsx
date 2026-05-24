@@ -23,7 +23,7 @@ import { PointModal } from "../components/PointModal";
 import { inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
 
-type Timeframe = "1H" | "1D" | "1M" | "3M" | "1Y";
+type Timeframe = "1W" | "1M" | "3M" | "1Y";
 
 type PointFormState = {
   date: string;
@@ -39,7 +39,7 @@ function getLocalDateTimeWithSeconds(date = new Date()) {
 
 type TimeframeConfig = {
   rangeMs: number;
-  bucket: "hour" | "day" | "month";
+  bucket: "day" | "week" | "month";
 };
 
 type AggregatedPoint = {
@@ -51,29 +51,33 @@ type AggregatedPoint = {
 };
 
 const TIMEFRAME_CONFIG: Record<Timeframe, TimeframeConfig> = {
-  "1H": { rangeMs: 60 * 60 * 1000, bucket: "hour" },
-  "1D": { rangeMs: 24 * 60 * 60 * 1000, bucket: "hour" },
+  "1W": { rangeMs: 7 * 24 * 60 * 60 * 1000, bucket: "day" },
   "1M": { rangeMs: 30 * 24 * 60 * 60 * 1000, bucket: "day" },
   "3M": { rangeMs: 90 * 24 * 60 * 60 * 1000, bucket: "day" },
   "1Y": { rangeMs: 365 * 24 * 60 * 60 * 1000, bucket: "month" },
 };
 
 function getBucketDate(date: Date, bucket: TimeframeConfig["bucket"]) {
-  if (bucket === "hour") {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
-  }
   if (bucket === "day") {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+  if (bucket === "week") {
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.getFullYear(), date.getMonth(), diff);
   }
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 function getBucketLabel(date: Date, bucket: TimeframeConfig["bucket"]) {
-  if (bucket === "hour") {
-    return date.toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-  }
   if (bucket === "day") {
     return date.toLocaleDateString();
+  }
+  if (bucket === "week") {
+    const weekStart = new Date(date);
+    const weekEnd = new Date(date);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    return `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
   }
   return date.toLocaleString([], { month: "long", year: "numeric" });
 }
@@ -134,7 +138,7 @@ export function FinancialPlanDetailsPage() {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [points, setPoints] = useState<ChartPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<Timeframe>("1D");
+  const [timeframe, setTimeframe] = useState<Timeframe>("1W");
   const [deleteTarget, setDeleteTarget] = useState<{ type: "chart" | "point"; id: number; title: string } | null>(
     null,
   );
@@ -454,7 +458,7 @@ export function FinancialPlanDetailsPage() {
         }}
       >
         <div className="relative mb-3 flex flex-wrap items-center gap-2">
-          {(["1H", "1D", "1M", "3M", "1Y"] as Timeframe[]).map((tf) => (
+          {(["1W", "1M", "3M", "1Y"] as Timeframe[]).map((tf) => (
             <button
               key={tf}
               className="rounded-lg px-3 py-1.5 text-xs transition-colors"
@@ -464,7 +468,7 @@ export function FinancialPlanDetailsPage() {
               }
               onClick={() => setTimeframe(tf)}
             >
-              {tf === "1H" ? "1 час" : tf === "1D" ? "День" : tf === "1M" ? "Месяц" : tf === "3M" ? "3 месяца" : "Год"}
+              {tf === "1W" ? "Неделя" : tf === "1M" ? "Месяц" : tf === "3M" ? "3 месяца" : "Год"}
             </button>
           ))}
           <div className="ml-auto flex gap-2">
