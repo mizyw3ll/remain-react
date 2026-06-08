@@ -107,7 +107,8 @@ export function SettingsModal({ open, tab, onClose }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-[max(1rem,5vw)]">
+      {/* Mobile: full-screen from bottom, small top gap */}
+      <div className="fixed inset-0 z-[100] md:flex md:items-center md:justify-center md:p-[max(1rem,5vw)]">
         <button
           type="button"
           className="absolute inset-0"
@@ -119,7 +120,7 @@ export function SettingsModal({ open, tab, onClose }: Props) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
-          className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border max-md:max-h-[85vh] max-md:w-[90vw]"
+          className="relative z-10 flex flex-col overflow-hidden max-md:fixed max-md:inset-x-0 max-md:top-6 max-md:bottom-0 max-md:rounded-t-2xl max-md:border max-lg:top-12 md:h-[656px] md:w-full md:max-w-2xl md:rounded-2xl md:border"
           style={{
             background: 'var(--bg-sidebar)',
             borderColor: 'var(--border-primary)',
@@ -127,8 +128,9 @@ export function SettingsModal({ open, tab, onClose }: Props) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Header */}
           <div
-            className="flex items-center justify-between border-b px-4 py-3"
+            className="flex items-center justify-between border-b px-4 py-3 shrink-0"
             style={{ borderColor: 'var(--border-muted)' }}
           >
             <h2 id="settings-title" className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -153,269 +155,270 @@ export function SettingsModal({ open, tab, onClose }: Props) {
             </button>
           </div>
 
-          <div
-            className="flex gap-1 border-b px-2 pt-2"
-            style={{ borderColor: 'var(--border-muted)' }}
-          >
-            <button
-              type="button"
-              className={`rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${panel === "main" ? "active" : ""
-                }`}
-              style={{
-                background: panel === "main" ? 'var(--bg-active)' : 'transparent',
-                color: panel === "main" ? 'var(--text-primary)' : 'var(--text-muted)',
-              }}
-              onMouseEnter={(e) => {
-                if (panel !== "main") {
-                  e.currentTarget.style.background = 'var(--bg-hover)';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (panel !== "main") {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }
-              }}
-              onClick={() => setPanel("main")}
+          {/* Body: tabs left (desktop) / tabs top (mobile) */}
+          <div className="flex flex-1 overflow-hidden max-md:flex-col">
+            {/* Tabs - desktop left sidebar */}
+            <div
+              className="flex max-md:flex-row max-md:gap-1 max-md:border-b max-md:px-2 max-md:pt-2 md:flex-col md:border-r md:p-2 md:shrink-0"
+              style={{ borderColor: 'var(--border-muted)' }}
             >
-              Главная
-            </button>
-            <button
-              type="button"
-              className={`rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${panel === "profile" ? "active" : ""
-                }`}
-              style={{
-                background: panel === "profile" ? 'var(--bg-active)' : 'transparent',
-                color: panel === "profile" ? 'var(--text-primary)' : 'var(--text-muted)',
-              }}
-              onMouseEnter={(e) => {
-                if (panel !== "profile") {
-                  e.currentTarget.style.background = 'var(--bg-hover)';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (panel !== "profile") {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }
-              }}
-              onClick={() => setPanel("profile")}
-            >
-              Профиль
-            </button>
-          </div>
+              <button
+                type="button"
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${panel === "main" ? "active" : ""}`}
+                style={{
+                  background: panel === "main" ? 'var(--bg-active)' : 'transparent',
+                  color: panel === "main" ? 'var(--text-primary)' : 'var(--text-muted)',
+                }}
+                onMouseEnter={(e) => {
+                  if (panel !== "main") {
+                    e.currentTarget.style.background = 'var(--bg-hover)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (panel !== "main") {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                  }
+                }}
+                onClick={() => setPanel("main")}
+              >
+                Главная
+              </button>
+              <button
+                type="button"
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${panel === "profile" ? "active" : ""}`}
+                style={{
+                  background: panel === "profile" ? 'var(--bg-active)' : 'transparent',
+                  color: panel === "profile" ? 'var(--text-primary)' : 'var(--text-muted)',
+                }}
+                onMouseEnter={(e) => {
+                  if (panel !== "profile") {
+                    e.currentTarget.style.background = 'var(--bg-hover)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (panel !== "profile") {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                  }
+                }}
+                onClick={() => setPanel("profile")}
+              >
+                Профиль
+              </button>
+            </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            {panel === "main" ? (
-              <div className="space-y-3">
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Тема оформления</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setTheme("dark")}
-                    className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${theme === "dark" ? "active-theme-dark" : ""
-                      }`}
-                    style={{
-                      borderColor: theme === "dark" ? 'rgba(34, 211, 238, 0.6)' : 'var(--border-primary)',
-                      background: theme === "dark" ? 'rgba(34, 211, 238, 0.1)' : 'var(--bg-secondary)',
-                      color: theme === "dark" ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    <Moon size={28} />
-                    <span className="text-sm font-medium">Тёмная</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTheme("light")}
-                    className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${theme === "light" ? "active-theme-light" : ""
-                      }`}
-                    style={{
-                      borderColor: theme === "light" ? 'rgba(251, 191, 36, 0.6)' : 'var(--border-primary)',
-                      background: theme === "light" ? 'rgba(251, 191, 36, 0.1)' : 'var(--bg-secondary)',
-                      color: theme === "light" ? 'rgb(251, 191, 36)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    <Sun size={28} />
-                    <span className="text-sm font-medium">Светлая</span>
-                  </button>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {panel === "main" ? (
+                <div className="space-y-3">
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Тема оформления</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setTheme("dark")}
+                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${theme === "dark" ? "active-theme-dark" : ""}`}
+                      style={{
+                        borderColor: theme === "dark" ? 'rgba(34, 211, 238, 0.6)' : 'var(--border-primary)',
+                        background: theme === "dark" ? 'rgba(34, 211, 238, 0.1)' : 'var(--bg-secondary)',
+                        color: theme === "dark" ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      <Moon size={28} />
+                      <span className="text-sm font-medium">Тёмная</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme("light")}
+                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${theme === "light" ? "active-theme-light" : ""}`}
+                      style={{
+                        borderColor: theme === "light" ? 'rgba(251, 191, 36, 0.6)' : 'var(--border-primary)',
+                        background: theme === "light" ? 'rgba(251, 191, 36, 0.1)' : 'var(--bg-secondary)',
+                        color: theme === "light" ? 'rgb(251, 191, 36)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      <Sun size={28} />
+                      <span className="text-sm font-medium">Светлая</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Email + Verification */}
-                <div
-                  className="rounded-xl border p-4"
-                  style={{
-                    borderColor: 'var(--border-primary)',
-                    background: 'var(--bg-secondary)',
-                  }}
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                    Электронная почта
-                  </p>
-                  <p className="mt-2 font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {user ? maskEmail(user.email) : "—"}
-                  </p>
-                  {user?.is_verified ? (
-                    <div className="mt-2 flex items-center gap-1.5 text-xs text-green-500">
-                      <CheckCircle size={14} />
-                      <span>Email подтвержден</span>
-                    </div>
-                  ) : (
-                    <div className="mt-2 space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs text-amber-500">
-                        <AlertCircle size={14} />
-                        <span>Email не подтвержден</span>
+              ) : (
+                <div className="space-y-4">
+                  {/* Email + Verification */}
+                  <div
+                    className="rounded-xl border p-4"
+                    style={{
+                      borderColor: 'var(--border-primary)',
+                      background: 'var(--bg-secondary)',
+                    }}
+                  >
+                    <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                      Электронная почта
+                    </p>
+                    <p className="mt-2 font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {user ? maskEmail(user.email) : "—"}
+                    </p>
+                    {user?.is_verified ? (
+                      <div className="mt-2 flex items-center gap-1.5 text-xs text-green-500">
+                        <CheckCircle size={14} />
+                        <span>Email подтвержден</span>
                       </div>
+                    ) : (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center gap-1.5 text-xs text-amber-500">
+                          <AlertCircle size={14} />
+                          <span>Email не подтвержден</span>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={verifyBusy}
+                          onClick={handleResendVerification}
+                          className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+                          style={{
+                            borderColor: 'var(--border-secondary)',
+                            color: 'var(--text-secondary)',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'var(--bg-hover)';
+                            e.currentTarget.style.color = 'var(--text-primary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }}
+                        >
+                          {verifyBusy ? (
+                            <>
+                              <Loader2 size={12} className="animate-spin" />
+                              Отправка...
+                            </>
+                          ) : (
+                            "Отправить письмо повторно"
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Password Change */}
+                  <div
+                    className="rounded-xl border p-4"
+                    style={{
+                      borderColor: 'var(--border-primary)',
+                      background: 'var(--bg-secondary)',
+                    }}
+                  >
+                    <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                      Смена пароля
+                    </p>
+                    <form onSubmit={handleChangePassword} className="mt-3 space-y-2">
+                      <div className="relative">
+                        <input
+                          type={showOldPass ? "text" : "password"}
+                          placeholder="Текущий пароль"
+                          className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                          style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
+                          value={oldPass}
+                          onChange={(e) => setOldPass(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowOldPass((p) => !p)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          {showOldPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showNewPass ? "text" : "password"}
+                          placeholder="Новый пароль"
+                          className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                          style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
+                          value={newPass}
+                          onChange={(e) => setNewPass(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPass((p) => !p)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          {showNewPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <input
+                        type="password"
+                        placeholder="Подтвердите новый пароль"
+                        className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
+                        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
+                        value={confirmPass}
+                        onChange={(e) => setConfirmPass(e.target.value)}
+                      />
+                      {passError && (
+                        <p className="text-xs text-rose-500">{passError}</p>
+                      )}
                       <button
-                        type="button"
-                        disabled={verifyBusy}
-                        onClick={handleResendVerification}
-                        className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
-                        style={{
-                          borderColor: 'var(--border-secondary)',
-                          color: 'var(--text-secondary)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'var(--bg-hover)';
-                          e.currentTarget.style.color = 'var(--text-primary)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                        }}
+                        type="submit"
+                        disabled={passBusy || !oldPass || !newPass || !confirmPass}
+                        className="w-full rounded-lg bg-white py-2 text-sm font-medium text-black transition-colors hover:bg-zinc-200 disabled:opacity-50"
                       >
-                        {verifyBusy ? (
-                          <>
-                            <Loader2 size={12} className="animate-spin" />
-                            Отправка...
-                          </>
+                        {passBusy ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Loader2 size={14} className="animate-spin" />
+                            Сохранение...
+                          </span>
                         ) : (
-                          "Отправить письмо повторно"
+                          "Сменить пароль"
                         )}
                       </button>
-                    </div>
-                  )}
+                    </form>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="w-full rounded-xl border py-3 text-sm font-medium transition-colors"
+                    style={{
+                      borderColor: 'var(--border-secondary)',
+                      color: 'var(--text-secondary)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--bg-hover)';
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }}
+                    onClick={() => setLogoutConfirmOpen(true)}
+                  >
+                    Выйти из аккаунта
+                  </button>
+
+                  <button
+                    type="button"
+                    className="w-full rounded-xl border py-3 text-sm font-medium transition-colors"
+                    style={{
+                      borderColor: 'rgba(220, 38, 38, 0.6)',
+                      background: 'rgba(220, 38, 38, 0.1)',
+                      color: 'rgb(252, 165, 165)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)';
+                    }}
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    Удалить аккаунт
+                  </button>
                 </div>
-
-                {/* Password Change */}
-                <div
-                  className="rounded-xl border p-4"
-                  style={{
-                    borderColor: 'var(--border-primary)',
-                    background: 'var(--bg-secondary)',
-                  }}
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                    Смена пароля
-                  </p>
-                  <form onSubmit={handleChangePassword} className="mt-3 space-y-2">
-                    <div className="relative">
-                      <input
-                        type={showOldPass ? "text" : "password"}
-                        placeholder="Текущий пароль"
-                        className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
-                        value={oldPass}
-                        onChange={(e) => setOldPass(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowOldPass((p) => !p)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {showOldPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type={showNewPass ? "text" : "password"}
-                        placeholder="Новый пароль"
-                        className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
-                        value={newPass}
-                        onChange={(e) => setNewPass(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPass((p) => !p)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {showNewPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
-                    <input
-                      type="password"
-                      placeholder="Подтвердите новый пароль"
-                      className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                      style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-secondary)', color: 'var(--text-primary)' }}
-                      value={confirmPass}
-                      onChange={(e) => setConfirmPass(e.target.value)}
-                    />
-                    {passError && (
-                      <p className="text-xs text-rose-500">{passError}</p>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={passBusy || !oldPass || !newPass || !confirmPass}
-                      className="w-full rounded-lg bg-white py-2 text-sm font-medium text-black transition-colors hover:bg-zinc-200 disabled:opacity-50"
-                    >
-                      {passBusy ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader2 size={14} className="animate-spin" />
-                          Сохранение...
-                        </span>
-                      ) : (
-                        "Сменить пароль"
-                      )}
-                    </button>
-                  </form>
-                </div>
-
-                <button
-                  type="button"
-                  className="w-full rounded-xl border py-3 text-sm font-medium transition-colors"
-                  style={{
-                    borderColor: 'var(--border-secondary)',
-                    color: 'var(--text-secondary)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--bg-hover)';
-                    e.currentTarget.style.color = 'var(--text-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }}
-                  onClick={() => setLogoutConfirmOpen(true)}
-                >
-                  Выйти из аккаунта
-                </button>
-
-                <button
-                  type="button"
-                  className="w-full rounded-xl border py-3 text-sm font-medium transition-colors"
-                  style={{
-                    borderColor: 'rgba(220, 38, 38, 0.6)',
-                    background: 'rgba(220, 38, 38, 0.1)',
-                    color: 'rgb(252, 165, 165)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(220, 38, 38, 0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)';
-                  }}
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  Удалить аккаунт
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

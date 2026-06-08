@@ -7,8 +7,10 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
-import { ACCESS_TOKEN_KEY } from "../../shared/api/http";
-import type { User } from "../../shared/types/models";
+import { useQueryClient } from "@tanstack/react-query";
+import { TOKEN_KEY } from "../../api";
+import type { User } from "../../api";
+import { queryKeys } from "../../lib/queryClient";
 import * as authApi from "./authApi";
 
 type AuthContextType = {
@@ -24,39 +26,47 @@ type AuthContextType = {
   }) => Promise<void>;
   signout: () => void;
   requestVerify: () => Promise<void>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(() => {
-    return !!localStorage.getItem(ACCESS_TOKEN_KEY);
+    return !!localStorage.getItem(TOKEN_KEY);
   });
 
   const loadMe = useCallback(async () => {
     try {
-      setUser(await authApi.me());
+      const cached = queryClient.getQueryData<User>(queryKeys.user);
+      const me = cached ?? await authApi.me();
+      queryClient.setQueryData(queryKeys.user, me);
+      setUser(me);
     } catch {
-      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      queryClient.removeQueries({ queryKey: queryKeys.user });
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
-    if (!localStorage.getItem(ACCESS_TOKEN_KEY)) {
+    if (!localStorage.getItem(TOKEN_KEY)) {
       return;
     }
     void loadMe();
   }, [loadMe]);
 
   const signin = useCallback(async (login: string, password: string) => {
-    const token = await authApi.login({ username: login, password });
-    localStorage.setItem(ACCESS_TOKEN_KEY, token.access_token);
-    setUser(await authApi.me());
-  }, []);
+    const token = await authApi.login(login, password);
+    localStorage.setItem(TOKEN_KEY, token.access_token);
+    const me = await authApi.me();
+    queryClient.setQueryData(queryKeys.user, me);
+    setUser(me);
+  }, [queryClient]);
 
   const signup = useCallback(
     async (payload: {
@@ -73,16 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signout = useCallback(() => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    queryClient.removeQueries({ queryKey: queryKeys.user });
     setUser(null);
-  }, []);
+  }, [queryClient]);
 
   const requestVerify = useCallback(async () => {
     await authApi.requestVerification();
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, signin, signup, signout, requestVerify }),
+    () => ({ user, loading, signin, signup, signout, requestVerify, setUser }),
     [user, loading, signin, signup, signout, requestVerify],
   );
 

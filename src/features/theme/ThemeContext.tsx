@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { THEME_KEY } from "../../shared/api/http";
+
+const THEME_KEY = "remain.theme";
 
 type Theme = "light" | "dark";
 

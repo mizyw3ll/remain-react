@@ -1,11 +1,13 @@
 import { useRef } from "react";
 import toast from "react-hot-toast";
+import { Loader2 } from "lucide-react";
 import { RichTextEditor } from "./RichTextEditor";
 import { SwotEditor, TimelineEditor, MetricsEditor, MarkdownEditor, ChecklistEditor } from "./SmartBlockEditors";
+import { TagPicker } from "./TagPicker";
 import { isRichTextBlockType } from "../lib/blockDefaults";
 import { ru } from "../i18n/ru";
 import { v, tw, inputStyle, buttonStyle } from "../shared/theme";
-import type { FinancialPlan, MediaAttachment } from "../api";
+import type { FinancialPlan, MediaAttachment, Tag } from "../api";
 import { uploadBlockAttachmentApi, deleteBlockAttachmentApi } from "../api";
 
 interface BlockModalProps {
@@ -18,14 +20,18 @@ interface BlockModalProps {
     rich_content: object;
     media_attachments: MediaAttachment[];
     linked_financial_chart_ids: number[];
+    tags: Tag[];
+    due_date: string | null;
   };
   planId: number | null;
   editingBlockId: number | null;
   financialCharts: FinancialPlan[];
   isDark: boolean;
-  onFormChange: (field: string, value: string | number[] | object) => void;
+  onFormChange: (field: string, value: string | number[] | object | null) => void;
   onSave: () => void;
   onCancel: () => void;
+  onImproveWithAI?: () => Promise<void>;
+  aiImproving?: boolean;
 }
 
 const BLOCK_TYPES = [
@@ -87,6 +93,8 @@ export function BlockModal({
   onFormChange,
   onSave,
   onCancel,
+  onImproveWithAI,
+  aiImproving,
 }: BlockModalProps) {
   const attachInputRef = useRef<HTMLInputElement>(null);
 
@@ -130,7 +138,23 @@ export function BlockModal({
           borderColor: v("border-primary"),
         }}
       >
-        <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{title}</h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{title}</h3>
+          {editingBlockId && onImproveWithAI ? (
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-colors"
+              style={buttonStyle("secondary", isDark)}
+              disabled={Boolean(aiImproving)}
+              onMouseEnter={(e) => { if (!aiImproving) e.currentTarget.style.background = v("bg-hover"); }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              onClick={() => void onImproveWithAI()}
+            >
+              {aiImproving ? <Loader2 size={14} className="animate-spin" /> : null}
+              AI: улучшить
+            </button>
+          ) : null}
+        </div>
 
         <div className="mt-4 space-y-3">
           <input
@@ -151,6 +175,29 @@ export function BlockModal({
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
+
+          <div className="pt-1">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+              Теги блока
+            </label>
+            <TagPicker
+              selectedTags={form.tags}
+              onChange={(tags) => onFormChange("tags", tags)}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+              Дедлайн
+            </label>
+            <input
+              type="date"
+              className={tw.inputBase}
+              style={inputStyle(isDark)}
+              value={form.due_date ?? ""}
+              onChange={(e) => onFormChange("due_date", e.target.value || null)}
+            />
+          </div>
 
           {isRichBlock(form.block_type) && (
             <>

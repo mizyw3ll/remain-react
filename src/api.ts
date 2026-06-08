@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 export const TOKEN_KEY = "remain.accessToken";
 
@@ -8,6 +8,8 @@ export type User = {
   username: string;
   first_name?: string | null;
   last_name?: string | null;
+  is_active?: boolean;
+  is_verified?: boolean;
 };
 
 export type BusinessPlan = {
@@ -16,8 +18,7 @@ export type BusinessPlan = {
   title: string;
   description?: string | null;
   blocks?: PlanBlock[];
-  is_public?: boolean;
-  share_token?: string | null;
+  tags?: Tag[];
   created_at: string;
   updated_at?: string;
 };
@@ -42,6 +43,14 @@ export type Currency = {
   is_active: boolean;
 };
 
+export type Tag = {
+  id: number;
+  user_id: number;
+  name: string;
+  color_idx: number;
+  created_at: string;
+};
+
 export type Template = {
   id: number;
   title: string;
@@ -62,6 +71,21 @@ export type PlanBlock = {
   linked_financial_chart_ids: number[];
   has_unpublished_draft: boolean;
   draft_saved_at?: string | null;
+  tags?: Tag[];
+  due_date?: string | null;
+};
+
+export type BusinessPlanAnalytics = {
+  plan_id: number;
+  blocks_count: number;
+  drafts_count: number;
+  comments_count: number;
+  attachments_count: number;
+  linked_financial_charts_count: number;
+  rich_blocks_count: number;
+  total_content_chars: number;
+  average_content_chars: number;
+  block_type_breakdown: Record<string, number>;
 };
 
 export type ChartPoint = {
@@ -73,6 +97,34 @@ export type ChartPoint = {
   description?: string | null;
 };
 
+export type FinancialChartAnalyticsPoint = {
+  date: string;
+  income: number;
+  expense: number;
+  net: number;
+  cumulative: number;
+};
+
+export type FinancialChartAnalytics = {
+  chart_id: number;
+  currency_code: string;
+  points_count: number;
+  income_total: number;
+  expense_total: number;
+  net_total: number;
+  average_daily_net: number;
+  average_point_net: number;
+  first_point_at?: string | null;
+  last_point_at?: string | null;
+  series: FinancialChartAnalyticsPoint[];
+};
+
+export type AITextResponse = {
+  content: string;
+  provider: string;
+  model: string;
+};
+
 export const api = axios.create({
   baseURL: "/api/v1",
 });
@@ -82,8 +134,36 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  (config as typeof config & { metadata?: { startTime: number } }).metadata = {
+    startTime: performance.now(),
+  };
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => {
+    const meta = (response.config as typeof response.config & { metadata?: { startTime: number } }).metadata;
+    if (meta?.startTime !== undefined) {
+      const durationMs = performance.now() - meta.startTime;
+      if (durationMs >= 500) {
+        console.warn(
+          `[API slow] ${response.config.method?.toUpperCase()} ${response.config.url} — ${durationMs.toFixed(0)}ms`,
+        );
+      }
+    }
+    return response;
+  },
+  (error) => {
+    const config = error.config as typeof error.config & { metadata?: { startTime: number } } | undefined;
+    if (config?.metadata?.startTime !== undefined) {
+      const durationMs = performance.now() - config.metadata.startTime;
+      console.warn(
+        `[API error] ${config.method?.toUpperCase()} ${config.url} — ${durationMs.toFixed(0)}ms`,
+      );
+    }
+    return Promise.reject(error);
+  },
+);
 
 export async function loginApi(login: string, password: string) {
   const body = new URLSearchParams();
@@ -147,6 +227,11 @@ export async function getBusinessPlanApi(id: number) {
   return data;
 }
 
+export async function getBusinessPlanAnalyticsApi(id: number) {
+  const { data } = await api.get<BusinessPlanAnalytics>(`/business/plans/${id}/analytics`);
+  return data;
+}
+
 export async function getPlanBlocksApi(planId: number) {
   const { data } = await api.get<PlanBlock[]>(`/business/plans/${planId}/blocks`);
   return data;
@@ -154,7 +239,7 @@ export async function getPlanBlocksApi(planId: number) {
 
 export async function createPlanBlockApi(
   planId: number,
-  payload: { title: string; content?: string; block_type: string; rich_content?: object; linked_financial_chart_ids?: number[] },
+  payload: { title: string; content?: string; block_type: string; rich_content?: object; linked_financial_chart_ids?: number[]; due_date?: string | null; media_attachments?: MediaAttachment[] },
 ) {
   const { data } = await api.post<PlanBlock>(`/business/plans/${planId}/blocks`, {
     content: payload.content ?? "",
@@ -184,6 +269,7 @@ export async function updatePlanBlockApi(
     rich_content?: object;
     media_attachments?: MediaAttachment[];
     linked_financial_chart_ids?: number[];
+    due_date?: string | null;
   },
 ) {
   const { data } = await api.patch<PlanBlock>(`/business/plans/${planId}/blocks/${blockId}`, payload);
@@ -213,8 +299,10 @@ export async function reorderPlanBlocksApi(planId: number, newOrder: number[]) {
   await api.patch(`/business/plans/${planId}/blocks/reorder`, { new_order: newOrder });
 }
 
-export async function getFinancialPlansApi() {
-  const { data } = await api.get<FinancialPlan[]>("/financial/charts");
+export async function getFinancialPlansApi(includePoints = false) {
+  const { data } = await api.get<FinancialPlan[]>("/financial/charts", {
+    params: includePoints ? { include_points: true } : undefined,
+  });
   return data;
 }
 
@@ -245,9 +333,29 @@ export async function getFinancialPlanApi(id: number) {
   return data;
 }
 
+export async function getFinancialChartAnalyticsApi(id: number, includeSeries = false) {
+  const { data } = await api.get<FinancialChartAnalytics>(`/financial/charts/${id}/analytics`, {
+    params: includeSeries ? { include_series: true } : { include_series: false },
+  });
+  return data;
+}
+
 export async function getChartPointsApi(chartId: number) {
   const { data } = await api.get<ChartPoint[]>(`/financial/${chartId}/points`);
   return data;
+}
+
+export async function getChartPointsBatchApi(chartIds: number[]) {
+  if (chartIds.length === 0) return {} as Record<number, ChartPoint[]>;
+  const { data } = await api.post<{ chart_id: number; points: ChartPoint[] }[]>(
+    "/financial/charts/points/batch",
+    { chart_ids: chartIds },
+  );
+  const result: Record<number, ChartPoint[]> = {};
+  for (const item of data) {
+    result[item.chart_id] = item.points;
+  }
+  return result;
 }
 
 export async function createChartPointApi(
@@ -276,8 +384,8 @@ export async function getCurrenciesApi() {
   return data;
 }
 
-export async function getTemplatesApi() {
-  const { data } = await api.get<Template[]>("/business/templates");
+export async function getTemplatesApi(category?: string) {
+  const { data } = await api.get<Template[]>("/business/templates", { params: { category } });
   return data;
 }
 
@@ -316,10 +424,11 @@ export async function importBusinessPlanApi(file: File) {
   return data;
 }
 
-export async function saveSnapshotApi(planId: number, note?: string) {
-  const { data } = await api.post<{ detail: string; snapshot_id: number }>(`/business/plans/${planId}/snapshots`, null, {
-    params: note ? { note } : {},
-  });
+export async function saveSnapshotApi(planId: number, title?: string, note?: string) {
+  const params: Record<string, string> = {};
+  if (title) params.title = title;
+  if (note) params.note = note;
+  const { data } = await api.post<{ detail: string; snapshot_id: number }>(`/business/plans/${planId}/snapshots`, null, { params });
   return data;
 }
 
@@ -328,18 +437,13 @@ export async function getSnapshotsApi(planId: number) {
   return data;
 }
 
+export async function deleteSnapshotApi(planId: number, snapshotId: number) {
+  const { data } = await api.delete<{ detail: string }>(`/business/plans/${planId}/snapshots/${snapshotId}`);
+  return data;
+}
+
 export async function restoreSnapshotApi(planId: number, snapshotId: number) {
   const { data } = await api.post<BusinessPlan>(`/business/plans/${planId}/snapshots/${snapshotId}/restore`);
-  return data;
-}
-
-export async function sharePlanApi(planId: number) {
-  const { data } = await api.post<{ share_token: string; is_public: boolean }>(`/business/plans/${planId}/share`);
-  return data;
-}
-
-export async function unsharePlanApi(planId: number) {
-  const { data } = await api.post<{ is_public: boolean }>(`/business/plans/${planId}/unshare`);
   return data;
 }
 
@@ -360,4 +464,504 @@ export async function updateCommentApi(planId: number, blockId: number, commentI
 
 export async function deleteCommentApi(planId: number, blockId: number, commentId: number) {
   await api.delete(`/business/plans/${planId}/blocks/${blockId}/comments/${commentId}`);
+}
+
+export async function generateBusinessPlanOutlineApi(planId: number) {
+  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/generate`);
+  return data;
+}
+
+export async function improveBusinessPlanBlockApi(planId: number, blockId: number) {
+  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/blocks/${blockId}/improve`);
+  return data;
+}
+
+export async function summarizeFinancialChartApi(chartId: number) {
+  const { data } = await api.post<AITextResponse>(`/ai/financial-charts/${chartId}/summary`);
+  return data;
+}
+
+// ── Duplicate ──
+
+export async function duplicatePlanApi(planId: number) {
+  const { data } = await api.post<BusinessPlan>(`/business/plans/${planId}/duplicate`);
+  return data;
+}
+
+export async function duplicateBlockApi(planId: number, blockId: number) {
+  const { data } = await api.post<PlanBlock>(`/business/plans/${planId}/blocks/${blockId}/duplicate`);
+  return data;
+}
+
+// ── Tags ──
+
+export async function getTagsApi() {
+  const { data } = await api.get<Tag[]>(`/tags`);
+  return data;
+}
+
+export async function createTagApi(payload: { name: string; color_idx: number }) {
+  const { data } = await api.post<Tag>(`/tags`, payload);
+  return data;
+}
+
+export async function updateTagApi(tagId: number, payload: { name?: string; color_idx?: number }) {
+  const { data } = await api.patch<Tag>(`/tags/${tagId}`, payload);
+  return data;
+}
+
+export async function deleteTagApi(tagId: number) {
+  await api.delete(`/tags/${tagId}`);
+}
+
+export async function assignTagToPlanApi(planId: number, tagId: number) {
+  await api.post(`/business/plans/${planId}/tags/${tagId}`);
+}
+
+export async function unassignTagFromPlanApi(planId: number, tagId: number) {
+  await api.delete(`/business/plans/${planId}/tags/${tagId}`);
+}
+
+export async function assignTagToBlockApi(planId: number, blockId: number, tagId: number) {
+  await api.post(`/business/plans/${planId}/blocks/${blockId}/tags/${tagId}`);
+}
+
+export async function unassignTagFromBlockApi(planId: number, blockId: number, tagId: number) {
+  await api.delete(`/business/plans/${planId}/blocks/${blockId}/tags/${tagId}`);
+}
+
+// ── Projects & Notes ──
+
+export type Project = {
+  id: number;
+  user_id: number;
+  name: string;
+  description?: string | null;
+  color_idx: number;
+  created_at: string;
+};
+
+export type Note = {
+  id: number;
+  user_id: number;
+  project_id?: number | null;
+  title: string;
+  content_markdown: string;
+  tags?: Tag[];
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getProjectsApi() {
+  const { data } = await api.get<Project[]>(`/notes/projects`);
+  return data;
+}
+
+export async function createProjectApi(payload: { name: string; description?: string; color_idx?: number }) {
+  const { data } = await api.post<Project>(`/notes/projects`, payload);
+  return data;
+}
+
+export async function updateProjectApi(projectId: number, payload: { name?: string; description?: string; color_idx?: number }) {
+  const { data } = await api.patch<Project>(`/notes/projects/${projectId}`, payload);
+  return data;
+}
+
+export async function deleteProjectApi(projectId: number) {
+  await api.delete(`/notes/projects/${projectId}`);
+}
+
+export async function getNotesApi(params?: { project_id?: number; tag_ids?: string }) {
+  const searchParams = new URLSearchParams();
+  if (params?.project_id) searchParams.set("project_id", String(params.project_id));
+  if (params?.tag_ids) searchParams.set("tag_ids", params.tag_ids);
+  const query = searchParams.toString();
+  const { data } = await api.get<Note[]>(`/notes${query ? `?${query}` : ""}`);
+  return data;
+}
+
+export async function createNoteApi(payload: { title: string; content_markdown?: string; project_id?: number | null; tag_ids?: number[] }) {
+  const { data } = await api.post<Note>(`/notes`, payload);
+  return data;
+}
+
+export async function getNoteApi(noteId: number) {
+  const { data } = await api.get<Note>(`/notes/${noteId}`);
+  return data;
+}
+
+export async function updateNoteApi(noteId: number, payload: { title?: string; content_markdown?: string; project_id?: number | null; tag_ids?: number[] }) {
+  const { data } = await api.patch<Note>(`/notes/${noteId}`, payload);
+  return data;
+}
+
+export async function deleteNoteApi(noteId: number) {
+  await api.delete(`/notes/${noteId}`);
+}
+
+// ── Calendar ──
+
+export type CalendarEvent = {
+  id: number;
+  user_id: number;
+  title: string;
+  description?: string | null;
+  event_date: string;
+  event_type: string;
+  related_plan_id?: number | null;
+  related_block_id?: number | null;
+  related_note_id?: number | null;
+  created_at: string;
+};
+
+export async function getCalendarEventsApi(fromDate?: string, toDate?: string) {
+  const params = new URLSearchParams();
+  if (fromDate) params.set("from_date", fromDate);
+  if (toDate) params.set("to_date", toDate);
+  const query = params.toString();
+  const { data } = await api.get<CalendarEvent[]>(`/calendar/events${query ? `?${query}` : ""}`);
+  return data;
+}
+
+export async function createCalendarEventApi(payload: { title: string; description?: string; event_date: string; event_type?: string }) {
+  const { data } = await api.post<CalendarEvent>(`/calendar/events`, payload);
+  return data;
+}
+
+export async function updateCalendarEventApi(eventId: number, payload: { title?: string; description?: string; event_date?: string }) {
+  const { data } = await api.patch<CalendarEvent>(`/calendar/events/${eventId}`, payload);
+  return data;
+}
+
+export async function deleteCalendarEventApi(eventId: number) {
+  await api.delete(`/calendar/events/${eventId}`);
+}
+
+export function getCalendarExportUrl(fromDate?: string, toDate?: string) {
+  const params = new URLSearchParams();
+  if (fromDate) params.set("from_date", fromDate);
+  if (toDate) params.set("to_date", toDate);
+  const query = params.toString();
+  return `/api/v1/calendar/export.ics${query ? `?${query}` : ""}`;
+}
+
+// ── Dashboard ──
+
+export type DashboardPlanItem = {
+  id: number;
+  title: string;
+  description?: string | null;
+  block_count: number;
+  created_at: string;
+};
+
+export type DashboardChartItem = {
+  id: number;
+  title: string;
+  point_count: number;
+  created_at: string;
+};
+
+export type DashboardNoteItem = {
+  id: number;
+  title: string;
+  created_at: string;
+};
+
+export type DashboardData = {
+  plan_count: number;
+  chart_count: number;
+  note_count: number;
+  block_count: number;
+  recent_plans: DashboardPlanItem[];
+  recent_charts: DashboardChartItem[];
+  recent_notes: DashboardNoteItem[];
+};
+
+export async function getDashboardApi() {
+  const { data } = await api.get<DashboardData>("/dashboard");
+  return data;
+}
+// ── Search ──
+
+export type SearchPlanResult = {
+  id: number;
+  title: string;
+  description?: string | null;
+  type: "plan";
+};
+
+export type SearchBlockResult = {
+  id: number;
+  title: string;
+  content: string;
+  plan_id: number;
+  plan_title: string;
+  type: "block";
+};
+
+export type SearchNoteResult = {
+  id: number;
+  title: string;
+  content_markdown: string;
+  type: "note";
+};
+
+export type SearchResults = {
+  plans: SearchPlanResult[];
+  blocks: SearchBlockResult[];
+  notes: SearchNoteResult[];
+  total: number;
+};
+
+export async function searchApi(query: string) {
+  const { data } = await api.get<SearchResults>("/search", { params: { q: query } });
+  return data;
+}
+// ── Tax Events ──
+
+export type TaxEvent = {
+  id: number;
+  user_id: number;
+  title: string;
+  description?: string | null;
+  event_date: string;
+  event_type: string;
+  amount?: number | null;
+  is_recurring: boolean;
+  recurrence_rule?: string | null;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getTaxEventsApi() {
+  const { data } = await api.get<TaxEvent[]>("/tax-events");
+  return data;
+}
+
+export async function createTaxEventApi(payload: {
+  title: string;
+  description?: string;
+  event_date: string;
+  event_type?: string;
+  amount?: number;
+  is_recurring?: boolean;
+  recurrence_rule?: string;
+}) {
+  const { data } = await api.post<TaxEvent>("/tax-events", payload);
+  return data;
+}
+
+export async function updateTaxEventApi(id: number, payload: Partial<TaxEvent>) {
+  const { data } = await api.patch<TaxEvent>(`/tax-events/${id}`, payload);
+  return data;
+}
+
+export async function deleteTaxEventApi(id: number) {
+  await api.delete(`/tax-events/${id}`);
+}
+// ── Kanban ──
+
+export type BoardCard = {
+  id: number;
+  column_id: number;
+  title: string;
+  description?: string | null;
+  card_order: number;
+  metadata_json?: Record<string, unknown> | null;
+};
+
+export type BoardColumn = {
+  id: number;
+  board_id: number;
+  title: string;
+  color?: string | null;
+  column_order: number;
+  cards: BoardCard[];
+};
+
+export type Board = {
+  id: number;
+  user_id: number;
+  business_plan_id?: number | null;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  columns: BoardColumn[];
+};
+
+export type BoardListItem = {
+  id: number;
+  title: string;
+  business_plan_id?: number | null;
+  created_at: string;
+};
+
+export async function getBoardsApi() {
+  const { data } = await api.get<BoardListItem[]>("/kanban/boards");
+  return data;
+}
+
+export async function getBoardApi(id: number) {
+  const { data } = await api.get<Board>(`/kanban/boards/${id}`);
+  return data;
+}
+
+export async function createBoardApi(payload: { title: string; business_plan_id?: number }) {
+  const { data } = await api.post<Board>("/kanban/boards", payload);
+  return data;
+}
+
+export async function updateBoardApi(id: number, payload: { title?: string }) {
+  const { data } = await api.patch<Board>(`/kanban/boards/${id}`, payload);
+  return data;
+}
+
+export async function deleteBoardApi(id: number) {
+  await api.delete(`/kanban/boards/${id}`);
+}
+
+export async function createColumnApi(boardId: number, payload: { title: string; color?: string }) {
+  const { data } = await api.post<BoardColumn>(`/kanban/boards/${boardId}/columns`, payload);
+  return data;
+}
+
+export async function updateColumnApi(id: number, payload: { title?: string; color?: string }) {
+  const { data } = await api.patch<BoardColumn>(`/kanban/columns/${id}`, payload);
+  return data;
+}
+
+export async function deleteColumnApi(id: number) {
+  await api.delete(`/kanban/columns/${id}`);
+}
+
+export async function reorderColumnsApi(boardId: number, columnIds: number[]) {
+  await api.patch(`/kanban/boards/${boardId}/columns/reorder`, { column_ids: columnIds });
+}
+
+export async function createCardApi(columnId: number, payload: { title: string; description?: string }) {
+  const { data } = await api.post<BoardCard>(`/kanban/columns/${columnId}/cards`, payload);
+  return data;
+}
+
+export async function updateCardApi(id: number, payload: { title?: string; description?: string }) {
+  const { data } = await api.patch<BoardCard>(`/kanban/cards/${id}`, payload);
+  return data;
+}
+
+export async function deleteCardApi(id: number) {
+  await api.delete(`/kanban/cards/${id}`);
+}
+
+export async function moveCardApi(id: number, payload: { column_id: number; card_order: number }) {
+  const { data } = await api.patch<BoardCard>(`/kanban/cards/${id}/move`, payload);
+  return data;
+}
+
+// ── CRM ──
+
+export type Contact = {
+  id: number;
+  user_id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  position?: string | null;
+  notes?: string | null;
+  is_lead: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Deal = {
+  id: number;
+  user_id: number;
+  contact_id?: number | null;
+  title: string;
+  description?: string | null;
+  status: string;
+  value?: number | null;
+  currency: string;
+  priority: string;
+  due_date?: string | null;
+  created_at: string;
+  updated_at: string;
+  contact?: Contact | null;
+};
+
+export type PipelineStats = {
+  total_deals: number;
+  total_value: number;
+  by_status: Record<string, number>;
+  by_priority: Record<string, number>;
+};
+
+export async function getContacts(isLead?: boolean) {
+  const params = isLead !== undefined ? { is_lead: isLead } : {};
+  const { data } = await api.get<Contact[]>("/crm/contacts", { params });
+  return data;
+}
+
+export async function createContactApi(payload: {
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  notes?: string;
+  is_lead?: boolean;
+}) {
+  const { data } = await api.post<Contact>("/crm/contacts", payload);
+  return data;
+}
+
+export async function updateContactApi(
+  id: number,
+  payload: Partial<Pick<Contact, "name" | "email" | "phone" | "company" | "position" | "notes" | "is_lead">>
+) {
+  const { data } = await api.patch<Contact>(`/crm/contacts/${id}`, payload);
+  return data;
+}
+
+export async function deleteContactApi(id: number) {
+  await api.delete(`/crm/contacts/${id}`);
+}
+
+export async function getDeals(status?: string) {
+  const params = status ? { status } : {};
+  const { data } = await api.get<Deal[]>("/crm/deals", { params });
+  return data;
+}
+
+export async function createDealApi(payload: {
+  title: string;
+  description?: string;
+  contact_id?: number;
+  status?: string;
+  value?: number;
+  currency?: string;
+  priority?: string;
+  due_date?: string;
+}) {
+  const { data } = await api.post<Deal>("/crm/deals", payload);
+  return data;
+}
+
+export async function updateDealApi(
+  id: number,
+  payload: Partial<Pick<Deal, "title" | "description" | "contact_id" | "status" | "value" | "currency" | "priority" | "due_date">>
+) {
+  const { data } = await api.patch<Deal>(`/crm/deals/${id}`, payload);
+  return data;
+}
+
+export async function deleteDealApi(id: number) {
+  await api.delete(`/crm/deals/${id}`);
+}
+
+export async function getPipelineStats() {
+  const { data } = await api.get<PipelineStats>("/crm/pipeline/stats");
+  return data;
 }

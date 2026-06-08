@@ -1,4 +1,4 @@
-// ============================================
+﻿// ============================================
 // Neutral Theme Configuration - No Neon/Glow
 // ============================================
 
@@ -97,6 +97,20 @@ export const theme = {
         hoverBg: "#faf8f5",
       },
     },
+    note: {
+      dark: {
+        bg: "#171717",
+        border: "#2a2a2a",
+        hoverBorder: "#3a3a3a",
+        hoverBg: "#1f1f1f",
+      },
+      light: {
+        bg: "#ffffff",
+        border: "#e8e2d9",
+        hoverBorder: "#d4ccc0",
+        hoverBg: "#faf8f5",
+      },
+    },
   },
 
   // Block styles - NO gradients
@@ -169,7 +183,7 @@ export const tw = {
 } as const;
 
 // Get card style object for inline styles - NO shadows
-export function cardStyle(type: "business" | "financial", isDark: boolean) {
+export function cardStyle(type: "business" | "financial" | "note", isDark: boolean) {
   const t = theme.cards[type][isDark ? "dark" : "light"];
   return {
     background: t.bg,
@@ -178,7 +192,7 @@ export function cardStyle(type: "business" | "financial", isDark: boolean) {
 }
 
 // Get card hover style object - NO glow effects
-export function cardHoverStyle(type: "business" | "financial", isDark: boolean) {
+export function cardHoverStyle(type: "business" | "financial" | "note", isDark: boolean) {
   const t = theme.cards[type][isDark ? "dark" : "light"];
   return {
     background: t.hoverBg,

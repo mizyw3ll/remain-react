@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, LayoutTemplate, Loader2, Upload } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Plus, LayoutTemplate, Loader2, Upload, Copy } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ru } from "../i18n/ru";
 import {
   createBusinessPlanApi,
-  getBusinessPlansApi,
   getTemplatesApi,
   createPlanFromTemplateApi,
   importBusinessPlanApi,
-  type BusinessPlan,
+  duplicatePlanApi,
   type Template,
 } from "../api";
 import { cardStyle, cardHoverStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { ExpandableText } from "../components/ExpandableText";
 import { useTheme } from "../features/theme/ThemeContext";
+import { useBusinessPlansQuery } from "../hooks/useCachedData";
+import { queryKeys } from "../lib/queryClient";
 
 type FormState = {
   title: string;
@@ -27,30 +29,20 @@ export function BusinessPlansPage() {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const isDark = theme === "dark";
-  const [plans, setPlans] = useState<BusinessPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: plans = [], isLoading: loading, isError: plansError } = useBusinessPlansQuery();
   const [openForm, setOpenForm] = useState(false);
   const [openTemplates, setOpenTemplates] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templateCategoryFilter, setTemplateCategoryFilter] = useState<string | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  async function fetchData() {
-    try {
-      setLoading(true);
-      setPlans(await getBusinessPlansApi());
-    } catch {
-      toast.error(ru.toasts.plansLoadError);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    void fetchData();
-  }, []);
+    if (plansError) toast.error(ru.toasts.plansLoadError);
+  }, [plansError]);
 
   const valid = useMemo(() => form.title.trim().length > 0, [form.title]);
 
@@ -65,16 +57,16 @@ export function BusinessPlansPage() {
       await createBusinessPlanApi(form);
       toast.success(ru.toasts.planCreated);
       setOpenForm(false);
-      await fetchData();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
     } catch {
       toast.error(ru.toasts.planSaveError);
     }
   }
 
-  async function loadTemplates() {
+  async function loadTemplates(category?: string | null) {
     try {
       setTemplatesLoading(true);
-      const data = await getTemplatesApi();
+      const data = await getTemplatesApi(category || undefined);
       setTemplates(data);
     } catch {
       toast.error(ru.toasts.templatesLoadError);
@@ -89,7 +81,7 @@ export function BusinessPlansPage() {
       await createPlanFromTemplateApi(templateId);
       toast.success(ru.toasts.planFromTemplate);
       setOpenTemplates(false);
-      await fetchData();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
     } catch {
       toast.error(ru.toasts.planFromTemplateError);
     } finally {
@@ -103,7 +95,7 @@ export function BusinessPlansPage() {
       const importedPlan = await importBusinessPlanApi(file);
       toast.success(ru.toasts.planImported);
       setOpenImport(false);
-      await fetchData();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
       navigate(`/business-plans/${importedPlan.id}`);
     } catch {
       toast.error(ru.toasts.planImportError);
@@ -128,7 +120,7 @@ export function BusinessPlansPage() {
             <span className="hidden sm:inline whitespace-nowrap">Импорт</span>
           </button>
           <button
-            onClick={() => { setOpenTemplates(true); void loadTemplates(); }}
+            onClick={() => { setOpenTemplates(true); setTemplateCategoryFilter(null); void loadTemplates(); }}
             className={`${tw.buttonSecondary} flex items-center gap-1.5`}
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
             onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
@@ -211,9 +203,33 @@ export function BusinessPlansPage() {
                 >{plan.title}</h2>
               </div>
               <ExpandableText text={plan.description || "Без описания"} expandable={false} />
-              <p className="mt-3 text-xs" style={{ color: v("text-muted") }}>
-                Создан: {new Date(plan.created_at).toLocaleDateString()}
-              </p>
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs" style={{ color: v("text-muted") }}>
+                  Создан: {new Date(plan.created_at).toLocaleDateString()}
+                </p>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-colors"
+                  style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                      await duplicatePlanApi(plan.id);
+                      toast.success(ru.toasts.planCreated);
+                      await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
+                    } catch {
+                      toast.error(ru.toasts.planSaveError);
+                    }
+                  }}
+                  title="Дублировать план"
+                >
+                  <Copy size={12} />
+                  <span>Дублировать</span>
+                </button>
+              </div>
             </Link>
           ))}
         </div>
@@ -292,20 +308,42 @@ export function BusinessPlansPage() {
                 <Loader2 className="animate-spin" size={32} style={{ color: v("text-muted") }} />
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {templates.map((t) => (
-                  <button
-                    key={t.id}
-                    className="rounded-xl border p-4 text-left transition hover:opacity-90"
-                    style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
-                    onClick={() => void useTemplate(t.id)}
-                  >
-                    <p className="text-sm font-semibold capitalize" style={{ color: v("text-primary") }}>{t.title}</p>
-                    <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>{t.description || "Без описания"}</p>
-                    <p className="mt-2 text-xs font-medium uppercase tracking-wide" style={{ color: v("text-secondary") }}>{t.category}</p>
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {[...new Set(templates.map((t) => t.category))].map((cat) => (
+                    <button
+                      key={cat}
+                      className={`rounded-full border px-3 py-1 text-xs transition ${templateCategoryFilter === cat ? "font-semibold" : ""}`}
+                      style={{
+                        borderColor: templateCategoryFilter === cat ? v("text-primary") : v("border-secondary"),
+                        color: templateCategoryFilter === cat ? v("text-primary") : v("text-secondary"),
+                        background: templateCategoryFilter === cat ? v("bg-hover") : "transparent",
+                      }}
+                      onClick={() => {
+                        const next = templateCategoryFilter === cat ? null : cat;
+                        setTemplateCategoryFilter(next);
+                        void loadTemplates(next);
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(templateCategoryFilter ? templates.filter((t) => t.category === templateCategoryFilter) : templates).map((t) => (
+                    <button
+                      key={t.id}
+                      className="rounded-xl border p-4 text-left transition hover:opacity-90"
+                      style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+                      onClick={() => void useTemplate(t.id)}
+                    >
+                      <p className="text-sm font-semibold capitalize" style={{ color: v("text-primary") }}>{t.title}</p>
+                      <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>{t.description || "Без описания"}</p>
+                      <p className="mt-2 text-xs font-medium uppercase tracking-wide" style={{ color: v("text-secondary") }}>{t.category}</p>
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
             <div className="mt-4 flex justify-end">
               <button

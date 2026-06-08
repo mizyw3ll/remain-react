@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   createFinancialPlanApi,
-  getCurrenciesApi,
-  getFinancialPlansApi,
-  type Currency,
-  type FinancialPlan,
 } from "../api";
+import { useCurrenciesQuery, useFinancialPlansQuery } from "../hooks/useCachedData";
+import { queryKeys } from "../lib/queryClient";
 import { cardStyle, cardHoverStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { ExpandableText } from "../components/ExpandableText";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -25,28 +24,16 @@ const emptyForm: FormState = { title: "", description: "", currency_id: 0, is_ac
 export function FinancialPlansPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const [plans, setPlans] = useState<FinancialPlan[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: plans = [], isLoading: plansLoading, isError: plansError } = useFinancialPlansQuery();
+  const { data: currencies = [], isLoading: currenciesLoading } = useCurrenciesQuery();
+  const loading = plansLoading || currenciesLoading;
   const [openForm, setOpenForm] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
 
-  async function fetchData() {
-    try {
-      setLoading(true);
-      const [charts, currencyList] = await Promise.all([getFinancialPlansApi(), getCurrenciesApi()]);
-      setPlans(charts);
-      setCurrencies(currencyList);
-    } catch {
-      toast.error("Ошибка загрузки финансовых планов");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    void fetchData();
-  }, []);
+    if (plansError) toast.error("Ошибка загрузки финансовых планов");
+  }, [plansError]);
 
   const valid = useMemo(() => form.title.trim().length > 0 && form.currency_id > 0, [form]);
 
@@ -56,7 +43,7 @@ export function FinancialPlansPage() {
       await createFinancialPlanApi(form);
       toast.success("План создан");
       setOpenForm(false);
-      await fetchData();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.financialPlans });
     } catch {
       toast.error("Ошибка сохранения финансового плана");
     }
@@ -64,22 +51,24 @@ export function FinancialPlansPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>Финансовые планы</h1>
-        <button
-          className={`${tw.buttonPrimary} flex items-center gap-1.5`}
-          style={buttonStyle("primary", isDark)}
-          onClick={() => setOpenForm(true)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = "0.9";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = "1";
-          }}
-        >
-          <Plus size={16} />
-          <span className="hidden sm:inline whitespace-nowrap">Создать</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className={`${tw.buttonPrimary} flex items-center gap-1.5`}
+            style={buttonStyle("primary", isDark)}
+            onClick={() => setOpenForm(true)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1";
+            }}
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline whitespace-nowrap">Создать</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (

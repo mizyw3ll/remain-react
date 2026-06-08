@@ -12,20 +12,20 @@ import {
 import {
   SortableContext,
   arrayMove,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2, Download, Camera, Share2, MessageCircle, Check, X, Copy, Loader2, FileText, Table } from "lucide-react";
-import { BlockRenderer } from "../components/BlockRenderer";
+import { Pencil, Trash2, Download, Camera, Check, X, Loader2, FileText, Table, BarChart3 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import toast from "react-hot-toast";
 import {
   createPlanBlockApi,
   deleteBusinessPlanApi,
   deletePlanBlockApi,
+  getBusinessPlanAnalyticsApi,
+  generateBusinessPlanOutlineApi,
+  improveBusinessPlanBlockApi,
   getBusinessPlanApi,
   getPlanBlocksApi,
-  getFinancialPlansApi,
   type MediaAttachment,
   reorderPlanBlocksApi,
   updateBusinessPlanApi,
@@ -33,136 +33,35 @@ import {
   exportBusinessPlanApi,
   saveSnapshotApi,
   getSnapshotsApi,
+  deleteSnapshotApi,
   restoreSnapshotApi,
-  sharePlanApi,
-  unsharePlanApi,
   getCommentsApi,
   createCommentApi,
   updateCommentApi,
   deleteCommentApi,
+  assignTagToBlockApi,
+  assignTagToPlanApi,
+  unassignTagFromPlanApi,
+  duplicateBlockApi,
   type BusinessPlan,
+  type BusinessPlanAnalytics,
   type PlanBlock,
   type FinancialPlan,
+  type Tag,
 } from "../api";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { BlockModal } from "../components/BlockModal";
+import { SortableBlock } from "../components/SortableBlock";
+import { useChartEmbedPoints } from "../components/BlockRenderer";
+import { useFinancialPlansQuery } from "../hooks/useCachedData";
 import { ExpandableText } from "../components/ExpandableText";
-import { buttonStyle, inputStyle, tw, v, theme } from "../shared/theme";
+import { MarkdownPreview } from "../components/MarkdownPreview";
+import { TagPicker } from "../components/TagPicker";
+import { buttonStyle, inputStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
 import { getDefaultRichContent, normalizeRichContentForBlockType } from "../lib/blockDefaults";
+import { textToTiptapDoc } from "../lib/textToTiptap";
 import { ru } from "../i18n/ru";
-
-function SortableBlock({
-  block,
-  onDelete,
-  onEdit,
-  onComments,
-  financialCharts,
-  isDark,
-}: {
-  block: PlanBlock;
-  onDelete: (block: PlanBlock) => void;
-  onEdit: (block: PlanBlock) => void;
-  onComments: (block: PlanBlock) => void;
-  financialCharts: FinancialPlan[];
-  isDark: boolean;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
-
-  return (
-    <article
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        background: isDark ? theme.colors.dark.bg.secondary : theme.colors.light.bg.secondary,
-        border: `1px solid ${isDark ? theme.colors.dark.border.primary : theme.colors.light.border.primary}`,
-      }}
-      className="rounded-2xl border p-4 overflow-hidden"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold break-words" style={{ color: v("text-primary") }}>{block.title}</h3>
-          <p className="text-xs capitalize" style={{ color: v("text-muted") }}>{block.block_type.replace("_", " ")}</p>
-        </div>
-        <div className="shrink-0 flex gap-2">
-          <button
-            className="rounded-lg border px-3 py-1 text-xs transition-colors md:hidden"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary"), cursor: "grab" }}
-            {...attributes} {...listeners}
-            onTouchStart={(e) => {
-              e.currentTarget.style.cursor = "grabbing";
-              e.currentTarget.style.background = v("bg-hover");
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.cursor = "grab";
-              e.currentTarget.style.background = "transparent";
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.cursor = "grabbing";
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.cursor = "grab";
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.cursor = "grab";
-            }}
-          >
-            <GripVertical size={16} />
-          </button>
-          <button
-            className="rounded-lg border px-3 py-1 text-xs transition-colors hidden md:flex"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary"), cursor: "grab" }}
-            {...attributes} {...listeners}
-            onMouseDown={(e) => {
-              e.currentTarget.style.cursor = "grabbing";
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.cursor = "grab";
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.cursor = "grab";
-            }}
-          >
-            Перетащить
-          </button>
-          <button
-            className="rounded-lg border px-3 py-1 text-xs transition-colors"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            onClick={() => onEdit(block)}
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            className="rounded-lg border px-3 py-1 text-xs transition-colors"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            onClick={() => onComments(block)}
-          >
-            <MessageCircle size={14} />
-          </button>
-          <button
-            className="rounded-lg border px-3 py-1 text-xs transition-colors"
-            style={buttonStyle("danger", isDark)}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            onClick={() => onDelete(block)}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      </div>
-      <BlockRenderer block={block} financialCharts={financialCharts} isDark={isDark} />
-    </article>
-  );
-}
 
 export function BusinessPlanDetailsPage() {
   const { id } = useParams();
@@ -177,6 +76,7 @@ export function BusinessPlanDetailsPage() {
 
   const [plan, setPlan] = useState<BusinessPlan | null>(null);
   const [blocks, setBlocks] = useState<PlanBlock[]>([]);
+  const [analytics, setAnalytics] = useState<BusinessPlanAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "plan" | "block"; id: number; title: string } | null>(
     null,
@@ -194,6 +94,8 @@ export function BusinessPlanDetailsPage() {
     rich_content: object;
     media_attachments: MediaAttachment[];
     linked_financial_chart_ids: number[];
+    tags: Tag[];
+    due_date: string | null;
   }>({
     title: "",
     content: "",
@@ -201,54 +103,73 @@ export function BusinessPlanDetailsPage() {
     rich_content: {},
     media_attachments: [],
     linked_financial_chart_ids: [],
+    tags: [],
+    due_date: null,
   });
   const [financialCharts, setFinancialCharts] = useState<FinancialPlan[]>([]);
+  const [aiGeneratingPlan, setAiGeneratingPlan] = useState(false);
+  const [aiImprovingBlock, setAiImprovingBlock] = useState(false);
 
   // Snapshots
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const [snapshots, setSnapshots] = useState<{ id: number; title: string; note: string | null; created_at: string; created_by_id: number }[]>([]);
   const [snapshotsLoading, setSnapshotsLoading] = useState(false);
-
-  // Sharing
-  const [shareOpen, setShareOpen] = useState(false);
-  const [shareToken, setShareToken] = useState<string | null>(null);
-  const [isPublic, setIsPublic] = useState(false);
+  const [snapshotTitle, setSnapshotTitle] = useState("");
+  const [snapshotNote, setSnapshotNote] = useState("");
 
   // Comments
   const [commentBlockId, setCommentBlockId] = useState<number | null>(null);
-  const [comments, setComments] = useState<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number }[]>([]);
+  const [comments, setComments] = useState<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number; username?: string | null }[]>([]);
   const [commentText, setCommentText] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
 
   // Export format selection
   const [exportFormatOpen, setExportFormatOpen] = useState(false);
 
   const isEditingBlock = editingBlockId !== null;
-
-  const loadFinancialCharts = useCallback(async () => {
-    try {
-      const charts = await getFinancialPlansApi();
-      setFinancialCharts(charts.filter((c) => c.is_active));
-    } catch {
-      // ignore
-    }
-  }, []);
+  const { chartPointsById, chartPointsLoading } = useChartEmbedPoints(blocks);
+  const { data: financialPlansList = [] } = useFinancialPlansQuery();
 
   useEffect(() => {
-    void loadFinancialCharts();
-  }, [loadFinancialCharts]);
+    setFinancialCharts(financialPlansList.filter((c) => c.is_active));
+  }, [financialPlansList]);
+
+  const refreshAnalytics = useCallback(async () => {
+    if (!planId) return;
+    try {
+      setAnalytics(await getBusinessPlanAnalyticsApi(planId));
+    } catch {
+      // ignore analytics refresh errors
+    }
+  }, [planId]);
+
+  const refreshBlocks = useCallback(async () => {
+    if (!planId) return;
+    try {
+      setBlocks(await getPlanBlocksApi(planId));
+      await refreshAnalytics();
+    } catch {
+      toast.error(ru.toasts.planLoadError);
+    }
+  }, [planId, refreshAnalytics]);
 
   const fetchData = useCallback(async () => {
     if (!planId) return;
     try {
       setLoading(true);
-      const [planData, blocksData] = await Promise.all([getBusinessPlanApi(planId), getPlanBlocksApi(planId)]);
+      const [planData, analyticsData] = await Promise.all([
+        getBusinessPlanApi(planId),
+        getBusinessPlanAnalyticsApi(planId),
+      ]);
       setPlan(planData);
       setPlanForm({
         title: planData.title,
         description: planData.description ?? "",
       });
-      setBlocks(blocksData);
+      setBlocks(planData.blocks ?? []);
+      setAnalytics(analyticsData);
     } catch {
       toast.error(ru.toasts.planLoadError);
     } finally {
@@ -262,13 +183,39 @@ export function BusinessPlanDetailsPage() {
 
   function openCreateBlockModal() {
     setEditingBlockId(null);
-    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [] });
+    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [], tags: [], due_date: null });
     setBlockModalOpen(true);
+  }
+
+  async function generatePlanOutlineWithAI() {
+    if (!planId) return;
+    try {
+      setAiGeneratingPlan(true);
+      const result = await generateBusinessPlanOutlineApi(planId);
+      setEditingBlockId(null);
+      setBlockForm({
+        title: "AI-структура плана",
+        content: "",
+        block_type: "markdown",
+        rich_content: { markdown: result.content },
+        media_attachments: [],
+        tags: [],
+        due_date: null,
+        linked_financial_chart_ids: [],
+      });
+      setBlockModalOpen(true);
+      toast.success("AI-структура создана");
+    } catch {
+      toast.error("Не удалось сгенерировать структуру");
+    } finally {
+      setAiGeneratingPlan(false);
+    }
   }
 
   async function saveBlock() {
     if (!planId) return;
     try {
+      let blockId: number;
       if (isEditingBlock) {
         await updatePlanBlockApi(planId, editingBlockId, {
           title: blockForm.title.trim(),
@@ -277,22 +224,35 @@ export function BusinessPlanDetailsPage() {
           rich_content: blockForm.rich_content,
           media_attachments: blockForm.media_attachments,
           linked_financial_chart_ids: blockForm.linked_financial_chart_ids,
+          due_date: blockForm.due_date,
         });
+        blockId = editingBlockId;
         toast.success(ru.toasts.blockUpdated);
       } else {
-        await createPlanBlockApi(planId, {
+        const newBlock = await createPlanBlockApi(planId, {
           title: blockForm.title.trim(),
           content: blockForm.content.trim(),
           block_type: blockForm.block_type,
           rich_content: blockForm.rich_content,
+          media_attachments: blockForm.media_attachments,
           linked_financial_chart_ids: blockForm.linked_financial_chart_ids,
+          due_date: blockForm.due_date,
         });
+        blockId = newBlock.id;
         toast.success(ru.toasts.blockAdded);
       }
+
+      // Sync tags
+      if (blockForm.tags.length > 0) {
+        for (const tag of blockForm.tags) {
+          await assignTagToBlockApi(planId, blockId, tag.id);
+        }
+      }
+
       setBlockModalOpen(false);
       setEditingBlockId(null);
-      setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [] });
-      await fetchData();
+      setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [], tags: [], due_date: null });
+      await refreshBlocks();
     } catch {
       toast.error(isEditingBlock ? ru.toasts.blockUpdateError : ru.toasts.blockCreateError);
     }
@@ -307,14 +267,45 @@ export function BusinessPlanDetailsPage() {
       rich_content: normalizeRichContentForBlockType(block.block_type, block.rich_content),
       media_attachments: (block.media_attachments ?? []) as MediaAttachment[],
       linked_financial_chart_ids: block.linked_financial_chart_ids || [],
+      tags: (block.tags ?? []) as Tag[],
+      due_date: block.due_date ?? null,
     });
     setBlockModalOpen(true);
+  }
+
+  async function handleImproveBlockWithAI() {
+    if (!planId || editingBlockId === null) return;
+    try {
+      setAiImprovingBlock(true);
+      const result = await improveBusinessPlanBlockApi(planId, editingBlockId);
+      if (blockForm.block_type === "markdown") {
+        setBlockForm((prev) => ({
+          ...prev,
+          rich_content: { markdown: result.content },
+        }));
+      } else if (["general", "financial", "marketing", "operations"].includes(blockForm.block_type)) {
+        setBlockForm((prev) => ({
+          ...prev,
+          rich_content: textToTiptapDoc(result.content),
+        }));
+      } else {
+        setBlockForm((prev) => ({
+          ...prev,
+          content: result.content,
+        }));
+      }
+      toast.success("Текст улучшен с помощью AI");
+    } catch {
+      toast.error("Не удалось улучшить текст");
+    } finally {
+      setAiImprovingBlock(false);
+    }
   }
 
   function handleCancelBlockEdit() {
     setBlockModalOpen(false);
     setEditingBlockId(null);
-    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [] });
+    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [], tags: [], due_date: null });
   }
 
   async function onDragEnd(event: DragEndEvent) {
@@ -344,7 +335,7 @@ export function BusinessPlanDetailsPage() {
       } else {
         await deletePlanBlockApi(planId, deleteTarget.id);
         toast.success(ru.toasts.blockDeleted);
-        await fetchData();
+        await refreshBlocks();
       }
     } catch {
       toast.error(ru.toasts.deleteError);
@@ -372,7 +363,7 @@ export function BusinessPlanDetailsPage() {
     }
   }
 
-  function handleBlockFormChange(field: string, value: string | number[] | object) {
+  function handleBlockFormChange(field: string, value: string | number[] | object | Tag[] | null) {
     setBlockForm((prev) => {
       if (field === "block_type" && typeof value === "string" && value !== prev.block_type) {
         return {
@@ -422,11 +413,25 @@ export function BusinessPlanDetailsPage() {
   async function handleSaveSnapshot() {
     if (!planId) return;
     try {
-      await saveSnapshotApi(planId);
+      const title = snapshotTitle.trim() || plan?.title;
+      await saveSnapshotApi(planId, title || undefined, snapshotNote.trim() || undefined);
       toast.success(ru.toasts.snapshotSaved);
+      setSnapshotTitle("");
+      setSnapshotNote("");
       await loadSnapshots();
     } catch {
       toast.error(ru.toasts.snapshotSaveError);
+    }
+  }
+
+  async function handleDeleteSnapshot(snapshotId: number) {
+    if (!planId) return;
+    try {
+      await deleteSnapshotApi(planId, snapshotId);
+      toast.success(ru.toasts.snapshotDeleted);
+      await loadSnapshots();
+    } catch {
+      toast.error(ru.toasts.snapshotDeleteError);
     }
   }
 
@@ -439,24 +444,6 @@ export function BusinessPlanDetailsPage() {
       await fetchData();
     } catch {
       toast.error(ru.toasts.snapshotRestoreError);
-    }
-  }
-
-  async function handleShare() {
-    if (!planId || !plan) return;
-    try {
-      if (plan.is_public) {
-        await unsharePlanApi(planId);
-        toast.success(ru.toasts.sharingDisabled);
-        setPlan((p) => (p ? { ...p, is_public: false } : p));
-      } else {
-        const data = await sharePlanApi(planId);
-        toast.success(ru.toasts.sharingEnabled);
-        setPlan((p) => (p ? { ...p, is_public: true, share_token: data.share_token } : p));
-        setShareToken(data.share_token);
-      }
-    } catch {
-      toast.error(ru.toasts.sharingError);
     }
   }
 
@@ -488,6 +475,17 @@ export function BusinessPlanDetailsPage() {
     if (!planId || !commentBlockId) return;
     try {
       await updateCommentApi(planId, commentBlockId, commentId, { resolved: !resolved });
+      await loadComments(commentBlockId);
+    } catch {
+      toast.error(ru.toasts.commentUpdateError);
+    }
+  }
+
+  async function handleUpdateCommentText(commentId: number, text: string) {
+    if (!planId || !commentBlockId || !text.trim()) return;
+    try {
+      await updateCommentApi(planId, commentBlockId, commentId, { content: text.trim() });
+      setEditingCommentId(null);
       await loadComments(commentBlockId);
     } catch {
       toast.error(ru.toasts.commentUpdateError);
@@ -615,16 +613,6 @@ export function BusinessPlanDetailsPage() {
                   </button>
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
-                    style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                    onClick={() => { setShareOpen(true); setShareToken(plan.share_token ?? null); setIsPublic(plan.is_public ?? false); }}
-                  >
-                    <Share2 size={16} />
-                    <span className="hidden sm:inline">{ru.modals.share}</span>
-                  </button>
-                  <button
-                    className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={buttonStyle("secondary", isDark)}
                     onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
@@ -657,21 +645,125 @@ export function BusinessPlanDetailsPage() {
               onChange={(e) => setPlanForm((prev) => ({ ...prev, description: e.target.value }))}
             />
           ) : (
-            <ExpandableText text={plan.description || "Без описания"} />
+            <MarkdownPreview content={plan.description || "Без описания"} />
+          )}
+
+          {plan && (
+            <div className="mt-3">
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                Теги плана
+              </label>
+              <TagPicker
+                selectedTags={(plan.tags ?? []) as Tag[]}
+                onChange={async (tags) => {
+                  if (!planId) return;
+                  const currentIds = new Set((plan.tags ?? []).map((t) => t.id));
+                  const newIds = new Set(tags.map((t) => t.id));
+
+                  const toRemove = [...currentIds].filter((id) => !newIds.has(id));
+                  const toAdd = tags.filter((t) => !currentIds.has(t.id));
+
+                  try {
+                    for (const tagId of toRemove) {
+                      await unassignTagFromPlanApi(planId, tagId);
+                    }
+                    for (const tag of toAdd) {
+                      await assignTagToPlanApi(planId, tag.id);
+                    }
+                    await fetchData();
+                  } catch {
+                    toast.error("Ошибка при обновлении тегов");
+                  }
+                }}
+              />
+            </div>
           )}
         </div>
       </article>
 
+      {analytics && (
+        <article className="space-y-3 rounded-2xl border p-5" style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Обзор</h2>
+            <p className="text-xs" style={{ color: v("text-muted") }}>Быстрая аналитика плана</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              ["Блоков", analytics.blocks_count],
+              ["Черновиков", analytics.drafts_count],
+              ["Комментариев", analytics.comments_count],
+              ["Вложений", analytics.attachments_count],
+              ["Связей с графиками", analytics.linked_financial_charts_count],
+              ["Rich-блоков", analytics.rich_blocks_count],
+              ["Символов текста", analytics.total_content_chars],
+              ["Средняя длина", Math.round(analytics.average_content_chars)],
+            ].map(([label, value]) => (
+              <div key={label as string} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
+                <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>{label as string}</p>
+                <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>{value as number}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {Object.entries(analytics.block_type_breakdown).map(([type, count]) => (
+              <span key={type} className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}>
+                {type}: {count}
+              </span>
+            ))}
+          </div>
+          <div className="pt-2">
+            <div className="flex items-center gap-2 pb-2">
+              <BarChart3 size={14} style={{ color: v("text-muted") }} />
+              <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>Распределение по типам блоков</p>
+            </div>
+            <div className="h-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={Object.entries(analytics.block_type_breakdown).map(([type, count]) => ({ type, count }))} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
+                  <XAxis dataKey="type" tick={{ fontSize: 10, fill: isDark ? "#a3a3a3" : "#525252" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: isDark ? "#a3a3a3" : "#525252" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      background: isDark ? "#1c1c1c" : "#fff",
+                      border: `1px solid ${isDark ? "#2a2a2a" : "#e8e2d9"}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(value) => [value, "Блоков"]}
+                  />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {Object.entries(analytics.block_type_breakdown).map(([type]) => (
+                      <Cell key={type} fill={isDark ? "#525252" : "#a3a3a3"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </article>
+      )}
+
       <article className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Блоки</h2>
-          <button
-            className={tw.buttonPrimary}
-            onClick={openCreateBlockModal}
-          >
-            Добавить блок
-          </button>
-        </div>
+            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Блоки</h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="rounded-lg border px-3 py-2 text-sm transition-colors"
+              style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              onClick={() => void generatePlanOutlineWithAI()}
+              disabled={aiGeneratingPlan}
+            >
+              {aiGeneratingPlan ? "AI..." : "AI: структура"}
+            </button>
+            <button
+              className={tw.buttonPrimary}
+              onClick={openCreateBlockModal}
+            >
+              Добавить блок
+            </button>
+          </div>
+          </div>
         {blocks.length === 0 ? (
           <div className="flex min-h-[150px] items-center justify-center rounded-xl border p-6" style={{ borderColor: v("border-primary"), background: v("bg-hover") }}>
             <div className="text-center">
@@ -693,9 +785,21 @@ export function BusinessPlanDetailsPage() {
                     block={block}
                     isDark={isDark}
                     financialCharts={financialCharts}
+                    chartPointsById={chartPointsById}
+                    chartPointsLoading={chartPointsLoading}
                     onEdit={handleEditBlock}
                     onDelete={(item) => setDeleteTarget({ type: "block", id: item.id, title: item.title })}
                     onComments={(item) => { setCommentBlockId(item.id); void loadComments(item.id); }}
+                    onDuplicate={async (item) => {
+                      if (!planId) return;
+                      try {
+                        await duplicateBlockApi(planId, item.id);
+                        toast.success(ru.toasts.blockAdded);
+                        await refreshBlocks();
+                      } catch {
+                        toast.error("Не удалось дублировать блок");
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -715,6 +819,8 @@ export function BusinessPlanDetailsPage() {
         onFormChange={handleBlockFormChange}
         onSave={saveBlock}
         onCancel={handleCancelBlockEdit}
+        onImproveWithAI={editingBlockId !== null ? handleImproveBlockWithAI : undefined}
+        aiImproving={aiImprovingBlock}
       />
 
       <ConfirmModal
@@ -735,14 +841,41 @@ export function BusinessPlanDetailsPage() {
           <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{ru.modals.snapshots}</h3>
-              <button className="rounded-lg border px-3 py-1 text-xs" style={buttonStyle("primary", isDark)} onClick={() => void handleSaveSnapshot()}>{ru.modals.saveSnapshot}</button>
+              <span className="text-xs" style={{ color: v("text-muted") }}>{snapshots.length}/20</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              <input
+                className={tw.inputBase + " w-full"}
+                style={inputStyle(isDark)}
+                placeholder={ru.modals.snapshotTitlePlaceholder}
+                value={snapshotTitle}
+                onChange={(e) => setSnapshotTitle(e.target.value)}
+              />
+              <input
+                className={tw.inputBase + " w-full"}
+                style={inputStyle(isDark)}
+                placeholder={ru.modals.snapshotNotePlaceholder}
+                value={snapshotNote}
+                onChange={(e) => setSnapshotNote(e.target.value)}
+              />
+              <button
+                className="w-full rounded-lg border px-3 py-2 text-sm transition-colors"
+                style={buttonStyle("primary", isDark)}
+                disabled={snapshots.length >= 20}
+                onClick={() => void handleSaveSnapshot()}
+              >
+                {ru.modals.saveSnapshot}
+              </button>
+              {snapshots.length >= 20 && (
+                <p className="text-xs" style={{ color: v("text-muted") }}>{ru.modals.snapshotLimitReached}</p>
+              )}
             </div>
             {snapshotsLoading ? (
               <div className="flex h-40 items-center justify-center"><Loader2 className="animate-spin" size={24} style={{ color: v("text-muted") }} /></div>
             ) : (
               <div className="mt-3 space-y-2">
-                {snapshots.length === 0 ? (
-                  <p className="text-sm" style={{ color: v("text-muted") }}>No snapshots yet</p>
+                  {snapshots.length === 0 ? (
+                  <p className="text-sm" style={{ color: v("text-muted") }}>{ru.modals.noSnapshots}</p>
                 ) : (
                   snapshots.map((s) => (
                     <div key={s.id} className="flex items-center justify-between rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
@@ -751,7 +884,10 @@ export function BusinessPlanDetailsPage() {
                         {s.note && <p className="text-xs" style={{ color: v("text-muted") }}>{s.note}</p>}
                         <p className="text-xs" style={{ color: v("text-muted") }}>{new Date(s.created_at).toLocaleString()}</p>
                       </div>
-                      <button className="rounded-lg border px-3 py-1 text-xs" style={buttonStyle("primary", isDark)} onClick={() => void handleRestoreSnapshot(s.id)}>{ru.modals.restore}</button>
+                      <div className="shrink-0 flex gap-2">
+                        <button className="rounded-lg border px-3 py-1 text-xs" style={buttonStyle("primary", isDark)} onClick={() => void handleRestoreSnapshot(s.id)}>{ru.modals.restore}</button>
+                        <button className="rounded-lg border px-3 py-1 text-xs" style={buttonStyle("danger", isDark)} onClick={() => void handleDeleteSnapshot(s.id)}><Trash2 size={14} /></button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -764,58 +900,11 @@ export function BusinessPlanDetailsPage() {
         </div>
       )}
 
-      {/* Share Modal */}
-      {shareOpen && (
-        <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
-            <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{ru.modals.publicSharing}</h3>
-            <div className="mt-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm" style={{ color: v("text-secondary") }}>Enable public link</span>
-                <button
-                  className={`rounded-lg px-3 py-1 text-xs ${isPublic ? "bg-green-600 text-white" : ""}`}
-                  style={isPublic ? {} : buttonStyle("primary", isDark)}
-                  onClick={() => void handleShare()}
-                >
-                  {isPublic ? ru.common.on : ru.common.off}
-                </button>
-              </div>
-              {isPublic && shareToken && (
-                <div className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
-                  <p className="text-xs" style={{ color: v("text-muted") }}>Public link:</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      className={tw.inputBase + " flex-1 text-xs"}
-                      style={inputStyle(isDark)}
-                      readOnly
-                      value={`${window.location.origin}/public-plans/${planId}?token=${shareToken}`}
-                    />
-                    <button
-                      className="rounded-lg border px-2 py-1"
-                      style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/public-plans/${planId}?token=${shareToken}`);
-                        toast.success(ru.common.copied);
-                      }}
-                    >
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setShareOpen(false)}>{ru.modals.close}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Comments Modal */}
       {commentBlockId !== null && (
         <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
           <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
-            <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>Comments</h3>
+            <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{ru.modals.comments}</h3>
             {commentsLoading ? (
               <div className="flex h-40 items-center justify-center"><Loader2 className="animate-spin" size={24} style={{ color: v("text-muted") }} /></div>
             ) : (
@@ -825,11 +914,43 @@ export function BusinessPlanDetailsPage() {
                 ) : (
                   comments.map((c) => (
                     <div key={c.id} className={`rounded-xl border p-3 ${c.resolved ? "opacity-60" : ""}`} style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
-                      <p className="text-sm" style={{ color: v("text-secondary") }}>{c.content}</p>
+                      <div className="flex items-center gap-2 text-xs" style={{ color: v("text-muted") }}>
+                        <span className="font-medium" style={{ color: v("text-primary") }}>{c.username || `User #${c.user_id}`}</span>
+                        <span>{new Date(c.created_at).toLocaleString()}</span>
+                      </div>
+                      {editingCommentId === c.id ? (
+                        <div className="mt-1 flex gap-2">
+                          <input
+                            className={tw.inputBase + " flex-1 text-sm"}
+                            style={inputStyle(isDark)}
+                            value={editingCommentText}
+                            onChange={(e) => setEditingCommentText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                void handleUpdateCommentText(c.id, editingCommentText);
+                              }
+                              if (e.key === "Escape") setEditingCommentId(null);
+                            }}
+                          />
+                          <button className="rounded-md border px-2 py-0.5 text-xs" style={buttonStyle("primary", isDark)} onClick={() => void handleUpdateCommentText(c.id, editingCommentText)}>
+                            <Check size={12} />
+                          </button>
+                          <button className="rounded-md border px-2 py-0.5 text-xs" style={buttonStyle("secondary", isDark)} onClick={() => setEditingCommentId(null)}>
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-sm" style={{ color: v("text-secondary") }}>{c.content}</p>
+                      )}
                       <div className="mt-2 flex items-center gap-2">
                         <button className="rounded-md border px-2 py-0.5 text-xs" style={{ borderColor: v("border-secondary"), color: v("text-muted") }} onClick={() => void handleToggleResolveComment(c.id, c.resolved)}>
                           {c.resolved ? <X size={12} /> : <Check size={12} />}
                         </button>
+                        {editingCommentId !== c.id && (
+                          <button className="rounded-md border px-2 py-0.5 text-xs" style={{ borderColor: v("border-secondary"), color: v("text-muted") }} onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.content); }}>
+                            <Pencil size={12} />
+                          </button>
+                        )}
                         <button className="rounded-md border px-2 py-0.5 text-xs" style={buttonStyle("danger", isDark)} onClick={() => void handleDeleteComment(c.id)}>
                           <Trash2 size={12} />
                         </button>
@@ -851,7 +972,7 @@ export function BusinessPlanDetailsPage() {
               <button className={tw.buttonPrimary} style={buttonStyle("primary", isDark)} onClick={() => void handleAddComment()}>{ru.modals.postComment}</button>
             </div>
             <div className="mt-3 flex justify-end">
-              <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setCommentBlockId(null)}>Close</button>
+              <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setCommentBlockId(null)}>{ru.modals.close}</button>
             </div>
           </div>
         </div>

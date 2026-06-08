@@ -2,20 +2,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Pencil, Trash2, Download } from "lucide-react";
 import { ExpandableText } from "../components/ExpandableText";
+import { MarkdownPreview } from "../components/MarkdownPreview";
 import { CartesianGrid, Line, Area, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import toast from "react-hot-toast";
 import {
   createChartPointApi,
   deleteChartPointApi,
   deleteFinancialPlanApi,
+  getFinancialChartAnalyticsApi,
   getCurrenciesApi,
-  getChartPointsApi,
   getFinancialPlanApi,
+  summarizeFinancialChartApi,
   updateFinancialPlanApi,
   updateChartPointApi,
   exportFinancialChartApi,
   type ChartPoint,
   type Currency,
+  type FinancialChartAnalytics,
   type FinancialPlan,
 } from "../api";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -51,7 +54,7 @@ type AggregatedPoint = {
 };
 
 const TIMEFRAME_CONFIG: Record<Timeframe, TimeframeConfig> = {
-  "1W": { rangeMs: 7 * 24 * 60 * 60 * 1000, bucket: "day" },
+  "1W": { rangeMs: 0, bucket: "week" },
   "1M": { rangeMs: 30 * 24 * 60 * 60 * 1000, bucket: "day" },
   "3M": { rangeMs: 90 * 24 * 60 * 60 * 1000, bucket: "day" },
   "1Y": { rangeMs: 365 * 24 * 60 * 60 * 1000, bucket: "month" },
@@ -85,8 +88,10 @@ function getBucketLabel(date: Date, bucket: TimeframeConfig["bucket"]) {
 function buildChartData(points: ChartPoint[], timeframe: Timeframe): AggregatedPoint[] {
   const now = Date.now();
   const { rangeMs, bucket } = TIMEFRAME_CONFIG[timeframe];
-  const threshold = now - rangeMs;
-  const filteredPoints = points.filter((point) => new Date(point.date).getTime() >= threshold);
+  const threshold = rangeMs > 0 ? now - rangeMs : 0;
+  const filteredPoints = rangeMs > 0
+    ? points.filter((point) => new Date(point.date).getTime() >= threshold)
+    : points;
 
   // Sort points by date chronologically
   const sortedPoints = filteredPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -137,11 +142,14 @@ export function FinancialPlanDetailsPage() {
   const [chart, setChart] = useState<FinancialPlan | null>(null);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [points, setPoints] = useState<ChartPoint[]>([]);
+  const [analytics, setAnalytics] = useState<FinancialChartAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<Timeframe>("1W");
   const [deleteTarget, setDeleteTarget] = useState<{ type: "chart" | "point"; id: number; title: string } | null>(
     null,
   );
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const [isEditingChart, setIsEditingChart] = useState(false);
   const [chartForm, setChartForm] = useState({
     title: "",
@@ -168,10 +176,10 @@ export function FinancialPlanDetailsPage() {
     if (!chartId) return;
     try {
       setLoading(true);
-      const [chartData, pointsData, currenciesData] = await Promise.all([
+      const [chartData, currenciesData, analyticsData] = await Promise.all([
         getFinancialPlanApi(chartId),
-        getChartPointsApi(chartId),
         getCurrenciesApi(),
+        getFinancialChartAnalyticsApi(chartId, false),
       ]);
       setChart(chartData);
       setChartForm({
@@ -181,7 +189,8 @@ export function FinancialPlanDetailsPage() {
         is_active: chartData.is_active,
       });
       setCurrencies(currenciesData);
-      setPoints(pointsData);
+      setPoints(chartData.chart_points ?? []);
+      setAnalytics(analyticsData);
     } catch {
       toast.error("Не удалось загрузить график");
     } finally {
@@ -298,6 +307,20 @@ export function FinancialPlanDetailsPage() {
     }
   }
 
+  async function handleAiSummary() {
+    if (!chartId) return;
+    try {
+      setAiSummaryLoading(true);
+      const result = await summarizeFinancialChartApi(chartId);
+      setAiSummary(result.content);
+      toast.success("AI-сводка готова");
+    } catch {
+      toast.error("Не удалось получить AI-сводку");
+    } finally {
+      setAiSummaryLoading(false);
+    }
+  }
+
   async function handleExport(format: "xlsx" | "csv") {
     if (!chartId) return;
     try {
@@ -349,6 +372,16 @@ export function FinancialPlanDetailsPage() {
               )}
             </div>
             <div className="shrink-0 flex flex-wrap gap-2">
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
+                style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onClick={() => void handleAiSummary()}
+                disabled={aiSummaryLoading}
+              >
+                {aiSummaryLoading ? "AI..." : "AI: сводка"}
+              </button>
               {isEditingChart ? (
                 <>
                   <button className={tw.buttonPrimary} onClick={() => void saveChart()}>
@@ -437,7 +470,7 @@ export function FinancialPlanDetailsPage() {
             </div>
           ) : (
             <>
-              <ExpandableText text={chart.description || "Без описания"} />
+              <MarkdownPreview content={chart.description || "Без описания"} />
               <p className="text-sm" style={{ color: v("text-muted") }}>
                 Валюта: {currencies.find((currency) => currency.id === chart.currency_id)?.code ?? `ID ${chart.currency_id}`} |
                 Статус:
@@ -447,8 +480,71 @@ export function FinancialPlanDetailsPage() {
               </p>
             </>
           )}
+
+          {aiSummary && (
+            <div className="rounded-xl border p-4" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold" style={{ color: v("text-primary") }}>AI-сводка</h3>
+                <div className="flex gap-2">
+                  <button
+                    className="rounded-lg border px-3 py-1.5 text-xs transition-colors"
+                    style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(aiSummary);
+                      toast.success("Скопировано");
+                    }}
+                  >
+                    Копировать
+                  </button>
+                  <button
+                    className="rounded-lg border px-3 py-1.5 text-xs transition-colors"
+                    style={buttonStyle("primary", isDark)}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onClick={() => {
+                      setChartForm((prev) => ({ ...prev, description: aiSummary }));
+                      setIsEditingChart(true);
+                    }}
+                  >
+                    Вставить в описание
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3">
+                <MarkdownPreview content={aiSummary} />
+              </div>
+            </div>
+          )}
         </div>
       </article>
+
+      {analytics && (
+        <article className="space-y-3 rounded-2xl border p-5" style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Обзор</h2>
+            <p className="text-xs" style={{ color: v("text-muted") }}>Быстрая аналитика графика</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: "Доход", value: analytics.income_total, fixed: 2 },
+              { label: "Расход", value: analytics.expense_total, fixed: 2 },
+              { label: "Net", value: analytics.net_total, fixed: 2 },
+              { label: "Точек", value: analytics.points_count, fixed: 0 },
+              { label: "Средний net/день", value: analytics.average_daily_net, fixed: 2 },
+              { label: "Средний net/точку", value: analytics.average_point_net, fixed: 2 },
+            ].map((metric) => (
+              <div key={metric.label} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
+                <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>{metric.label}</p>
+                <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>
+                  {metric.fixed === 0 ? Math.round(metric.value).toString() : Number(metric.value).toFixed(metric.fixed)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </article>
+      )}
 
       <article
         className="rounded-2xl border p-5"
@@ -468,7 +564,7 @@ export function FinancialPlanDetailsPage() {
               }
               onClick={() => setTimeframe(tf)}
             >
-              {tf === "1W" ? "Неделя" : tf === "1M" ? "Месяц" : tf === "3M" ? "3 месяца" : "Год"}
+              {tf === "1W" ? "По неделям" : tf === "1M" ? "Месяц" : tf === "3M" ? "3 месяца" : "Год"}
             </button>
           ))}
           <div className="ml-auto flex gap-2">
@@ -490,7 +586,7 @@ export function FinancialPlanDetailsPage() {
             </button>
           </div>
         </div>
-        {/* Chart with horizontal scroll on mobile */}
+          {/* Chart with horizontal scroll on mobile */}
         {points.length < 2 ? (
           <div
             className="flex h-80 items-center justify-center rounded-xl border p-6"
@@ -531,13 +627,17 @@ export function FinancialPlanDetailsPage() {
                     labelStyle={{ color: "transparent" }}
                     content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null;
-                      const item = payload[0]?.payload as AggregatedPoint;
+                      const item = payload[0]?.payload as {
+                        income?: number;
+                        expense?: number;
+                        total?: number | null;
+                      };
                       return (
                         <div className="rounded-xl border p-3 text-xs" style={{ borderColor: v("border-secondary"), background: v("bg-secondary"), color: v("text-secondary") }}>
                           <p className="mb-2 font-medium" style={{ color: v("text-primary") }}>{label}</p>
-                          <p>Доходы: {item.income.toFixed(2)}</p>
-                          <p>Расходы: {item.expense.toFixed(2)}</p>
-                          <p className="mt-1 font-semibold" style={{ color: v("text-primary") }}>Итог: {item.total.toFixed(2)}</p>
+                          {typeof item.income === "number" && <p>Доходы: {item.income.toFixed(2)}</p>}
+                          {typeof item.expense === "number" && <p>Расходы: {item.expense.toFixed(2)}</p>}
+                          {typeof item.total === "number" && <p className="mt-1 font-semibold" style={{ color: v("text-primary") }}>Итог: {item.total.toFixed(2)}</p>}
                         </div>
                       );
                     }}
@@ -562,6 +662,7 @@ export function FinancialPlanDetailsPage() {
                     animationDuration={500}
                     animationEasing="ease-out"
                   />
+
                 </LineChart>
               </ResponsiveContainer>
             </div>

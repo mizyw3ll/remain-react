@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { LogOut, Menu, MoreHorizontal, PiggyBank, ScrollText, Settings, User, UserCircle } from "lucide-react";
+import { LogOut, Menu, MoreHorizontal, PiggyBank, ScrollText, Settings, Home, FileText, Calendar, Receipt, LayoutGrid, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import type { SettingsTab } from "../context/SettingsUiContext";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
+import { SearchBar } from "./SearchBar";
 
 type SidebarProps = {
   open: boolean;
@@ -64,10 +65,17 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
 
           <div className="mb-3 border-t" style={{ borderColor: 'var(--border-primary)' }} />
 
+          <SearchBar onNavigate={onClose} />
+
           <nav className="space-y-2">
+            <NavButton to="/" icon={<Home size={18} />} text="Главная" onNavigate={onClose} />
             <NavButton to="/business-plans" icon={<ScrollText size={18} />} text="Бизнес-планы" onNavigate={onClose} />
+            <NavButton to="/notes" icon={<FileText size={18} />} text="Заметки" onNavigate={onClose} />
+            <NavButton to="/calendar" icon={<Calendar size={18} />} text="Календарь" onNavigate={onClose} />
+            <NavButton to="/tax-calendar" icon={<Receipt size={18} />} text="Налоги" onNavigate={onClose} />
+            <NavButton to="/kanban" icon={<LayoutGrid size={18} />} text="Kanban" onNavigate={onClose} />
+            <NavButton to="/crm" icon={<Users size={18} />} text="CRM" onNavigate={onClose} />
             <NavButton to="/financial-plans" icon={<PiggyBank size={18} />} text="Финансовые планы" onNavigate={onClose} />
-            <NavButton to="/profile" icon={<UserCircle size={18} />} text="Профиль" onNavigate={onClose} />
           </nav>
 
           <div className="my-3 border-t" style={{ borderColor: 'var(--border-primary)' }} />
@@ -76,35 +84,28 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
             {user && (
               <div
                 ref={accountRef}
-                className="relative rounded-xl p-3"
-                style={{ background: 'var(--bg-secondary)' }}
+                className="relative cursor-pointer select-none rounded-xl border p-3 transition-colors"
+                style={{
+                  background: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-muted)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!accountOpen) e.currentTarget.style.background = 'var(--bg-secondary)';
+                }}
+                onClick={() => setAccountOpen((p) => !p)}
               >
                 <div className="flex items-center gap-2">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: 'var(--bg-hover)' }}>
-                    <User size={16} className="text-white" />
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold" style={{ background: 'var(--accent-primary)', color: 'var(--bg-body)' }}>
+                    {(user.first_name || user.username).charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{user.first_name || user.username}</p>
                     <p className="truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>{user.email}</p>
                   </div>
-                  <button
-                    type="button"
-                    className="shrink-0 rounded-lg p-2 transition-colors"
-                    style={{ color: 'var(--text-muted)' }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--bg-hover)';
-                      e.currentTarget.style.color = 'var(--text-primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'var(--text-muted)';
-                    }}
-                    aria-label="Действия аккаунта"
-                    aria-expanded={accountOpen}
-                    onClick={() => setAccountOpen((p) => !p)}
-                  >
-                    <MoreHorizontal size={18} />
-                  </button>
+                  <MoreHorizontal size={18} style={{ color: 'var(--text-muted)' }} />
                 </div>
 
                 {accountOpen ? (

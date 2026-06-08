@@ -1,15 +1,20 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { normalizeSwotData } from "../lib/blockDefaults";
 import { ru } from "../i18n/ru";
 import { RichTextEditor } from "./RichTextEditor";
 import { MarkdownPreview } from "./MarkdownPreview";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Loader2 } from "lucide-react";
 import { v } from "../shared/theme";
-import type { PlanBlock, FinancialPlan } from "../api";
+import { getChartPointsBatchApi, type PlanBlock, type FinancialPlan, type ChartPoint } from "../api";
 
 interface BlockRendererProps {
   block: PlanBlock;
   financialCharts: FinancialPlan[];
   isDark: boolean;
+  chartPointsById?: Record<number, ChartPoint[]>;
+  chartPointsLoading?: boolean;
 }
 
 /* ─── SWOT ─── */
@@ -46,18 +51,18 @@ function SwotRenderer({ block }: { block: PlanBlock }) {
 
 /* ─── Timeline ─── */
 function TimelineRenderer({ block }: { block: PlanBlock }) {
-  const milestones = ((block.rich_content as { milestones?: { title: string; date: string; description: string }[] })?.milestones) ?? [];
-  const valid = milestones.filter((m) => m.title.trim() || m.date);
+  const events = ((block.rich_content as { events?: { date: string; title: string; description?: string }[] })?.events) ?? [];
+  const valid = events.filter((e) => e.title.trim());
   if (valid.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.timeline}</p>;
   return (
-    <div className="mt-2 relative pl-4">
-      <div className="absolute left-1.5 top-2 bottom-2 w-px" style={{ background: v("border-secondary") }} />
-      {valid.map((m, i) => (
-        <div key={i} className="relative mb-3 pl-4">
-          <div className="absolute left-[-13px] top-1.5 h-2.5 w-2.5 rounded-full border" style={{ borderColor: v("border-secondary"), background: v("bg-active") }} />
-          <p className="text-sm font-medium" style={{ color: v("text-primary") }}>{m.title}</p>
-          {m.date && <p className="text-xs" style={{ color: v("text-muted") }}>{new Date(m.date).toLocaleDateString()}</p>}
-          {m.description && <p className="mt-0.5 text-xs" style={{ color: v("text-secondary") }}>{m.description}</p>}
+    <div className="mt-2 space-y-2">
+      {valid.map((event, i) => (
+        <div key={i} className="flex gap-3">
+          <div className="w-20 shrink-0 text-xs font-medium" style={{ color: v("text-muted") }}>{event.date}</div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: v("text-primary") }}>{event.title}</p>
+            {event.description && <p className="text-xs" style={{ color: v("text-secondary") }}>{event.description}</p>}
+          </div>
         </div>
       ))}
     </div>
@@ -66,19 +71,17 @@ function TimelineRenderer({ block }: { block: PlanBlock }) {
 
 /* ─── Metrics ─── */
 function MetricsRenderer({ block }: { block: PlanBlock }) {
-  const metrics = ((block.rich_content as { metrics?: { label: string; value: string; unit: string; change?: string }[] })?.metrics) ?? [];
-  const valid = metrics.filter((m) => m.label.trim() || m.value.trim());
+  const metrics = ((block.rich_content as { metrics?: { label: string; value: string; change?: string }[] })?.metrics) ?? [];
+  const valid = metrics.filter((m) => m.label.trim());
   if (valid.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.metrics}</p>;
   return (
     <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
       {valid.map((m, i) => (
-        <div key={i} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
+        <div key={i} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
           <p className="text-xs" style={{ color: v("text-muted") }}>{m.label}</p>
-          <p className="mt-1 text-lg font-semibold" style={{ color: v("text-primary") }}>
-            {m.value} <span className="text-xs font-normal">{m.unit}</span>
-          </p>
+          <p className="text-lg font-semibold" style={{ color: v("text-primary") }}>{m.value}</p>
           {m.change && (
-            <p className="mt-0.5 text-xs" style={{ color: m.change.startsWith("+") ? "#16a34a" : m.change.startsWith("-") ? "#dc2626" : v("text-secondary") }}>
+            <p className="text-xs" style={{ color: v("text-secondary") }}>
               {m.change}
             </p>
           )}
@@ -89,22 +92,68 @@ function MetricsRenderer({ block }: { block: PlanBlock }) {
 }
 
 /* ─── Chart Embed ─── */
-function ChartEmbedRenderer({ block, financialCharts }: { block: PlanBlock; financialCharts: FinancialPlan[] }) {
+function ChartMiniView({
+  points,
+  loading,
+}: {
+  points?: ChartPoint[];
+  loading?: boolean;
+}) {
+  if (loading) return <div className="flex h-24 items-center justify-center"><Loader2 className="animate-spin" size={16} style={{ color: v("text-muted") }} /></div>;
+  if (!points || points.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>Нет данных</p>;
+
+  const grouped: Record<string, { date: string; income: number; expense: number }> = {};
+  for (const p of points) {
+    const key = p.date.slice(0, 10);
+    if (!grouped[key]) grouped[key] = { date: key, income: 0, expense: 0 };
+    if (p.type === "income") grouped[key].income += Number(p.amount);
+    else grouped[key].expense += Number(p.amount);
+  }
+  const data = Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+  const maxVal = Math.max(...data.map((d) => Math.max(d.income, d.expense)), 1);
+
+  return (
+    <div className="h-32">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data}>
+          <XAxis dataKey="date" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+          <YAxis domain={[0, maxVal * 1.15]} hide />
+          <Tooltip
+            contentStyle={{ fontSize: 11, background: "#1c1c1c", border: "1px solid #2a2a2a", borderRadius: 6 }}
+            formatter={(value, name) => [Number(value).toFixed(2), name === "income" ? "Доход" : "Расход"]}
+          />
+          <Area type="monotone" dataKey="income" stroke="#16a34a" fill="#16a34a" fillOpacity={0.15} strokeWidth={1.5} dot={false} />
+          <Area type="monotone" dataKey="expense" stroke="#dc2626" fill="#dc2626" fillOpacity={0.12} strokeWidth={1.5} dot={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function ChartEmbedRenderer({
+  block,
+  financialCharts,
+  chartPointsById,
+  chartPointsLoading,
+}: {
+  block: PlanBlock;
+  financialCharts: FinancialPlan[];
+  chartPointsById?: Record<number, ChartPoint[]>;
+  chartPointsLoading?: boolean;
+}) {
   const linked = financialCharts.filter((c) => block.linked_financial_chart_ids.includes(c.id));
   if (linked.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.charts}</p>;
 
   return (
-    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+    <div className="mt-2 grid gap-3 sm:grid-cols-2">
       {linked.map((chart) => (
-        <Link
-          key={chart.id}
-          to={`/financial-plans/${chart.id}`}
-          className="rounded-xl border p-3 transition hover:opacity-90"
-          style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
-        >
-          <p className="text-sm font-medium" style={{ color: v("text-primary") }}>{chart.title}</p>
-          <p className="text-xs" style={{ color: v("text-muted") }}>{chart.description || ru.common.noDescription}</p>
-        </Link>
+        <div key={chart.id} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
+          <Link to={`/financial-plans/${chart.id}`} className="text-sm font-semibold hover:underline" style={{ color: v("text-primary") }}>{chart.title}</Link>
+          <ChartMiniView
+            points={chartPointsById?.[chart.id]}
+            loading={chartPointsLoading}
+          />
+        </div>
       ))}
     </div>
   );
@@ -158,7 +207,7 @@ function DefaultRenderer({ block, isDark }: { block: PlanBlock; isDark: boolean 
 }
 
 /* ─── Main dispatcher ─── */
-export function BlockRenderer({ block, financialCharts, isDark }: BlockRendererProps) {
+export function BlockRenderer({ block, financialCharts, isDark, chartPointsById, chartPointsLoading }: BlockRendererProps) {
   switch (block.block_type) {
     case "swot":
       return <SwotRenderer block={block} />;
@@ -167,7 +216,14 @@ export function BlockRenderer({ block, financialCharts, isDark }: BlockRendererP
     case "metrics":
       return <MetricsRenderer block={block} />;
     case "chart_embed":
-      return <ChartEmbedRenderer block={block} financialCharts={financialCharts} />;
+      return (
+        <ChartEmbedRenderer
+          block={block}
+          financialCharts={financialCharts}
+          chartPointsById={chartPointsById}
+          chartPointsLoading={chartPointsLoading}
+        />
+      );
     case "markdown":
       return <MarkdownRenderer block={block} />;
     case "checklist":
@@ -175,4 +231,34 @@ export function BlockRenderer({ block, financialCharts, isDark }: BlockRendererP
     default:
       return <DefaultRenderer block={block} isDark={isDark} />;
   }
+}
+
+/** Collect unique chart IDs from chart_embed blocks and batch-load points. */
+export function useChartEmbedPoints(blocks: PlanBlock[]) {
+  const [chartPointsById, setChartPointsById] = useState<Record<number, ChartPoint[]>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const chartIds = [
+      ...new Set(
+        blocks
+          .filter((b) => b.block_type === "chart_embed")
+          .flatMap((b) => b.linked_financial_chart_ids),
+      ),
+    ];
+    if (chartIds.length === 0) {
+      setChartPointsById({});
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    getChartPointsBatchApi(chartIds)
+      .then((data) => { if (!cancelled) setChartPointsById(data); })
+      .catch(() => { if (!cancelled) setChartPointsById({}); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [blocks]);
+
+  return { chartPointsById, chartPointsLoading: loading };
 }
