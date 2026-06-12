@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2, Download } from "lucide-react";
+import { queryKeys } from "../lib/queryClient";
 import { ExpandableText } from "../components/ExpandableText";
 import { MarkdownPreview } from "../components/MarkdownPreview";
 import { CartesianGrid, Line, Area, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ChartWrapper } from "../shared/components/ChartWrapper";
 import toast from "react-hot-toast";
 import {
   createChartPointApi,
@@ -138,6 +141,7 @@ export function FinancialPlanDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const chartId = Number(id);
+  const queryClient = useQueryClient();
 
   const [chart, setChart] = useState<FinancialPlan | null>(null);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -271,6 +275,7 @@ export function FinancialPlanDetailsPage() {
       if (deleteTarget.type === "chart") {
         await deleteFinancialPlanApi(deleteTarget.id);
         toast.success("График удален");
+        await queryClient.invalidateQueries({ queryKey: queryKeys.financialPlans });
         navigate("/financial-plans");
       } else {
         await deleteChartPointApi(chartId, deleteTarget.id);
@@ -301,6 +306,7 @@ export function FinancialPlanDetailsPage() {
         is_active: updated.is_active,
       });
       setIsEditingChart(false);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.financialPlans });
       toast.success("Финансовый план обновлен");
     } catch {
       toast.error("Ошибка обновления финансового плана");
@@ -532,8 +538,6 @@ export function FinancialPlanDetailsPage() {
               { label: "Расход", value: analytics.expense_total, fixed: 2 },
               { label: "Net", value: analytics.net_total, fixed: 2 },
               { label: "Точек", value: analytics.points_count, fixed: 0 },
-              { label: "Средний net/день", value: analytics.average_daily_net, fixed: 2 },
-              { label: "Средний net/точку", value: analytics.average_point_net, fixed: 2 },
             ].map((metric) => (
               <div key={metric.label} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
                 <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>{metric.label}</p>
@@ -607,8 +611,8 @@ export function FinancialPlanDetailsPage() {
           </div>
         ) : (
           <div className="relative h-80 w-full overflow-x-auto overflow-y-hidden">
-            <div className="h-full min-w-[600px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <ChartWrapper className="h-full min-w-[600px]">
+              <ResponsiveContainer width="100%" height={320}>
                 <LineChart data={chartData}>
                   <svg style={{ position: 'absolute', width: 0, height: 0 }}>
                     <defs>
@@ -665,7 +669,7 @@ export function FinancialPlanDetailsPage() {
 
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </ChartWrapper>
           </div>
         )}
       </article>

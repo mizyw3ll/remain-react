@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Download, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Plus, Download, Trash2, Pencil, Bell, BellOff } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   getCalendarEventsApi,
   createCalendarEventApi,
+  updateCalendarEventApi,
   deleteCalendarEventApi,
+  getCalendarPendingNotificationsApi,
+  markCalendarNotifiedApi,
+  createNotificationApi,
   getCalendarExportUrl,
   type CalendarEvent,
 } from "../api";
@@ -13,28 +17,92 @@ import { useTheme } from "../features/theme/ThemeContext";
 
 const MONTHS = [
   "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-  "Июль", "Август", "Сентябрь", "Окторябрь", "Ноябрь", "Декабрь",
+  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
 ];
 
 const DAYS_OF_WEEK = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
+const NOTIFY_OPTIONS = [
+  { value: 0, label: "Нет" },
+  { value: 10, label: "За 10 минут" },
+  { value: 30, label: "За 30 минут" },
+  { value: 60, label: "За 1 час" },
+  { value: 120, label: "За 2 часа" },
+  { value: 1440, label: "За 1 день" },
+];
+
 function getMonthDays(year: number, month: number) {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const days = [];
+  const days: (Date | null)[] = [];
   const startPad = (firstDay.getDay() + 6) % 7;
-
-  for (let i = 0; i < startPad; i++) {
-    days.push(null);
-  }
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    days.push(new Date(year, month, d));
-  }
+  for (let i = 0; i < startPad; i++) days.push(null);
+  for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
   return days;
 }
 
 function formatDate(d: Date) {
-  return d.toISOString().split("T")[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("ru-RU", {
+    day: "numeric", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
+function getLocalDatetimeStr() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const h = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${d}T${h}:${min}`;
+}
+
+function isoToDatetimeLocal(iso: string) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso.slice(0, 16);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+
+function isPastDate(d: Date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const cmp = new Date(d);
+  cmp.setHours(0, 0, 0, 0);
+  return cmp < today;
+}
+
+function isWeekend(d: Date) {
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}
+
+function getEventColor(title: string) {
+  const colors = [
+    "linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.18))",
+    "linear-gradient(135deg, rgba(236,72,153,0.25), rgba(244,114,182,0.18))",
+    "linear-gradient(135deg, rgba(52,211,153,0.25), rgba(16,185,129,0.18))",
+    "linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.18))",
+    "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(96,165,250,0.18))",
+    "linear-gradient(135deg, rgba(168,85,247,0.25), rgba(192,132,252,0.18))",
+  ];
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) hash = title.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
 }
 
 export function CalendarPage() {
@@ -47,8 +115,17 @@ export function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newDate, setNewDate] = useState(formatDate(today));
+  const [newDate, setNewDate] = useState(getLocalDatetimeStr());
   const [newDesc, setNewDesc] = useState("");
+  const [newNotify, setNewNotify] = useState(0);
+
+  const [editEvent, setEditEvent] = useState<CalendarEvent | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editNotify, setEditNotify] = useState(0);
+
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function fetchEvents() {
     try {
@@ -61,53 +138,98 @@ export function CalendarPage() {
     }
   }
 
+  const checkNotifications = useCallback(async () => {
+    try {
+      const pending = await getCalendarPendingNotificationsApi();
+      for (const ev of pending) {
+        await createNotificationApi({
+          title: ev.title,
+          body: ev.description ?? undefined,
+          source_type: "calendar_event",
+          source_id: ev.id,
+        });
+        await markCalendarNotifiedApi(ev.id);
+      }
+      if (pending.length > 0) {
+        toast.success(`🔔 ${pending.length} напоминание(й) о событиях`);
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { void fetchEvents(); }, [year, month]);
+
   useEffect(() => {
-    void fetchEvents();
-  }, [year, month]);
+    void checkNotifications();
+    pollingRef.current = setInterval(() => void checkNotifications(), 30000);
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+  }, [checkNotifications]);
 
   const days = getMonthDays(year, month);
 
   function prevMonth() {
-    if (month === 0) {
-      setYear(year - 1);
-      setMonth(11);
-    } else {
-      setMonth(month - 1);
-    }
+    if (month === 0) { setYear(year - 1); setMonth(11); }
+    else { setMonth(month - 1); }
   }
 
   function nextMonth() {
-    if (month === 11) {
-      setYear(year + 1);
-      setMonth(0);
-    } else {
-      setMonth(month + 1);
-    }
+    if (month === 11) { setYear(year + 1); setMonth(0); }
+    else { setMonth(month + 1); }
   }
 
   function getEventsForDate(d: Date | null) {
     if (!d) return [];
     const ds = formatDate(d);
-    return events.filter((e) => e.event_date === ds);
+    return events.filter((e) => e.event_date.startsWith(ds));
   }
 
   async function handleCreate() {
     if (!newTitle.trim()) return;
     try {
+      const eventDate = new Date(newDate);
+      const y = eventDate.getFullYear();
+      const m = String(eventDate.getMonth() + 1).padStart(2, "0");
+      const d = String(eventDate.getDate()).padStart(2, "0");
       await createCalendarEventApi({
         title: newTitle.trim(),
         description: newDesc || undefined,
-        event_date: newDate,
+        event_date: `${y}-${m}-${d}`,
+        notify_before: newNotify || null,
       });
       toast.success("Событие создано");
       setShowCreate(false);
       setNewTitle("");
       setNewDesc("");
-      setNewDate(formatDate(today));
+      setNewNotify(0);
+      setNewDate(getLocalDatetimeStr());
       await fetchEvents();
-    } catch {
-      toast.error("Ошибка создания события");
-    }
+    } catch { toast.error("Ошибка создания события"); }
+  }
+
+  function openEdit(event: CalendarEvent) {
+    setEditEvent(event);
+    setEditTitle(event.title);
+    setEditDate(isoToDatetimeLocal(event.event_date));
+    setEditDesc(event.description || "");
+    setEditNotify(event.notify_before ?? 0);
+  }
+
+  async function handleEdit() {
+    if (!editEvent || !editTitle.trim()) return;
+    try {
+      const eventDate = new Date(editDate);
+      const y = eventDate.getFullYear();
+      const m = String(eventDate.getMonth() + 1).padStart(2, "0");
+      const d = String(eventDate.getDate()).padStart(2, "0");
+      await updateCalendarEventApi(editEvent.id, {
+        title: editTitle.trim(),
+        description: editDesc || undefined,
+        event_date: `${y}-${m}-${d}`,
+        notify_before: editNotify || null,
+      });
+      toast.success("Событие обновлено");
+      setEditEvent(null);
+      await fetchEvents();
+    } catch { toast.error("Ошибка обновления события"); }
   }
 
   async function handleDelete(eventId: number) {
@@ -115,28 +237,30 @@ export function CalendarPage() {
       await deleteCalendarEventApi(eventId);
       toast.success("Событие удалено");
       await fetchEvents();
-    } catch {
-      toast.error("Ошибка удаления события");
-    }
+    } catch { toast.error("Ошибка удаления события"); }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>Календарь</h1>
+        <h1 className="text-2xl font-semibold flex items-center gap-2" style={{ color: v("text-primary") }}>
+          <span className="inline-block h-6 w-6 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600" />
+          Календарь
+        </h1>
         <div className="flex items-center gap-2">
           <a
             href={getCalendarExportUrl()}
             download
-            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+            className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
+            style={{ borderColor: v("border-secondary"), color: v("text-secondary"), background: v("bg-card") }}
           >
             <Download size={16} />
             .ics
           </a>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm"
+            className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md"
             style={buttonStyle("primary", isDark)}
           >
             <Plus size={16} />
@@ -145,24 +269,48 @@ export function CalendarPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border p-4" style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}>
+      {/* Calendar card */}
+      <div
+        className="rounded-2xl border p-5 backdrop-blur-xl transition-all duration-300 hover:shadow-lg"
+        style={{
+          borderColor: v("border-primary"),
+          background: isDark
+            ? "linear-gradient(145deg, rgba(25,25,40,0.92), rgba(18,18,30,0.85))"
+            : "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,247,255,0.85))",
+          boxShadow: isDark
+            ? "0 8px 40px rgba(0,0,0,0.35)"
+            : "0 8px 40px rgba(99,102,241,0.1)",
+        }}
+      >
         {/* Month nav */}
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-            <ChevronLeft size={20} />
+        <div className="flex items-center justify-between mb-5">
+          <button
+            onClick={prevMonth}
+            className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md"
+            style={{ color: v("text-secondary"), background: v("bg-secondary") }}
+          >
+            <ChevronLeft size={18} />
           </button>
-          <h2 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+          <h2 className="text-lg font-bold tracking-wide" style={{ color: v("text-primary") }}>
             {MONTHS[month]} {year}
           </h2>
-          <button onClick={nextMonth} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-            <ChevronRight size={20} />
+          <button
+            onClick={nextMonth}
+            className="grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 hover:scale-110 hover:shadow-md"
+            style={{ color: v("text-secondary"), background: v("bg-secondary") }}
+          >
+            <ChevronRight size={18} />
           </button>
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {DAYS_OF_WEEK.map((d) => (
-            <div key={d} className="text-center text-xs font-medium py-1" style={{ color: v("text-muted") }}>
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {DAYS_OF_WEEK.map((d, i) => (
+            <div
+              key={d}
+              className={`text-center text-xs font-bold uppercase tracking-wider py-1 ${i >= 5 ? "text-indigo-400" : ""}`}
+              style={{ color: i >= 5 ? undefined : v("text-muted") }}
+            >
               {d}
             </div>
           ))}
@@ -174,53 +322,73 @@ export function CalendarPage() {
             const dayEvents = getEventsForDate(d);
             const isToday = d && formatDate(d) === formatDate(today);
             const isOtherMonth = d && d.getMonth() !== month;
+            const past = d ? isPastDate(d) : false;
+            const weekend = d ? isWeekend(d) : false;
 
             return (
               <div
                 key={i}
-                className={`min-h-[80px] rounded-lg border p-1 ${
-                  isToday ? "border-blue-500 dark:border-blue-400" : "border-transparent"
-                }`}
+                className={`min-h-[95px] rounded-xl border p-1.5 transition-all duration-200 hover:scale-[1.02] hover:z-10 ${
+                  isToday
+                    ? "border-indigo-500/60 ring-2 ring-indigo-500/20"
+                    : "border-transparent"
+                } ${past ? "opacity-35" : ""}`}
                 style={{
-                  background: d ? (isToday ? "rgba(59,130,246,0.1)" : v("bg-card")) : "transparent",
+                  background: d
+                    ? isToday
+                      ? "linear-gradient(145deg, rgba(99,102,241,0.12), rgba(139,92,246,0.06))"
+                      : past
+                        ? (isDark ? "rgba(35,35,50,0.25)" : "rgba(200,200,220,0.15)")
+                        : weekend && !isDark
+                          ? "rgba(99,102,241,0.03)"
+                          : v("bg-card")
+                    : "transparent",
+                  position: "relative",
                 }}
               >
                 {d && (
                   <>
-                    <p
-                      className={`text-xs font-medium mb-1 ${
-                        isOtherMonth ? "opacity-40" : ""
-                      }`}
-                      style={{ color: v("text-secondary") }}
-                    >
-                      {d.getDate()}
-                    </p>
+                    <div className="relative mb-1 inline-flex items-center justify-center group/number">
+                      <span className="absolute inset-0 scale-0 rounded-full transition-transform duration-200 group-hover/number:scale-100" style={{ background: isToday ? "rgba(129,140,248,0.15)" : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }} />
+                      <p
+                        className={`relative text-xs font-semibold z-10 size-6 inline-flex items-center justify-center ${
+                          isOtherMonth ? "opacity-30" : ""
+                        }`}
+                        style={{
+                          color: isToday ? "#818cf8" : v("text-secondary"),
+                        }}
+                      >
+                        {d.getDate()}
+                      </p>
+                    </div>
                     <div className="space-y-0.5">
                       {dayEvents.slice(0, 3).map((ev) => (
-                        <div
-                          key={ev.id}
-                          className="group flex items-center gap-0.5"
-                        >
+                        <div key={ev.id} className="relative group flex items-center gap-0.5">
                           <div
-                            className="flex-1 truncate rounded px-1 py-0.5 text-[10px] leading-tight cursor-pointer"
+                            className="flex-1 truncate rounded-lg px-1.5 py-0.5 text-[10px] leading-tight cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-sm font-medium"
                             style={{
-                              background: "rgba(59,130,246,0.15)",
+                              background: getEventColor(ev.title),
                               color: v("text-primary"),
                             }}
                             title={ev.title}
+                            onClick={() => openEdit(ev)}
                           >
                             {ev.title}
                           </div>
+                          {ev.notify_before && !ev.notified_at && (
+                            <Bell size={8} style={{ color: "rgba(250,204,21,0.8)", flexShrink: 0 }} />
+                          )}
                           <button
-                            onClick={() => void handleDelete(ev.id)}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-500 shrink-0"
+                            onClick={(e) => { e.stopPropagation(); void handleDelete(ev.id); }}
+                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all duration-200 hover:bg-red-500/10 shrink-0"
+                            style={{ color: "#ef4444" }}
                           >
                             <Trash2 size={10} />
                           </button>
                         </div>
                       ))}
                       {dayEvents.length > 3 && (
-                        <p className="text-[10px]" style={{ color: v("text-muted") }}>
+                        <p className="text-[10px] font-medium" style={{ color: v("text-muted") }}>
                           +{dayEvents.length - 3}
                         </p>
                       )}
@@ -233,84 +401,189 @@ export function CalendarPage() {
         </div>
       </div>
 
-      {/* Event list for selected date */}
-      <div className="rounded-2xl border p-4" style={{ borderColor: v("border-primary") }}>
-        <h3 className="text-sm font-semibold mb-3" style={{ color: v("text-primary") }}>
+      {/* Event list */}
+      <div
+        className="rounded-2xl border p-5 backdrop-blur-xl transition-all duration-300 hover:shadow-lg"
+        style={{
+          borderColor: v("border-primary"),
+          background: isDark
+            ? "linear-gradient(145deg, rgba(25,25,40,0.92), rgba(18,18,30,0.85))"
+            : "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,247,255,0.85))",
+          boxShadow: isDark
+            ? "0 8px 40px rgba(0,0,0,0.35)"
+            : "0 8px 40px rgba(99,102,241,0.1)",
+        }}
+      >
+        <h3 className="text-sm font-bold flex items-center gap-2 mb-4" style={{ color: v("text-primary") }}>
+          <span className="inline-block h-2 w-2 rounded-full bg-indigo-500" />
           Все события месяца
         </h3>
         {events.length === 0 ? (
           <p className="text-sm" style={{ color: v("text-muted") }}>Нет событий</p>
         ) : (
           <div className="space-y-2">
-            {events.map((ev) => (
-              <div
-                key={ev.id}
-                className="flex items-center justify-between rounded-lg border p-3"
-                style={{ borderColor: v("border-secondary"), background: v("bg-card") }}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium" style={{ color: v("text-primary") }}>{ev.title}</p>
-                  <p className="text-xs" style={{ color: v("text-muted") }}>
-                    {new Date(ev.event_date).toLocaleDateString()}
-                    {ev.description ? ` — ${ev.description}` : ""}
-                  </p>
-                </div>
-                <button
-                  onClick={() => void handleDelete(ev.id)}
-                  className="p-1 text-gray-400 hover:text-red-500 shrink-0"
+            {events.map((ev, idx) => {
+              const isPast = new Date(ev.event_date) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              return (
+                <div
+                  key={ev.id}
+                  className={`animate-fade-in stagger-${(idx % 6) + 1} flex items-center justify-between rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${isPast ? "" : ""}`}
+                  style={{
+                    borderColor: v("border-secondary"),
+                    background: isPast
+                      ? (isDark ? "rgba(35,35,50,0.3)" : "rgba(200,200,220,0.12)")
+                      : v("bg-card"),
+                    opacity: isPast ? 0.45 : 1,
+                  }}
                 >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: v("text-primary") }}>
+                      <span
+                        className="inline-block h-2 w-2 rounded-full shrink-0"
+                        style={{ background: getEventColor(ev.title).match(/rgba\((\d+,\d+,\d+)/)?.[1] ? `rgb(${getEventColor(ev.title).match(/rgba\((\d+,\d+,\d+)/)![1]})` : "#6366f1" }}
+                      />
+                      {ev.title}
+                      {ev.notify_before && !ev.notified_at && (
+                        <BellOff size={12} style={{ color: "rgba(250,204,21,0.7)" }} />
+                      )}
+                      {ev.notified_at && (
+                        <Bell size={12} style={{ color: "rgba(74,222,128,0.7)" }} />
+                      )}
+                    </p>
+                    <p className="text-xs" style={{ color: v("text-muted") }}>
+                      {formatDateTime(ev.event_date)}
+                      {ev.description ? ` — ${ev.description}` : ""}
+                      {ev.notify_before ? ` • увед. за ${ev.notify_before} мин` : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => openEdit(ev)}
+                      className="p-1.5 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-sm"
+                      style={{ color: v("text-secondary") }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = v("text-primary"); }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = v("text-secondary"); }}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => void handleDelete(ev.id)}
+                      className="p-1.5 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-sm"
+                      style={{ color: v("text-secondary") }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = v("text-secondary"); }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Create modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-[120] grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="w-full max-w-md rounded-2xl border p-4 sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: v("text-primary") }}>Новое событие</h3>
+        <div className="fixed inset-0 z-[120] grid place-items-center p-4 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div
+            className="w-full max-w-md rounded-2xl border p-6 backdrop-blur-xl transition-all duration-300 hover:shadow-2xl"
+            style={{
+              background: isDark
+                ? "linear-gradient(145deg, rgba(30,30,45,0.96), rgba(20,20,35,0.92))"
+                : "linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,247,255,0.92))",
+              borderColor: v("border-primary"),
+              boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
+            }}
+          >
+            <h3 className="text-lg font-semibold mb-4" style={{ color: v("text-primary") }}>Новое событие</h3>
             <div className="space-y-3">
-              <input
-                className={tw.inputBase}
-                style={inputStyle(isDark)}
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Название"
-              />
-              <input
-                type="date"
-                className={tw.inputBase}
-                style={inputStyle(isDark)}
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-              />
-              <textarea
-                className={tw.inputBase}
-                style={inputStyle(isDark)}
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Описание (необязательно)"
-              />
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Название *</label>
+                <input className={tw.inputBase} style={inputStyle(isDark)} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Название события" />
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Дата и время *</label>
+                <input type="datetime-local" className={tw.inputBase} style={inputStyle(isDark)} value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Напоминание</label>
+                <select className={tw.inputBase} style={inputStyle(isDark)} value={newNotify} onChange={(e) => setNewNotify(Number(e.target.value))}>
+                  {NOTIFY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Описание</label>
+                <textarea className={`${tw.inputBase} min-h-[80px]`} style={inputStyle(isDark)} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Описание (необязательно)" />
+              </div>
             </div>
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-5 flex justify-end gap-2">
               <button
-                className="rounded-xl border px-4 py-2 text-sm"
-                style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+                className="rounded-xl border px-4 py-2 text-sm transition-all duration-200 hover:scale-105"
+                style={{ borderColor: v("border-secondary"), color: v("text-secondary"), background: v("bg-card") }}
                 onClick={() => setShowCreate(false)}
-              >
-                Отмена
-              </button>
+              >Отмена</button>
               <button
-                className="rounded-xl border px-4 py-2 text-sm"
+                className="rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105"
                 style={buttonStyle("primary", isDark)}
                 disabled={!newTitle.trim()}
                 onClick={() => void handleCreate()}
-              >
-                Сохранить
-              </button>
+              >Сохранить</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editEvent && (
+        <div className="fixed inset-0 z-[120] grid place-items-center p-4 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div
+            className="w-full max-w-md rounded-2xl border p-6 backdrop-blur-xl transition-all duration-300 hover:shadow-2xl"
+            style={{
+              background: isDark
+                ? "linear-gradient(145deg, rgba(30,30,45,0.96), rgba(20,20,35,0.92))"
+                : "linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,247,255,0.92))",
+              borderColor: v("border-primary"),
+              boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
+            }}
+          >
+            <h3 className="text-lg font-semibold mb-4" style={{ color: v("text-primary") }}>Редактировать событие</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Название *</label>
+                <input className={tw.inputBase} style={inputStyle(isDark)} value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Название события" />
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Дата и время *</label>
+                <input type="datetime-local" className={tw.inputBase} style={inputStyle(isDark)} value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Напоминание</label>
+                <select className={tw.inputBase} style={inputStyle(isDark)} value={editNotify} onChange={(e) => setEditNotify(Number(e.target.value))}>
+                  {NOTIFY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Описание</label>
+                <textarea className={`${tw.inputBase} min-h-[80px]`} style={inputStyle(isDark)} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Описание (необязательно)" />
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                className="rounded-xl border px-4 py-2 text-sm transition-all duration-200 hover:scale-105"
+                style={{ borderColor: v("border-secondary"), color: v("text-secondary"), background: v("bg-card") }}
+                onClick={() => setEditEvent(null)}
+              >Отмена</button>
+              <button
+                className="rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105"
+                style={buttonStyle("primary", isDark)}
+                disabled={!editTitle.trim()}
+                onClick={() => void handleEdit()}
+              >Сохранить</button>
             </div>
           </div>
         </div>

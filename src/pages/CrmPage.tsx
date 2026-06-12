@@ -1,4 +1,5 @@
-﻿import { useState } from "react";
+﻿import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, Trash2, Phone, Mail, Building2, User, DollarSign, Calendar, Target, TrendingUp, Users, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -64,6 +65,42 @@ export function CrmPage() {
   const [dCurrency, setDCurrency] = useState("RUB");
   const [dPriority, setDPriority] = useState("medium");
   const [dDueDate, setDDueDate] = useState("");
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const contactIdParam = searchParams.get("contactId");
+    const dealIdParam = searchParams.get("dealId");
+    if (contactIdParam) {
+      setTab("contacts");
+      const found = contacts.find((c) => c.id === Number(contactIdParam));
+      if (found) {
+        setEditingContact(found);
+        setCName(found.name);
+        setCEmail(found.email || "");
+        setCPhone(found.phone || "");
+        setCCompany(found.company || "");
+        setCPosition(found.position || "");
+        setCNotes(found.notes || "");
+        setCIsLead(found.is_lead);
+        setShowContactForm(true);
+      }
+    } else if (dealIdParam) {
+      setTab("deals");
+      const found = deals.find((d) => d.id === Number(dealIdParam));
+      if (found) {
+        setEditingDeal(found);
+        setDTitle(found.title);
+        setDDescription(found.description || "");
+        setDContactId(found.contact_id?.toString() || "");
+        setDStatus(found.status);
+        setDValue(found.value?.toString() || "");
+        setDCurrency(found.currency);
+        setDPriority(found.priority);
+        setDDueDate(found.due_date || "");
+        setShowDealForm(true);
+      }
+    }
+  }, [searchParams, contacts, deals]);
 
   const createContactMut = useMutation({
     mutationFn: () =>
@@ -281,10 +318,10 @@ export function CrmPage() {
 
       {tab === "contacts" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {contacts.map((contact: Contact) => (
+          {contacts.map((contact: Contact, i) => (
             <div
               key={contact.id}
-              className="rounded-xl border p-4 transition hover:-translate-y-0.5"
+              className={`animate-fade-in stagger-${(i % 6) + 1} rounded-xl border p-4 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/5`}
               style={cardStyle("note", isDark)}
             >
               <div className="flex items-start justify-between">
@@ -347,10 +384,10 @@ export function CrmPage() {
 
       {tab === "deals" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {deals.map((deal: Deal) => (
+          {deals.map((deal: Deal, i) => (
             <div
               key={deal.id}
-              className="rounded-xl border p-4 transition hover:-translate-y-0.5"
+              className={`animate-fade-in stagger-${(i % 6) + 1} rounded-xl border p-4 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/5`}
               style={cardStyle("note", isDark)}
             >
               <div>
@@ -405,18 +442,18 @@ export function CrmPage() {
       {tab === "pipeline" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-xl border p-4 text-center" style={cardStyle("business", isDark)}>
+            <div className="animate-fade-in stagger-1 rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg" style={cardStyle("business", isDark)}>
               <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>{stats?.total_deals || 0}</p>
               <p className="text-sm" style={{ color: v("text-muted") }}>Всего сделок</p>
             </div>
-            <div className="rounded-xl border p-4 text-center" style={cardStyle("business", isDark)}>
+            <div className="animate-fade-in stagger-2 rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg" style={cardStyle("business", isDark)}>
               <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>
                 {(stats?.total_value || 0).toLocaleString()} ₽
               </p>
               <p className="text-sm" style={{ color: v("text-muted") }}>Общая сумма</p>
             </div>
-            {DEAL_STATUSES.slice(0, 4).map((s) => (
-              <div key={s.value} className="rounded-xl border p-4 text-center" style={cardStyle("note", isDark)}>
+            {DEAL_STATUSES.slice(0, 4).map((s, i) => (
+              <div key={s.value} className={`animate-fade-in stagger-${i + 3} rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg`} style={cardStyle("note", isDark)}>
                 <div className="w-8 h-1 rounded mx-auto mb-2" style={{ background: s.color }} />
                 <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>
                   {stats?.by_status[s.value] || 0}
@@ -426,9 +463,9 @@ export function CrmPage() {
             ))}
           </div>
 
-          <div className="rounded-xl border p-4" style={cardStyle("note", isDark)}>
+          <div className="animate-fade-in stagger-5 rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-lg" style={cardStyle("note", isDark)}>
             <h3 className="mb-3 font-semibold" style={{ color: v("text-primary") }}>Воронка продаж</h3>
-            <div className="space-y-3">
+            <div className="relative space-y-3">
               {DEAL_STATUSES.map((s) => {
                 const count = stats?.by_status[s.value] || 0;
                 const total = stats?.total_deals || 1;
@@ -439,8 +476,15 @@ export function CrmPage() {
                       <span style={{ color: v("text-muted") }}>{s.label}</span>
                       <span style={{ color: v("text-primary") }}>{count} ({pct}%)</span>
                     </div>
-                    <div className="w-full h-2 rounded" style={{ background: v("bg-tertiary") }}>
-                      <div className="h-2 rounded transition-all" style={{ width: `${pct}%`, background: s.color }} />
+                    <div className="w-full h-6 rounded-lg overflow-hidden relative" style={{ background: v("bg-tertiary") }}>
+                      <div
+                        className="h-full rounded-lg transition-all duration-700 ease-out"
+                        style={{
+                          width: `${pct}%`,
+                          background: `linear-gradient(90deg, ${s.color}88, ${s.color})`,
+                          clipPath: `inset(0 ${100 - Math.min(pct + 8, 100)}% 0 0 round 8px)`,
+                        }}
+                      />
                     </div>
                   </div>
                 );

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Folder, Trash2 } from "lucide-react";
+import { Plus, Folder, Trash2, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   createNoteApi,
@@ -40,11 +41,50 @@ export function NotesPage() {
   const queryClient = useQueryClient();
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const tagIdsParam = selectedTagId ? String(selectedTagId) : undefined;
-  const { data: notes = [], isLoading: notesLoading } = useNotesQuery(selectedProject, tagIdsParam);
+  const { data: notesData, isLoading: notesLoading } = useNotesQuery(selectedProject, tagIdsParam, page);
+  const notes = notesData?.items ?? [];
+  const totalNotes = notesData?.total ?? 0;
+  const perPage = notesData?.per_page ?? 10;
+  const totalPages = Math.max(1, Math.ceil(totalNotes / perPage));
+
+  const pageNumbers = useMemo(() => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("...");
+      const start = Math.max(2, page - 1);
+      const end = Math.min(totalPages - 1, page + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (page < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [page, totalPages]);
   const { data: projects = [], isLoading: projectsLoading } = useProjectsQuery();
   const { data: allTags = [], isLoading: tagsLoading } = useTagsQuery();
   const loading = notesLoading || projectsLoading || tagsLoading;
+  const [searchParams] = useSearchParams();
+
+  // Open note from search result
+  useEffect(() => {
+    const noteIdParam = searchParams.get("noteId");
+    if (!noteIdParam || !notes.length || loading) return;
+    const target = notes.find((n) => n.id === Number(noteIdParam));
+    if (target) {
+      setEditingNote(target);
+      setNoteTitle(target.title);
+      setNoteContent(target.content_markdown);
+      setNoteProjectId(target.project_id ?? null);
+      setNoteTags(target.tags ?? []);
+      setEditorOpen(true);
+    }
+  }, [searchParams, notes, loading]);
 
   // Note editor
   const [editorOpen, setEditorOpen] = useState(false);
@@ -58,7 +98,17 @@ export function NotesPage() {
   const [projectInput, setProjectInput] = useState("");
 
   async function refreshNotes() {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.notes(selectedProject, tagIdsParam) });
+    await queryClient.invalidateQueries({ queryKey: ["notes"] });
+  }
+
+  function selectProject(id: number | null) {
+    setSelectedProject(id);
+    setPage(1);
+  }
+
+  function selectTag(id: number | null) {
+    setSelectedTagId(id);
+    setPage(1);
   }
 
   async function refreshProjects() {
@@ -149,80 +199,130 @@ export function NotesPage() {
 
   return (
     <div className="flex gap-4 h-[calc(100vh-8rem)]">
+      {/* Mobile overlay backdrop */}
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Закрыть панель"
+        />
+      )}
+
       {/* Left sidebar - Projects */}
-      <div className="w-64 shrink-0 space-y-3 overflow-y-auto rounded-2xl border p-4" style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}>
+      <div
+        className={`
+          shrink-0 rounded-2xl border overflow-y-auto
+          fixed inset-y-0 left-0 z-40 w-64 p-4 shadow-2xl
+          transition-all duration-300 ease-out
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:static lg:z-auto lg:shadow-none lg:translate-x-0
+          ${sidebarOpen ? "lg:w-64 lg:p-4" : "lg:w-10 lg:p-2"}
+        `}
+        style={{
+          borderColor: v("border-primary"),
+          background: v("bg-secondary"),
+        }}
+      >
+        {/* Sidebar header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold" style={{ color: v("text-primary") }}>Проекты</h2>
-          <button
-            onClick={() => setSelectedProject(null)}
-            className="text-xs" style={{ color: v("text-muted") }}
-          >
-            Все
-          </button>
-        </div>
-
-        <div className="space-y-1">
-          {projects.map((p) => (
-            <div key={p.id} className="flex items-center gap-1">
-              <button
-                onClick={() => setSelectedProject(p.id === selectedProject ? null : p.id)}
-                className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors border-l-4 ${PROJECT_COLORS[p.color_idx % PROJECT_COLORS.length]} ${selectedProject === p.id ? "font-semibold" : ""}`}
-                style={{
-                  background: selectedProject === p.id ? v("bg-hover") : "transparent",
-                  color: v("text-primary"),
-                }}
-              >
-                <Folder size={14} />
-                <span className="truncate">{p.name}</span>
+          {sidebarOpen && (
+            <h2 className="text-sm font-semibold" style={{ color: v("text-primary") }}>Проекты</h2>
+          )}
+          <div className={`flex items-center gap-1 ${sidebarOpen ? "" : "mx-auto"}`}>
+            {sidebarOpen && (
+              <button onClick={() => selectProject(null)} className="text-xs" style={{ color: v("text-muted") }}>
+                Все
               </button>
-              <button
-                onClick={() => void handleDeleteProject(p)}
-                className="p-1 text-gray-400 hover:text-red-500"
-                title="Удалить проект"
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-          ))}
+            )}
+            <button
+              onClick={() => setSidebarOpen((s) => !s)}
+              className="rounded-md p-1 transition-colors hover:bg-[var(--bg-hover)]"
+              style={{ color: v("text-muted") }}
+              title={sidebarOpen ? "Скрыть панель" : "Показать панель"}
+            >
+              {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeft size={14} />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-1">
-          <input
-            type="text"
-            value={projectInput}
-            onChange={(e) => setProjectInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void handleCreateProject(); }}
-            placeholder="Новый проект"
-            className="flex-1 px-2 py-1 text-xs border rounded"
-            style={inputStyle(isDark)}
-          />
-          <button
-            onClick={() => void handleCreateProject()}
-            disabled={!projectInput.trim()}
-            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            +
-          </button>
-        </div>
-
-        {/* Tags filter */}
-        {allTags.length > 0 && (
-          <div>
-            <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 mt-3">Фильтр по тегам</h3>
-            <div className="flex flex-wrap gap-1">
-              {allTags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => setSelectedTagId(selectedTagId === tag.id ? null : tag.id)}
-                  className={selectedTagId === tag.id ? "opacity-100" : "opacity-60 hover:opacity-100"}
-                >
-                  <TagChip tag={tag} size="sm" />
-                </button>
+        {sidebarOpen && (
+          <>
+            <div className="space-y-1 mt-3">
+              {projects.map((p) => (
+                <div key={p.id} className="flex items-center gap-1">
+                  <button
+                    onClick={() => selectProject(p.id === selectedProject ? null : p.id)}
+                    className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors border-l-4 ${PROJECT_COLORS[p.color_idx % PROJECT_COLORS.length]} ${selectedProject === p.id ? "font-semibold" : ""}`}
+                    style={{
+                      background: selectedProject === p.id ? v("bg-hover") : "transparent",
+                      color: v("text-primary"),
+                    }}
+                  >
+                    <Folder size={14} />
+                    <span className="truncate">{p.name}</span>
+                  </button>
+                  <button
+                    onClick={() => void handleDeleteProject(p)}
+                    className="p-1 text-gray-400 hover:text-red-500"
+                    title="Удалить проект"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               ))}
             </div>
-          </div>
+
+            <div className="flex gap-1 mt-3">
+              <input
+                type="text"
+                value={projectInput}
+                onChange={(e) => setProjectInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") void handleCreateProject(); }}
+                placeholder="Новый проект"
+                className="flex-1 px-2 py-1 text-xs border rounded"
+                style={inputStyle(isDark)}
+              />
+              <button
+                onClick={() => void handleCreateProject()}
+                disabled={!projectInput.trim()}
+                className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                +
+              </button>
+            </div>
+
+            {allTags.length > 0 && (
+              <div className="mt-3">
+                <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Фильтр по тегам</h3>
+                <div className="flex flex-wrap gap-1">
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => selectTag(selectedTagId === tag.id ? null : tag.id)}
+                      className={selectedTagId === tag.id ? "opacity-100" : "opacity-60 hover:opacity-100"}
+                    >
+                      <TagChip tag={tag} size="sm" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      {/* Floating sidebar toggle for mobile */}
+      {!sidebarOpen && (
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden fixed bottom-4 left-4 z-30 grid h-9 w-9 place-items-center rounded-full border shadow-lg"
+          style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}
+        >
+          <PanelLeft size={16} />
+        </button>
+      )}
 
       {/* Main content */}
       <div className="flex-1 space-y-3 overflow-y-auto">
@@ -246,19 +346,24 @@ export function NotesPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <p style={{ color: v("text-muted") }}>Загрузка...</p>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="skeleton-card h-24 rounded-xl" />
+            ))}
           </div>
         ) : filteredNotes.length === 0 ? (
-          <div className="flex items-center justify-center h-40">
-            <p style={{ color: v("text-muted") }}>Нет заметок</p>
+          <div className="flex items-center justify-center h-40 animate-fade-in">
+            <div className="text-center">
+              <p className="text-sm font-medium" style={{ color: v("text-primary") }}>Нет заметок</p>
+              <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>Создайте первую заметку</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredNotes.map((note) => (
+            {filteredNotes.map((note, i) => (
               <div
                 key={note.id}
-                className="rounded-xl border p-4 cursor-pointer transition-colors"
+                className={`animate-fade-in stagger-${(i % 6) + 1} rounded-xl border p-4 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/5`}
                 style={{ borderColor: v("border-primary"), background: v("bg-card") }}
                 onClick={() => openEditNote(note)}
               >
@@ -276,7 +381,7 @@ export function NotesPage() {
                       ))}
                       {note.project_id && (
                         <span className="text-xs" style={{ color: v("text-muted") }}>
-                          📁 {projects.find((p) => p.id === note.project_id)?.name || "Без проекта"}
+                          {projects.find((p) => p.id === note.project_id)?.name || "Без проекта"}
                         </span>
                       )}
                       <span className="text-xs" style={{ color: v("text-muted") }}>
@@ -293,6 +398,47 @@ export function NotesPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 pt-2 pb-4">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg p-2 transition-colors disabled:opacity-30"
+              style={{ color: v("text-muted") }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            {pageNumbers.map((p, i) =>
+              p === "..." ? (
+                <span key={`e${i}`} className="px-1 text-xs" style={{ color: v("text-muted") }}>...</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm transition-all ${
+                    p === page ? "font-semibold shadow-sm" : "hover:bg-[var(--bg-hover)]"
+                  }`}
+                  style={{
+                    background: p === page ? v("bg-hover") : "transparent",
+                    color: p === page ? v("text-primary") : v("text-muted"),
+                    border: p === page ? `1px solid ${v("border-secondary")}` : "1px solid transparent",
+                  }}
+                >
+                  {p}
+                </button>
+              )
+            )}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-lg p-2 transition-colors disabled:opacity-30"
+              style={{ color: v("text-muted") }}
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         )}
       </div>
@@ -313,6 +459,9 @@ export function NotesPage() {
                 onChange={(e) => setNoteTitle(e.target.value)}
                 placeholder="Заголовок"
               />
+              {!noteTitle.trim() && noteTitle !== "" && (
+                <p className="text-xs" style={{ color: "#ef4444" }}>Заголовок обязателен</p>
+              )}
 
               <select
                 className={tw.inputBase}

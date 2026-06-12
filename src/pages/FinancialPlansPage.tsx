@@ -10,6 +10,7 @@ import { useCurrenciesQuery, useFinancialPlansQuery } from "../hooks/useCachedDa
 import { queryKeys } from "../lib/queryClient";
 import { cardStyle, cardHoverStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { ExpandableText } from "../components/ExpandableText";
+import { GlassCard } from "../shared/components/GlassCard";
 import { useTheme } from "../features/theme/ThemeContext";
 
 type FormState = {
@@ -74,16 +75,12 @@ export function FinancialPlansPage() {
       {loading ? (
         <div className={tw.grid}>
           {Array.from({ length: 8 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="h-44 animate-pulse rounded-2xl"
-              style={{ background: v("bg-hover") }}
-            />
+            <div key={idx} className="skeleton-card h-44" />
           ))}
         </div>
       ) : plans.length === 0 ? (
         <div className="flex min-h-[300px] items-center justify-center">
-          <div className="text-center">
+          <div className="text-center animate-fade-in">
             <p className="text-lg font-medium" style={{ color: v("text-primary") }}>
               У вас пока нет финансовых графиков
             </p>
@@ -101,42 +98,44 @@ export function FinancialPlansPage() {
         </div>
       ) : (
         <div className={tw.grid}>
-          {plans.map((plan) => (
+          {plans.map((plan, i) => (
             <Link
               key={plan.id}
               to={`/financial-plans/${plan.id}`}
-              className={`${tw.cardBase} overflow-hidden`}
-              style={cardStyle("financial", isDark)}
-              onMouseEnter={(e) => {
-                const hover = cardHoverStyle("financial", isDark);
-                e.currentTarget.style.border = hover.border;
-                e.currentTarget.style.background = hover.background;
-              }}
-              onMouseLeave={(e) => {
-                const base = cardStyle("financial", isDark);
-                e.currentTarget.style.border = base.border;
-                e.currentTarget.style.background = base.background;
-              }}
+              className={`animate-fade-in stagger-${(i % 6) + 1} block min-w-0`}
             >
-              <div className="mb-3 flex items-center justify-between gap-2 min-w-0">
-                <h2
-                  className="line-clamp-2 text-lg font-semibold"
-                  style={{ color: v("text-primary") }}
-                >{plan.title}</h2>
-                <span
-                  className="rounded-lg px-2 py-1 text-[10px] font-medium"
-                  style={plan.is_active
-                    ? { background: "rgba(34, 197, 94, 0.15)", color: "#16a34a" }
-                    : { background: v("bg-active"), color: v("text-muted") }
-                  }
-                >
-                  {plan.is_active ? "Активен" : "Неактивен"}
-                </span>
-              </div>
-              <ExpandableText text={plan.description || "Без описания"} expandable={false} />
-              <p className="mt-3 text-sm" style={{ color: v("text-secondary") }}>
-                Валюта: {currencies.find((c) => c.id === plan.currency_id)?.code ?? `ID ${plan.currency_id}`}
-              </p>
+              <GlassCard accent="emerald">
+                <div className="mb-4 flex items-start gap-4">
+                  <div className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(16,185,129,0.12)" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                  </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 min-w-0">
+                        <h2 className="text-lg font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
+                          {plan.title}
+                        </h2>
+                        <span
+                          className="shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-medium whitespace-nowrap"
+                        style={plan.is_active
+                          ? { background: "rgba(34, 197, 94, 0.15)", color: "#16a34a" }
+                          : { background: v("bg-active"), color: v("text-muted") }
+                        }
+                      >
+                        {plan.is_active ? "Активен" : "Неактивен"}
+                      </span>
+                    </div>
+                    <ExpandableText text={plan.description || "Без описания"} expandable={false} className="mt-1.5" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 pt-3 border-t" style={{ borderColor: "var(--border-muted)" }}>
+                  <span className="text-xs" style={{ color: v("text-muted") }}>
+                    {currencies.find((c) => c.id === plan.currency_id)?.code ?? `ID ${plan.currency_id}`}
+                  </span>
+                </div>
+              </GlassCard>
             </Link>
           ))}
         </div>
@@ -165,6 +164,9 @@ export function FinancialPlansPage() {
                 value={form.title}
                 onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               />
+              {!form.title.trim() && form.title !== "" && (
+                <p className="text-xs" style={{ color: "#ef4444" }}>Название обязательно</p>
+              )}
               <input
                 className={tw.inputBase}
                 style={inputStyle(isDark)}
@@ -185,6 +187,9 @@ export function FinancialPlansPage() {
                   </option>
                 ))}
               </select>
+              {form.currency_id === 0 && (
+                <p className="text-xs" style={{ color: "#ef4444" }}>Выберите валюту</p>
+              )}
               <label className="flex items-center gap-2 text-sm" style={{ color: v("text-secondary") }}>
                 <input
                   type="checkbox"

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, LayoutTemplate, Loader2, Upload, Copy } from "lucide-react";
+import { Plus, LayoutTemplate, Loader2, Upload } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ru } from "../i18n/ru";
@@ -9,11 +9,11 @@ import {
   getTemplatesApi,
   createPlanFromTemplateApi,
   importBusinessPlanApi,
-  duplicatePlanApi,
   type Template,
 } from "../api";
 import { cardStyle, cardHoverStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { ExpandableText } from "../components/ExpandableText";
+import { GlassCard } from "../shared/components/GlassCard";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useBusinessPlansQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
@@ -38,6 +38,8 @@ export function BusinessPlansPage() {
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [templateCategoryFilter, setTemplateCategoryFilter] = useState<string | null>(null);
   const [importLoading, setImportLoading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
 
   useEffect(() => {
@@ -104,6 +106,16 @@ export function BusinessPlansPage() {
     }
   }
 
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file && !importLoading) void handleImport(file);
+    },
+    [importLoading],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -152,16 +164,12 @@ export function BusinessPlansPage() {
       {loading ? (
         <div className={tw.grid}>
           {Array.from({ length: 8 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="h-44 animate-pulse rounded-2xl"
-              style={{ background: v("bg-hover") }}
-            />
+            <div key={idx} className="skeleton-card h-44" />
           ))}
         </div>
       ) : plans.length === 0 ? (
         <div className="flex min-h-[300px] items-center justify-center">
-          <div className="text-center">
+          <div className="text-center animate-fade-in">
             <p className="text-lg font-medium" style={{ color: v("text-primary") }}>
               У вас пока нет бизнес-планов
             </p>
@@ -179,62 +187,42 @@ export function BusinessPlansPage() {
         </div>
       ) : (
         <div className={tw.grid}>
-          {plans.map((plan) => (
+          {plans.map((plan, i) => (
             <Link
               key={plan.id}
               to={`/business-plans/${plan.id}`}
-              className={`${tw.cardBase} overflow-hidden`}
-              style={cardStyle("business", isDark)}
-              onMouseEnter={(e) => {
-                const hover = cardHoverStyle("business", isDark);
-                e.currentTarget.style.border = hover.border;
-                e.currentTarget.style.background = hover.background;
-              }}
-              onMouseLeave={(e) => {
-                const base = cardStyle("business", isDark);
-                e.currentTarget.style.border = base.border;
-                e.currentTarget.style.background = base.background;
-              }}
+              className={`animate-fade-in stagger-${(i % 6) + 1} block min-w-0`}
             >
-              <div className="mb-2 min-w-0">
-                <h2
-                  className="line-clamp-2 text-lg font-semibold"
-                  style={{ color: v("text-primary") }}
-                >{plan.title}</h2>
-              </div>
-              <ExpandableText text={plan.description || "Без описания"} expandable={false} />
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-xs" style={{ color: v("text-muted") }}>
-                  Создан: {new Date(plan.created_at).toLocaleDateString()}
-                </p>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-colors"
-                  style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    try {
-                      await duplicatePlanApi(plan.id);
-                      toast.success(ru.toasts.planCreated);
-                      await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
-                    } catch {
-                      toast.error(ru.toasts.planSaveError);
-                    }
-                  }}
-                  title="Дублировать план"
-                >
-                  <Copy size={12} />
-                  <span>Дублировать</span>
-                </button>
-              </div>
+              <GlassCard accent="indigo">
+                <div className="mb-4 flex items-start gap-4">
+                  <div className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(99,102,241,0.12)" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
+                      {plan.title}
+                    </h2>
+                    <ExpandableText text={plan.description || "Без описания"} expandable={false} className="mt-1.5" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 pt-3 border-t" style={{ borderColor: "var(--border-muted)" }}>
+                  <span className="text-xs" style={{ color: v("text-muted") }}>
+                    {new Date(plan.created_at).toLocaleDateString("ru-RU")}
+                  </span>
+                </div>
+              </GlassCard>
             </Link>
           ))}
         </div>
       )}
 
+      {/* Create modal */}
       {openForm && (
         <div
           className={tw.modalOverlay}
@@ -256,6 +244,9 @@ export function BusinessPlansPage() {
                 value={form.title}
                 onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               />
+              {!form.title.trim() && form.title !== "" && (
+                <p className="text-xs" style={{ color: "#ef4444" }}>Название обязательно</p>
+              )}
               <textarea
                 className={tw.inputBase}
                 style={inputStyle(isDark)}
@@ -290,6 +281,7 @@ export function BusinessPlansPage() {
         </div>
       )}
 
+      {/* Templates modal */}
       {openTemplates && (
         <div
           className={tw.modalOverlay}
@@ -360,6 +352,7 @@ export function BusinessPlansPage() {
         </div>
       )}
 
+      {/* Import modal */}
       {openImport && (
         <div
           className={tw.modalOverlay}
@@ -375,18 +368,35 @@ export function BusinessPlansPage() {
             <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>Импорт бизнес-плана</h3>
             <div className="space-y-3">
               <p className="text-sm" style={{ color: v("text-muted") }}>
-                Загрузите файл в формате CSV или XLSX, экспортированный из этого приложения.
+                Загрузите файл в формате CSV, XLSX, HTML или PDF.
               </p>
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={onDrop}
+                onClick={() => importFileRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors"
+                style={{
+                  borderColor: dragOver ? "#6366f1" : v("border-secondary"),
+                  background: dragOver ? "rgba(99,102,241,0.08)" : "transparent",
+                  color: v("text-muted"),
+                }}
+              >
+                <Upload size={24} />
+                <span className="text-sm">Перетащите файл сюда или нажмите для выбора</span>
+                <span className="text-xs opacity-60">CSV, XLSX, HTML, PDF</span>
+              </div>
               <input
+                ref={importFileRef}
                 type="file"
-                accept=".csv,.xlsx,.xls"
+                accept=".csv,.xlsx,.xls,.html,.htm,.pdf"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) void handleImport(file);
+                  e.target.value = "";
                 }}
                 disabled={importLoading}
-                className="w-full text-sm"
-                style={inputStyle(isDark)}
+                className="hidden"
               />
               {importLoading && (
                 <div className="flex items-center gap-2 text-sm" style={{ color: v("text-muted") }}>
