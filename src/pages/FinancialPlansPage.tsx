@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { createFinancialPlanApi } from "../api";
 import { useCurrenciesQuery, useFinancialPlansQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
-import { cardStyle, cardHoverStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
+import { inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { ExpandableText } from "../components/ExpandableText";
 import { GlassCard } from "../shared/components/GlassCard";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -29,6 +29,17 @@ export function FinancialPlansPage() {
   const loading = plansLoading || currenciesLoading;
   const [openForm, setOpenForm] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("title");
+
+  const filteredPlans = useMemo(() => {
+    const list = plans.filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    list.sort((a, b) => {
+      if (sortBy === "title") return a.title.localeCompare(b.title);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return list;
+  }, [plans, searchQuery, sortBy]);
 
   useEffect(() => {
     if (plansError) toast.error("Ошибка загрузки финансовых планов");
@@ -72,6 +83,33 @@ export function FinancialPlansPage() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-xs">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: v("text-tertiary") }}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Поиск по названию..."
+            className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
+            style={inputStyle(isDark)}
+          />
+        </div>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="rounded-xl border px-3 py-2 text-sm"
+          style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+        >
+          <option value="title">По названию</option>
+          <option value="created_at">Сначала новые</option>
+        </select>
+      </div>
+
       {loading ? (
         <div className={tw.grid}>
           {Array.from({ length: 8 }).map((_, idx) => (
@@ -96,9 +134,15 @@ export function FinancialPlansPage() {
             </button>
           </div>
         </div>
+      ) : filteredPlans.length === 0 ? (
+        <div className="flex min-h-[200px] items-center justify-center">
+          <p className="text-sm" style={{ color: v("text-muted") }}>
+            Ничего не найдено
+          </p>
+        </div>
       ) : (
         <div className={tw.grid}>
-          {plans.map((plan, i) => (
+          {filteredPlans.map((plan, i) => (
             <Link
               key={plan.id}
               to={`/financial-plans/${plan.id}`}
