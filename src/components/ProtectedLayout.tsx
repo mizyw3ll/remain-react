@@ -5,7 +5,8 @@ import { Menu, ArrowLeft } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { SettingsModal } from "./SettingsModal";
-import { SettingsUiProvider, useSettingsModalState } from "../context/SettingsUiContext";
+import { SettingsUiProvider } from "../context/SettingsUiContext";
+import { useSettingsModalState } from "../context/settingsUi";
 import { NotificationBell } from "./NotificationBell";
 import { SearchBar } from "./SearchBar";
 
@@ -71,8 +72,8 @@ export function ProtectedLayout() {
           )}
         </div>
 
-        <div className="fixed right-4 top-4 z-40 flex items-center gap-2 max-[639px]:left-20">
-          <div className="flex-1 sm:w-56 sm:flex-none">
+        <div className="fixed right-4 top-4 z-40 flex items-center gap-2 max-[639px]:left-24">
+          <div className="flex-1 sm:w-72 lg:w-96 sm:flex-none">
             <SearchBar />
           </div>
           <NotificationBell />
