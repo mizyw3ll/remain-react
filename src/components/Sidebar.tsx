@@ -5,7 +5,6 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import type { SettingsTab } from "../context/SettingsUiContext";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
-import { SearchBar } from "./SearchBar";
 
 type SidebarProps = {
   open: boolean;
@@ -33,8 +32,7 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
   return (
     <>
       <aside
-        className={`theme-sidebar fixed inset-y-0 left-0 z-50 w-[240px] border-r transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={`theme-sidebar fixed inset-y-0 left-0 z-50 w-[240px] border-r transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"}`}
         style={{
           background: 'var(--bg-sidebar)',
           borderColor: 'var(--border-primary)',
@@ -47,28 +45,16 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 transition-colors"
+              className="rounded-lg p-2 transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--bg-hover)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--text-muted)';
-              }}
               aria-label="Закрыть меню"
             >
               <Menu size={18} />
             </button>
           </div>
 
-          <div className="mb-3 border-t" style={{ borderColor: 'var(--border-primary)' }} />
-
-          <SearchBar onNavigate={onClose} />
-
           <nav className="space-y-2">
-            <NavButton to="/" icon={<Home size={18} />} text="Главная" onNavigate={onClose} />
+            <NavButton to="/dashboard" icon={<Home size={18} />} text="Главная" onNavigate={onClose} />
             <NavButton to="/business-plans" icon={<ScrollText size={18} />} text="Бизнес-планы" onNavigate={onClose} />
             <NavButton to="/notes" icon={<FileText size={18} />} text="Заметки" onNavigate={onClose} />
             <NavButton to="/calendar" icon={<Calendar size={18} />} text="Календарь" onNavigate={onClose} />
@@ -84,21 +70,16 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
             {user && (
               <div
                 ref={accountRef}
-                className="relative cursor-pointer select-none rounded-xl border p-3 transition-colors"
+                className="relative cursor-pointer select-none rounded-xl border p-3 transition-colors hover:bg-[var(--bg-hover)]"
                 style={{
                   background: 'var(--bg-secondary)',
                   borderColor: 'var(--border-muted)',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--bg-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!accountOpen) e.currentTarget.style.background = 'var(--bg-secondary)';
-                }}
                 onClick={() => setAccountOpen((p) => !p)}
               >
                 <div className="flex items-center gap-2">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold" style={{ background: 'var(--accent-primary)', color: 'var(--bg-body)' }}>
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold"
+                    style={{ background: 'var(--accent-primary)', color: 'var(--bg-body)' }}>
                     {(user.first_name || user.username).charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -110,7 +91,7 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
 
                 {accountOpen ? (
                   <div
-                    className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-xl border shadow-xl"
+                    className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-xl border shadow-xl animate-scale-in"
                     style={{
                       background: 'var(--bg-secondary)',
                       borderColor: 'var(--border-primary)',
@@ -118,16 +99,8 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
                   >
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors"
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                       style={{ color: 'var(--text-secondary)' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--bg-hover)';
-                        e.currentTarget.style.color = 'var(--text-primary)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = 'var(--text-secondary)';
-                      }}
                       onClick={() => {
                         setAccountOpen(false);
                         onOpenSettings("main");
@@ -138,18 +111,10 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 border-t px-3 py-2.5 text-left text-sm transition-colors"
+                      className="flex w-full items-center gap-2 border-t px-3 py-2.5 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                       style={{
                         color: 'var(--text-secondary)',
                         borderColor: 'var(--border-muted)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--bg-hover)';
-                        e.currentTarget.style.color = 'var(--text-primary)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = 'var(--text-secondary)';
                       }}
                       onClick={() => {
                         setAccountOpen(false);
@@ -195,20 +160,15 @@ function NavButton({
     <NavLink
       to={to}
       onClick={onNavigate}
-      className={({ isActive }) => {
-        const baseClasses = "flex h-11 items-center rounded-xl px-3 transition-colors";
-        const activeClasses = isActive
-          ? "active-nav-item"
-          : "nav-item";
-        return `${baseClasses} ${activeClasses}`;
-      }}
-      style={({ isActive }) => ({
-        background: isActive ? 'var(--bg-active)' : 'transparent',
-        color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-      } as React.CSSProperties)}
+      className={({ isActive }) =>
+        `flex h-11 items-center rounded-xl px-3 transition-all duration-200 ${isActive
+          ? "bg-[var(--bg-active)] text-[var(--text-primary)] shadow-[inset_0_0_0_1px_var(--border-secondary)]"
+          : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+        }`
+      }
     >
       <span className="mr-3">{icon}</span>
-      <span className="text-sm">{text}</span>
+      <span className="text-sm font-medium">{text}</span>
     </NavLink>
   );
 }

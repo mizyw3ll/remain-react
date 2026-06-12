@@ -13,8 +13,10 @@ import { SearchPage } from "./pages/SearchPage";
 import { TaxCalendarPage } from "./pages/TaxCalendarPage";
 import { KanbanPage } from "./pages/KanbanPage";
 import { CrmPage } from "./pages/CrmPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { SharedPlanPage } from "./pages/SharedPlanPage";
 
 const BusinessPlanDetailsPage = lazy(() => import("./pages/BusinessPlanDetailsPage").then(m => ({ default: m.BusinessPlanDetailsPage })));
 const FinancialPlanDetailsPage = lazy(() => import("./pages/FinancialPlanDetailsPage").then(m => ({ default: m.FinancialPlanDetailsPage })));
@@ -28,11 +30,12 @@ function App() {
         <Route path="/" element={<HomePage onOpenAuth={() => setAuthModalOpen(true)} />} />
         <Route path="/verify" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/shared/:token" element={<SharedPlanPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/business-plans" element={<BusinessPlansPage />} />
-          <Route path="/business-plans/:id" element={<Suspense fallback={null}><BusinessPlanDetailsPage /></Suspense>} />
+          <Route path="/business-plans/:id" element={<Suspense fallback={<div className="skeleton-card h-64 m-6" />}><BusinessPlanDetailsPage /></Suspense>} />
           <Route path="/financial-plans" element={<FinancialPlansPage />} />
-          <Route path="/financial-plans/:id" element={<Suspense fallback={null}><FinancialPlanDetailsPage /></Suspense>} />
+          <Route path="/financial-plans/:id" element={<Suspense fallback={<div className="skeleton-card h-64 m-6" />}><FinancialPlanDetailsPage /></Suspense>} />
           <Route path="/notes" element={<NotesPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -40,12 +43,20 @@ function App() {
           <Route path="/tax-calendar" element={<TaxCalendarPage />} />
           <Route path="/kanban" element={<KanbanPage />} />
           <Route path="/crm" element={<CrmPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
-      <Toaster position="top-right" />
+      <Toaster position="top-right" toastOptions={{
+        style: {
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-primary)",
+          color: "var(--text-primary)",
+          borderRadius: "12px",
+        },
+      }} />
     </>
   );
 }

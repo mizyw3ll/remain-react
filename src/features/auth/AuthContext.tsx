@@ -8,7 +8,6 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { TOKEN_KEY } from "../../api";
 import type { User } from "../../api";
 import { queryKeys } from "../../lib/queryClient";
 import * as authApi from "./authApi";
@@ -34,9 +33,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(() => {
-    return !!localStorage.getItem(TOKEN_KEY);
-  });
+  const [loading, setLoading] = useState(true);
 
   const loadMe = useCallback(async () => {
     try {
@@ -45,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(queryKeys.user, me);
       setUser(me);
     } catch {
-      localStorage.removeItem(TOKEN_KEY);
       queryClient.removeQueries({ queryKey: queryKeys.user });
       setUser(null);
     } finally {
@@ -54,15 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   useEffect(() => {
-    if (!localStorage.getItem(TOKEN_KEY)) {
-      return;
-    }
     void loadMe();
   }, [loadMe]);
 
   const signin = useCallback(async (login: string, password: string) => {
-    const token = await authApi.login(login, password);
-    localStorage.setItem(TOKEN_KEY, token.access_token);
+    await authApi.login(login, password);
     const me = await authApi.me();
     queryClient.setQueryData(queryKeys.user, me);
     setUser(me);
@@ -83,7 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
     queryClient.removeQueries({ queryKey: queryKeys.user });
     setUser(null);
   }, [queryClient]);

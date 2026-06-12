@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 interface ExpandableTextProps {
   text: string;
   maxLines?: number;
-  mobileMaxLines?: number;
   className?: string;
   fontSize?: "text-sm" | "text-base" | "text-lg" | "text-xl" | "text-2xl";
   fontWeight?: "font-normal" | "font-medium" | "font-semibold" | "font-bold";
@@ -14,7 +13,6 @@ interface ExpandableTextProps {
 export function ExpandableText({
   text,
   maxLines = 3,
-  mobileMaxLines = 2,
   className = "",
   fontSize = "text-sm",
   fontWeight = "font-normal",
@@ -29,21 +27,16 @@ export function ExpandableText({
     const checkTruncation = () => {
       const element = textRef.current;
       if (element) {
-        // Compare scroll height to client height to detect truncation
         const lineHeight = parseInt(getComputedStyle(element).lineHeight) || 20;
-        const maxHeightDesktop = lineHeight * maxLines;
-        const maxHeightMobile = lineHeight * mobileMaxLines;
-        const isMobile = window.innerWidth < 640;
-        const maxHeight = isMobile ? maxHeightMobile : maxHeightDesktop;
-
-        setIsTruncated(element.scrollHeight > maxHeight + 2); // +2px tolerance
+        const maxHeight = lineHeight * maxLines;
+        setIsTruncated(element.scrollHeight > maxHeight + 2);
       }
     };
 
     checkTruncation();
     window.addEventListener("resize", checkTruncation);
     return () => window.removeEventListener("resize", checkTruncation);
-  }, [text, maxLines, mobileMaxLines]);
+  }, [text, maxLines]);
 
   const toggleExpand = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -55,7 +48,7 @@ export function ExpandableText({
     <div className={`min-w-0 ${className}`}>
       <p
         ref={textRef}
-        className={`overflow-hidden ${fontSize} ${fontWeight} leading-relaxed break-words ${!isExpanded ? "line-clamp-2 sm:line-clamp-3" : ""
+        className={`overflow-hidden ${fontSize} ${fontWeight} leading-relaxed break-words ${!isExpanded ? "line-clamp-3" : ""
           }`}
         style={{
           color: `var(--${color})`,

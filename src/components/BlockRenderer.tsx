@@ -5,6 +5,7 @@ import { ru } from "../i18n/ru";
 import { RichTextEditor } from "./RichTextEditor";
 import { MarkdownPreview } from "./MarkdownPreview";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ChartWrapper } from "../shared/components/ChartWrapper";
 import { Loader2 } from "lucide-react";
 import { v } from "../shared/theme";
 import { getChartPointsBatchApi, type PlanBlock, type FinancialPlan, type ChartPoint } from "../api";
@@ -113,8 +114,8 @@ function ChartMiniView({
   const maxVal = Math.max(...data.map((d) => Math.max(d.income, d.expense)), 1);
 
   return (
-    <div className="h-32">
-      <ResponsiveContainer width="100%" height="100%">
+    <ChartWrapper className="h-32 w-full">
+      <ResponsiveContainer width="100%" height={128}>
         <AreaChart data={data}>
           <XAxis dataKey="date" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
           <YAxis domain={[0, maxVal * 1.15]} hide />
@@ -126,7 +127,7 @@ function ChartMiniView({
           <Area type="monotone" dataKey="expense" stroke="#dc2626" fill="#dc2626" fillOpacity={0.12} strokeWidth={1.5} dot={false} />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </ChartWrapper>
   );
 }
 

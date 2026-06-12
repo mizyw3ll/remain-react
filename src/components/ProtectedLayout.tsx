@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Menu, ArrowLeft } from "lucide-react";
 import { useAuth } from "../features/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { SettingsModal } from "./SettingsModal";
 import { SettingsUiProvider, useSettingsModalState } from "../context/SettingsUiContext";
+import { NotificationBell } from "./NotificationBell";
+import { SearchBar } from "./SearchBar";
 
 export function ProtectedLayout() {
   const { user, loading } = useAuth();
@@ -35,49 +38,40 @@ export function ProtectedLayout() {
         <div className="fixed left-4 top-4 z-40 flex items-center gap-2">
           <button
             type="button"
-            className="grid h-10 w-10 place-items-center rounded-lg border transition-colors"
+            className="grid h-9 w-9 place-items-center rounded-lg border transition-colors hover:bg-[var(--bg-hover)] shrink-0"
             style={{
               borderColor: 'var(--border-secondary)',
               background: 'var(--bg-secondary)',
               color: 'var(--text-secondary)',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-hover)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--bg-secondary)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
             onClick={() => setSidebarOpen(true)}
             aria-label="Открыть меню"
           >
-            <Menu size={20} />
+            <Menu size={18} />
           </button>
 
           {isDetailPage && backPath && (
             <button
               type="button"
-              className="grid h-10 w-10 place-items-center rounded-lg border transition-colors"
+              className="grid h-9 w-9 place-items-center rounded-lg border transition-colors hover:bg-[var(--bg-hover)] shrink-0"
               style={{
                 borderColor: 'var(--border-secondary)',
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-secondary)',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--bg-hover)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--bg-secondary)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-              }}
               onClick={() => navigate(backPath)}
               aria-label="Назад к списку"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
           )}
+        </div>
+
+        <div className="fixed right-4 top-4 z-40 flex items-center gap-2 max-[639px]:left-20">
+          <div className="flex-1 sm:w-56 sm:flex-none">
+            <SearchBar />
+          </div>
+          <NotificationBell />
         </div>
 
         {sidebarOpen ? (
@@ -98,16 +92,24 @@ export function ProtectedLayout() {
           }}
         />
         <SettingsModal open={open} tab={tab} onClose={closeModal} />
+
         <div className="min-h-screen p-4 pt-16 md:p-6 md:pt-20">
           {loading ? (
-            <div
-              className="grid min-h-[50vh] place-items-center"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Загрузка...
+            <div className="grid min-h-[50vh] place-items-center" style={{ color: 'var(--text-muted)' }}>
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                <span className="text-sm">Загрузка...</span>
+              </div>
             </div>
           ) : (
-            <Outlet />
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Outlet />
+            </motion.div>
           )}
         </div>
       </div>

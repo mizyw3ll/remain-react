@@ -6,11 +6,9 @@ import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
-import { Strike } from "@tiptap/extension-strike";
 import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Image } from "@tiptap/extension-image";
-import { Link } from "@tiptap/extension-link";
 import {
   Bold,
   Italic,
@@ -66,11 +64,10 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        link: { openOnClick: false },
       }),
-      Strike,
       Highlight.configure({ multicolor: false }),
       Subscript,
-      Link.configure({ openOnClick: false }),
       Image.configure({ inline: true, allowBase64: false }),
       Table.configure({ resizable: true }),
       TableRow,
