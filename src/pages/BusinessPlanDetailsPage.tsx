@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   DndContext,
   PointerSensor,
@@ -14,8 +14,7 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Pencil, Trash2, Download, Camera, Check, X, Loader2, FileText, Table, BarChart3 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { Pencil, Trash2, Download, Camera, Check, X, Loader2, FileText, Table, Share2, Link } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   createPlanBlockApi,
@@ -43,13 +42,19 @@ import {
   assignTagToPlanApi,
   unassignTagFromPlanApi,
   duplicateBlockApi,
+  enableSharingApi,
+  disableSharingApi,
+  getShareStatusApi,
+  type ShareStatus,
   type BusinessPlan,
   type BusinessPlanAnalytics,
   type PlanBlock,
   type FinancialPlan,
   type Tag,
 } from "../api";
+import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { queryKeys } from "../lib/queryClient";
 import { BlockModal } from "../components/BlockModal";
 import { SortableBlock } from "../components/SortableBlock";
 import { useChartEmbedPoints } from "../components/BlockRenderer";
@@ -67,6 +72,7 @@ export function BusinessPlanDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const planId = Number(id);
+  const queryClient = useQueryClient();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const sensors = useSensors(
@@ -83,6 +89,16 @@ export function BusinessPlanDetailsPage() {
   );
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [planForm, setPlanForm] = useState({ title: "", description: "" });
+  const location = useLocation();
+
+  // Scroll to block from search result hash
+  useEffect(() => {
+    if (!location.hash || !blocks.length) return;
+    const el = document.getElementById(location.hash.slice(1));
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+    }
+  }, [location.hash, blocks.length]);
 
   // Block modal state (for create and edit)
   const [blockModalOpen, setBlockModalOpen] = useState(false);
@@ -127,6 +143,11 @@ export function BusinessPlanDetailsPage() {
 
   // Export format selection
   const [exportFormatOpen, setExportFormatOpen] = useState(false);
+
+  // Share
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareStatus, setShareStatus] = useState<ShareStatus | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
 
   const isEditingBlock = editingBlockId !== null;
   const { chartPointsById, chartPointsLoading } = useChartEmbedPoints(blocks);
@@ -331,6 +352,7 @@ export function BusinessPlanDetailsPage() {
       if (deleteTarget.type === "plan") {
         await deleteBusinessPlanApi(deleteTarget.id);
         toast.success(ru.toasts.planDeleted);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
         navigate("/business-plans");
       } else {
         await deletePlanBlockApi(planId, deleteTarget.id);
@@ -358,6 +380,8 @@ export function BusinessPlanDetailsPage() {
       });
       setIsEditingPlan(false);
       toast.success(ru.toasts.planUpdated);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.kanbanBoards });
     } catch {
       toast.error(ru.toasts.planUpdateError);
     }
@@ -378,7 +402,55 @@ export function BusinessPlanDetailsPage() {
     });
   }
 
-  async function handleExportPlan(format: "html" | "xlsx" | "csv" = "html") {
+  async function handleEnableSharing() {
+    if (!planId) return;
+    try {
+      setShareLoading(true);
+      const status = await enableSharingApi(planId);
+      setShareStatus(status);
+      toast.success(ru.share.enabled);
+    } catch {
+      toast.error("Не удалось включить доступ");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function handleDisableSharing() {
+    if (!planId) return;
+    try {
+      setShareLoading(true);
+      await disableSharingApi(planId);
+      setShareStatus(null);
+      toast.success(ru.share.disabled);
+    } catch {
+      toast.error("Не удалось отключить доступ");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function loadShareStatus() {
+    if (!planId) return;
+    try {
+      const status = await getShareStatusApi(planId);
+      setShareStatus(status);
+    } catch {
+      // share not enabled
+    }
+  }
+
+  function handleCopyShareLink() {
+    if (!shareStatus?.share_token) return;
+    const url = `${window.location.origin}/shared/${shareStatus.share_token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success(ru.share.copied);
+    }).catch(() => {
+      toast.error("Не удалось скопировать ссылку");
+    });
+  }
+
+  async function handleExportPlan(format: "html" | "xlsx" | "csv" | "pdf" = "html") {
     if (!planId) return;
     try {
       const blob = await exportBusinessPlanApi(planId, format);
@@ -392,8 +464,10 @@ export function BusinessPlanDetailsPage() {
       window.URL.revokeObjectURL(url);
       toast.success(ru.toasts.planExported);
       setExportFormatOpen(false);
-    } catch {
-      toast.error(ru.toasts.exportError);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("Export error:", msg, e);
+      toast.error(`${ru.toasts.exportError}: ${msg}`);
     }
   }
 
@@ -598,9 +672,29 @@ export function BusinessPlanDetailsPage() {
                           <Table size={14} />
                           {ru.export.csv}
                         </button>
+                        <button
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
+                          style={{ color: v("text-secondary") }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                          onClick={() => void handleExportPlan("pdf")}
+                        >
+                          <FileText size={14} />
+                          {ru.export.pdf}
+                        </button>
                       </div>
                     )}
                   </div>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
+                    style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onClick={() => { setShareOpen(true); void loadShareStatus(); }}
+                  >
+                    <Share2 size={16} />
+                    <span className="hidden sm:inline">{ru.share.share}</span>
+                  </button>
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
@@ -694,9 +788,6 @@ export function BusinessPlanDetailsPage() {
               ["Комментариев", analytics.comments_count],
               ["Вложений", analytics.attachments_count],
               ["Связей с графиками", analytics.linked_financial_charts_count],
-              ["Rich-блоков", analytics.rich_blocks_count],
-              ["Символов текста", analytics.total_content_chars],
-              ["Средняя длина", Math.round(analytics.average_content_chars)],
             ].map(([label, value]) => (
               <div key={label as string} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
                 <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>{label as string}</p>
@@ -704,41 +795,7 @@ export function BusinessPlanDetailsPage() {
               </div>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {Object.entries(analytics.block_type_breakdown).map(([type, count]) => (
-              <span key={type} className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}>
-                {type}: {count}
-              </span>
-            ))}
-          </div>
-          <div className="pt-2">
-            <div className="flex items-center gap-2 pb-2">
-              <BarChart3 size={14} style={{ color: v("text-muted") }} />
-              <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>Распределение по типам блоков</p>
-            </div>
-            <div className="h-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={Object.entries(analytics.block_type_breakdown).map(([type, count]) => ({ type, count }))} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
-                  <XAxis dataKey="type" tick={{ fontSize: 10, fill: isDark ? "#a3a3a3" : "#525252" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: isDark ? "#a3a3a3" : "#525252" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: isDark ? "#1c1c1c" : "#fff",
-                      border: `1px solid ${isDark ? "#2a2a2a" : "#e8e2d9"}`,
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                    formatter={(value) => [value, "Блоков"]}
-                  />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {Object.entries(analytics.block_type_breakdown).map(([type]) => (
-                      <Cell key={type} fill={isDark ? "#525252" : "#a3a3a3"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+
         </article>
       )}
 
@@ -895,6 +952,69 @@ export function BusinessPlanDetailsPage() {
             )}
             <div className="mt-4 flex justify-end">
               <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setSnapshotsOpen(false)}>{ru.modals.close}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {shareOpen && (
+        <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
+          <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-md sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{ru.share.share}</h3>
+              <button onClick={() => setShareOpen(false)} className="rounded-lg p-1 transition-colors" style={{ color: v("text-secondary") }} onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-4 space-y-4">
+              {shareStatus?.is_public ? (
+                <>
+                  <div className="flex items-center gap-2 rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
+                    <Link size={16} style={{ color: v("text-muted") }} />
+                    <input
+                      className="flex-1 bg-transparent text-sm outline-none"
+                      style={{ color: v("text-primary") }}
+                      value={`${window.location.origin}/shared/${shareStatus.share_token}`}
+                      readOnly
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="flex-1 rounded-lg border px-3 py-2 text-sm transition-colors"
+                      style={buttonStyle("primary", isDark)}
+                      onClick={handleCopyShareLink}
+                    >
+                      {ru.share.copy}
+                    </button>
+                    <button
+                      className="rounded-lg border px-3 py-2 text-sm transition-colors"
+                      style={buttonStyle("danger", isDark)}
+                      onClick={() => void handleDisableSharing()}
+                      disabled={shareLoading}
+                    >
+                      {shareLoading ? <Loader2 size={16} className="animate-spin" /> : ru.share.disable}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <p className="text-sm" style={{ color: v("text-secondary") }}>
+                    Доступ по ссылке выключен. Включите его, чтобы поделиться планом с другими.
+                  </p>
+                  <button
+                    className="mt-3 w-full rounded-lg border px-3 py-2 text-sm transition-colors"
+                    style={buttonStyle("primary", isDark)}
+                    onClick={() => void handleEnableSharing()}
+                    disabled={shareLoading}
+                  >
+                    {shareLoading ? <Loader2 size={16} className="animate-spin" /> : ru.share.enable}
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setShareOpen(false)}>{ru.modals.close}</button>
             </div>
           </div>
         </div>

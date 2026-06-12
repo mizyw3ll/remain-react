@@ -33,6 +33,7 @@ export function SortableBlock({
 
   return (
     <article
+      id={`block-${block.id}`}
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -78,13 +79,21 @@ export function SortableBlock({
           >
             <Pencil size={14} />
           </button>
-          <button className="rounded-lg border px-3 py-1 text-xs transition-colors"
+          <button className="relative rounded-lg border px-3 py-1 text-xs transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
             onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             onClick={() => onComments(block)}
           >
             <MessageCircle size={14} />
+            {(block.comments_count ?? 0) > 0 && (
+              <span
+                className="absolute -right-1.5 -top-1.5 flex min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold leading-tight"
+                style={{ background: v("text-primary"), color: v("bg-secondary") }}
+              >
+                {block.comments_count}
+              </span>
+            )}
           </button>
           <button className="rounded-lg border px-3 py-1 text-xs transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
