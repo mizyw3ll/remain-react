@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Download, Trash2, Pencil, Bell, BellOff } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Plus, Download, Trash2, Pencil, Bell, BellOff, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   getCalendarEventsApi,
@@ -137,6 +137,17 @@ export function CalendarPage() {
   const [editDate, setEditDate] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editNotify, setEditNotify] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("event_date");
+
+  const filteredEvents = useMemo(() => {
+    const list = events.filter((e) => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    list.sort((a, b) => {
+      if (sortBy === "title") return a.title.localeCompare(b.title);
+      return new Date(a.event_date).getTime() - new Date(b.event_date).getTime();
+    });
+    return list;
+  }, [events, searchQuery, sortBy]);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -172,7 +183,11 @@ export function CalendarPage() {
   }, []);
 
   useEffect(() => {
-    void fetchEvents();
+    const firstDay = formatDate(new Date(year, month, 1));
+    const lastDay = formatDate(new Date(year, month + 1, 0));
+    getCalendarEventsApi(firstDay, lastDay)
+      .then(setEvents)
+      .catch(() => toast.error("Ошибка загрузки событий"));
   }, [year, month]);
 
   useEffect(() => {
@@ -339,7 +354,9 @@ export function CalendarPage() {
           {DAYS_OF_WEEK.map((d, i) => (
             <div
               key={d}
-              className={`text-center text-xs font-bold uppercase tracking-wider py-1 ${i >= 5 ? "text-indigo-400" : ""}`}
+              className={`text-center text-xs font-bold uppercase tracking-wider py-1 ${
+                i >= 5 ? "text-indigo-400" : ""
+              }`}
               style={{ color: i >= 5 ? undefined : v("text-muted") }}
             >
               {d}
@@ -455,22 +472,56 @@ export function CalendarPage() {
           boxShadow: isDark ? "0 8px 40px rgba(0,0,0,0.35)" : "0 8px 40px rgba(99,102,241,0.1)",
         }}
       >
-        <h3 className="text-sm font-bold flex items-center gap-2 mb-4" style={{ color: v("text-primary") }}>
+        <h3 className="text-sm font-bold flex items-center gap-2 mb-3" style={{ color: v("text-primary") }}>
           <span className="inline-block h-2 w-2 rounded-full bg-indigo-500" />
           Все события месяца
         </h3>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="relative flex-1 max-w-xs">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: v("text-tertiary") }}
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Поиск по названию..."
+              className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
+              style={inputStyle(isDark)}
+            />
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-xl border px-3 py-2 text-sm"
+            style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+          >
+            <option value="event_date">По дате</option>
+            <option value="title">По названию</option>
+          </select>
+        </div>
         {events.length === 0 ? (
           <p className="text-sm" style={{ color: v("text-muted") }}>
             Нет событий
           </p>
+        ) : filteredEvents.length === 0 ? (
+          <p className="text-sm" style={{ color: v("text-muted") }}>
+            Ничего не найдено
+          </p>
         ) : (
           <div className="space-y-2">
-            {events.map((ev, idx) => {
+            {filteredEvents.map((ev, idx) => {
               const isPast = new Date(ev.event_date) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
               return (
                 <div
                   key={ev.id}
-                  className={`animate-fade-in stagger-${(idx % 6) + 1} flex items-center justify-between rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${isPast ? "" : ""}`}
+                  className={`animate-fade-in stagger-${
+                    (idx % 6) + 1
+                  } flex items-center justify-between rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+                    isPast ? "" : ""
+                  }`}
                   style={{
                     borderColor: v("border-secondary"),
                     background: isPast ? (isDark ? "rgba(35,35,50,0.3)" : "rgba(200,200,220,0.12)") : v("bg-card"),

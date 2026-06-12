@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Folder, Trash2, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Plus, Folder, Trash2, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   createNoteApi,
@@ -46,7 +46,7 @@ export function NotesPage() {
 
   const tagIdsParam = selectedTagId ? String(selectedTagId) : undefined;
   const { data: notesData, isLoading: notesLoading } = useNotesQuery(selectedProject, tagIdsParam, page);
-  const notes = notesData?.items ?? [];
+  const notes = useMemo(() => notesData?.items ?? [], [notesData]);
   const totalNotes = notesData?.total ?? 0;
   const perPage = notesData?.per_page ?? 10;
   const totalPages = Math.max(1, Math.ceil(totalNotes / perPage));
@@ -69,6 +69,13 @@ export function NotesPage() {
   const { data: projects = [], isLoading: projectsLoading } = useProjectsQuery();
   const { data: allTags = [], isLoading: tagsLoading } = useTagsQuery();
   const loading = notesLoading || projectsLoading || tagsLoading;
+  // Note editor
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+  const [noteProjectId, setNoteProjectId] = useState<number | null>(null);
+  const [noteTags, setNoteTags] = useState<Tag[]>([]);
   const [searchParams] = useSearchParams();
 
   // Open note from search result
@@ -77,7 +84,7 @@ export function NotesPage() {
     if (!noteIdParam || !notes.length || loading) return;
     const target = notes.find((n) => n.id === Number(noteIdParam));
     if (target) {
-      setEditingNote(target);
+      setEditingNote(target); // eslint-disable-line react-hooks/set-state-in-effect
       setNoteTitle(target.title);
       setNoteContent(target.content_markdown);
       setNoteProjectId(target.project_id ?? null);
@@ -85,14 +92,6 @@ export function NotesPage() {
       setEditorOpen(true);
     }
   }, [searchParams, notes, loading]);
-
-  // Note editor
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [noteTitle, setNoteTitle] = useState("");
-  const [noteContent, setNoteContent] = useState("");
-  const [noteProjectId, setNoteProjectId] = useState<number | null>(null);
-  const [noteTags, setNoteTags] = useState<Tag[]>([]);
 
   // Project create
   const [projectInput, setProjectInput] = useState("");
@@ -193,7 +192,18 @@ export function NotesPage() {
     }
   }
 
-  const filteredNotes = notes;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("updated_at");
+
+  const filteredNotes = useMemo(() => {
+    const list = notes.filter((n) => n.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    list.sort((a, b) => {
+      if (sortBy === "title") return a.title.localeCompare(b.title);
+      if (sortBy === "created_at") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+    return list;
+  }, [notes, searchQuery, sortBy]);
 
   const currentProject = projects.find((p) => p.id === selectedProject);
 
@@ -255,7 +265,9 @@ export function NotesPage() {
                 <div key={p.id} className="flex items-center gap-1">
                   <button
                     onClick={() => selectProject(p.id === selectedProject ? null : p.id)}
-                    className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors border-l-4 ${PROJECT_COLORS[p.color_idx % PROJECT_COLORS.length]} ${selectedProject === p.id ? "font-semibold" : ""}`}
+                    className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors border-l-4 ${
+                      PROJECT_COLORS[p.color_idx % PROJECT_COLORS.length]
+                    } ${selectedProject === p.id ? "font-semibold" : ""}`}
                     style={{
                       background: selectedProject === p.id ? v("bg-hover") : "transparent",
                       color: v("text-primary"),
@@ -349,13 +361,41 @@ export function NotesPage() {
           </button>
         </div>
 
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-xs">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: v("text-tertiary") }}
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Поиск по названию..."
+              className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
+              style={inputStyle(isDark)}
+            />
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-xl border px-3 py-2 text-sm"
+            style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+          >
+            <option value="updated_at">Сначала новые</option>
+            <option value="title">По названию</option>
+            <option value="created_at">По дате создания</option>
+          </select>
+        </div>
+
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="skeleton-card h-24 rounded-xl" />
             ))}
           </div>
-        ) : filteredNotes.length === 0 ? (
+        ) : notes.length === 0 ? (
           <div className="flex items-center justify-center h-40 animate-fade-in">
             <div className="text-center">
               <p className="text-sm font-medium" style={{ color: v("text-primary") }}>
@@ -366,12 +406,20 @@ export function NotesPage() {
               </p>
             </div>
           </div>
+        ) : filteredNotes.length === 0 ? (
+          <div className="flex items-center justify-center h-40 animate-fade-in">
+            <p className="text-sm" style={{ color: v("text-muted") }}>
+              Ничего не найдено
+            </p>
+          </div>
         ) : (
           <div className="space-y-2">
             {filteredNotes.map((note, i) => (
               <div
                 key={note.id}
-                className={`animate-fade-in stagger-${(i % 6) + 1} rounded-xl border p-4 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/5`}
+                className={`animate-fade-in stagger-${
+                  (i % 6) + 1
+                } rounded-xl border p-4 cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/5`}
                 style={{ borderColor: v("border-primary"), background: v("bg-card") }}
                 onClick={() => openEditNote(note)}
               >
@@ -386,9 +434,7 @@ export function NotesPage() {
                       </div>
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {note.tags?.map((tag) => (
-                        <TagChip key={tag.id} tag={tag} size="sm" />
-                      ))}
+                      {note.tags?.map((tag) => <TagChip key={tag.id} tag={tag} size="sm" />)}
                       {note.project_id && (
                         <span className="text-xs" style={{ color: v("text-muted") }}>
                           {projects.find((p) => p.id === note.project_id)?.name || "Без проекта"}
