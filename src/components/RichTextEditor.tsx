@@ -25,6 +25,7 @@ import {
   Columns3,
   Trash2,
   SquareX,
+  X,
   Strikethrough,
   Highlighter,
   Subscript as SubscriptIcon,
@@ -222,17 +223,18 @@ export function RichTextEditor({
           {btn(false, () => editor.chain().focus().deleteRow().run(), <Trash2 size={14} />, ru.editor.deleteRow)}
           {btn(false, () => editor.chain().focus().addColumnAfter().run(), <Columns3 size={14} />, ru.editor.addColumn)}
           {btn(false, () => editor.chain().focus().deleteColumn().run(), <SquareX size={14} />, ru.editor.deleteColumn)}
+          {btn(false, () => editor.chain().focus().deleteTable().run(), <X size={14} />, ru.editor.deleteTable)}
           <div className="mx-1 w-px self-stretch" style={{ background: v("border-primary") }} />
           {btn(
             false,
-            () => fileInputRef.current?.click(),
+            () => fileInputRef.current?.click(), // eslint-disable-line react-hooks/refs
             <Paperclip size={14} />,
             ru.editor.attachFile,
             !uploadContext,
           )}
           {btn(
             false,
-            () => fileInputRef.current?.click(),
+            () => fileInputRef.current?.click(), // eslint-disable-line react-hooks/refs
             <ImageIcon size={14} />,
             ru.editor.insertImage,
             !uploadContext,

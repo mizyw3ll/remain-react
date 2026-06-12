@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { normalizeSwotData } from "../lib/blockDefaults";
 import { ru } from "../i18n/ru";
@@ -8,7 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import { ChartWrapper } from "../shared/components/ChartWrapper";
 import { Loader2 } from "lucide-react";
 import { v } from "../shared/theme";
-import { getChartPointsBatchApi, type PlanBlock, type FinancialPlan, type ChartPoint } from "../api";
+import type { PlanBlock, FinancialPlan } from "../api";
 
 interface BlockRendererProps {
   block: PlanBlock;
@@ -321,38 +320,4 @@ export function BlockRenderer({
     default:
       return <DefaultRenderer block={block} isDark={isDark} />;
   }
-}
-
-/** Collect unique chart IDs from chart_embed blocks and batch-load points. */
-export function useChartEmbedPoints(blocks: PlanBlock[]) {
-  const [chartPointsById, setChartPointsById] = useState<Record<number, ChartPoint[]>>({});
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const chartIds = [
-      ...new Set(blocks.filter((b) => b.block_type === "chart_embed").flatMap((b) => b.linked_financial_chart_ids)),
-    ];
-    if (chartIds.length === 0) {
-      setChartPointsById({});
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    getChartPointsBatchApi(chartIds)
-      .then((data) => {
-        if (!cancelled) setChartPointsById(data);
-      })
-      .catch(() => {
-        if (!cancelled) setChartPointsById({});
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [blocks]);
-
-  return { chartPointsById, chartPointsLoading: loading };
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { createFinancialPlanApi } from "../api";
@@ -30,12 +30,14 @@ export function FinancialPlansPage() {
   const [openForm, setOpenForm] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("title");
+  const [sortBy, setSortBy] = useState("title_asc");
 
   const filteredPlans = useMemo(() => {
     const list = plans.filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()));
     list.sort((a, b) => {
-      if (sortBy === "title") return a.title.localeCompare(b.title);
+      if (sortBy === "title_asc") return a.title.localeCompare(b.title);
+      if (sortBy === "title_desc") return b.title.localeCompare(a.title);
+      if (sortBy === "created_at_asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return list;
@@ -99,15 +101,24 @@ export function FinancialPlansPage() {
             style={inputStyle(isDark)}
           />
         </div>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="rounded-xl border px-3 py-2 text-sm"
-          style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
-        >
-          <option value="title">По названию</option>
-          <option value="created_at">Сначала новые</option>
-        </select>
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-xl border px-3 py-2 pr-8 text-sm appearance-none cursor-pointer"
+            style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+          >
+            <option value="title_asc">По названию (А→Я)</option>
+            <option value="title_desc">По названию (Я→А)</option>
+            <option value="created_at_desc">Сначала новые</option>
+            <option value="created_at_asc">Сначала старые</option>
+          </select>
+          <ChevronDown
+            size={14}
+            className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: v("text-muted") }}
+          />
+        </div>
       </div>
 
       {loading ? (

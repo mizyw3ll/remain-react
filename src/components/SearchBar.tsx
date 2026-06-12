@@ -1,6 +1,17 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Loader2, Briefcase, Layout, FileText, Columns, DollarSign, TrendingUp, User } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  Briefcase,
+  Layout,
+  FileText,
+  Columns,
+  DollarSign,
+  TrendingUp,
+  User,
+  Calendar,
+} from "lucide-react";
 import { useSearchQuery } from "../hooks/useCachedData";
 import { inputStyle, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -37,7 +48,7 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   const hasResults = results && results.total > 0;
-  const showDropdown = debouncedQuery.length >= 2 && (isLoading || hasResults);
+  const showDropdown = debouncedQuery.length >= 1 && (isLoading || hasResults);
 
   function highlightText(text: string) {
     if (!debouncedQuery) return text;
@@ -292,6 +303,29 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
                       style={{ color: v("text-primary") }}
                     >
                       {highlightText(chart.title)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {results.tax_events.length > 0 && (
+                <div>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
+                    <Calendar size={12} />
+                    Налоговые события
+                  </div>
+                  {results.tax_events.map((event) => (
+                    <button
+                      key={`tax-event-${event.id}`}
+                      type="button"
+                      onClick={() => handleResultClick(`/tax-calendar?eventId=${event.id}`)}
+                      className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                      style={{ color: v("text-primary") }}
+                    >
+                      {highlightText(event.title)}
                     </button>
                   ))}
                 </div>

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
-import type { SettingsTab } from "../context/SettingsUiContext";
+import type { SettingsTab } from "../context/SettingsContext";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 
 type SidebarProps = {
@@ -45,7 +45,9 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
   return (
     <>
       <aside
-        className={`theme-sidebar fixed inset-y-0 left-0 z-50 w-[240px] border-r transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`theme-sidebar fixed inset-y-0 left-0 z-50 w-[240px] border-r transition-transform duration-300 ease-in-out ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
         style={{
           background: "var(--bg-sidebar)",
           borderColor: "var(--border-primary)",

@@ -1,10 +1,23 @@
 ﻿import { useState, useMemo, useEffect, useRef } from "react";
-import { Plus, Check, Clock, Pencil, Bell, BellOff } from "lucide-react";
+import {
+  Plus,
+  Check,
+  Clock,
+  Pencil,
+  Trash2,
+  Bell,
+  BellOff,
+  Search,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   createTaxEventApi,
   updateTaxEventApi,
+  deleteTaxEventApi,
   getPendingNotificationsApi,
   markNotifiedApi,
   createNotificationApi,
@@ -14,6 +27,7 @@ import { cardStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useTaxEventsQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
+import { ConfirmModal } from "../components/ConfirmModal";
 
 const EVENT_TYPES = [
   { value: "tax", label: "Налог" },
@@ -92,6 +106,11 @@ export function TaxCalendarPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<TaxEvent | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("event_date_asc");
+  const [page, setPage] = useState(1);
+  const perPage = 10;
+  const [deleteTarget, setDeleteTarget] = useState<TaxEvent | null>(null);
 
   const notifiedRef = useRef<Set<number>>(new Set());
 
@@ -119,15 +138,27 @@ export function TaxCalendarPage() {
   }, []);
 
   const upcomingEvents = useMemo(() => {
-    const now = new Date();
-    return events
-      .filter((e) => new Date(e.event_date) >= now && !e.is_completed)
-      .sort((a, b) => a.event_date.localeCompare(b.event_date));
+    return events.filter((e) => !e.is_completed).sort((a, b) => a.event_date.localeCompare(b.event_date));
   }, [events]);
 
   const completedEvents = useMemo(() => {
     return events.filter((e) => e.is_completed);
   }, [events]);
+
+  const filteredUpcoming = useMemo(() => {
+    const list = upcomingEvents.filter((e) => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    list.sort((a, b) => {
+      if (sortBy === "title_asc") return a.title.localeCompare(b.title);
+      if (sortBy === "title_desc") return b.title.localeCompare(a.title);
+      if (sortBy === "event_date_desc") return b.event_date.localeCompare(a.event_date);
+      return a.event_date.localeCompare(b.event_date);
+    });
+    return list;
+  }, [upcomingEvents, searchQuery, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUpcoming.length / perPage));
+  const safePage = Math.min(page, totalPages);
+  const paginatedUpcoming = filteredUpcoming.slice((safePage - 1) * perPage, safePage * perPage);
 
   function openNewForm() {
     setEditingEvent(null);
@@ -195,6 +226,19 @@ export function TaxCalendarPage() {
     }
   }
 
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteTaxEventApi(deleteTarget.id);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.taxEvents });
+      toast.success("Событие удалено");
+    } catch {
+      toast.error("Ошибка при удалении");
+    } finally {
+      setDeleteTarget(null);
+    }
+  }
+
   function getTypeLabel(type: string) {
     return EVENT_TYPES.find((t) => t.value === type)?.label || type;
   }
@@ -218,7 +262,9 @@ export function TaxCalendarPage() {
     return (
       <div
         key={event.id}
-        className={`flex items-center gap-3 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 ${isCompleted ? "opacity-50" : ""}`}
+        className={`flex items-center gap-3 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 ${
+          isCompleted ? "opacity-50" : ""
+        }`}
         style={{
           ...cardStyle("business", isDark),
           borderColor: isCompleted ? v("border-secondary") : v("border-primary"),
@@ -275,6 +321,20 @@ export function TaxCalendarPage() {
         >
           <Pencil size={16} />
         </button>
+        <button
+          type="button"
+          onClick={() => setDeleteTarget(event)}
+          className="p-1.5 rounded-lg transition-all duration-200 hover:scale-110"
+          style={{ color: v("text-secondary") }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#ef4444";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = v("text-secondary");
+          }}
+        >
+          <Trash2 size={16} />
+        </button>
       </div>
     );
   }
@@ -294,6 +354,48 @@ export function TaxCalendarPage() {
           <Plus size={16} />
           Добавить событие
         </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-xs">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: v("text-tertiary") }}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Поиск по названию..."
+            className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
+            style={inputStyle(isDark)}
+          />
+        </div>
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-xl border px-3 py-2 pr-8 text-sm appearance-none cursor-pointer"
+            style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+          >
+            <option value="event_date_asc">По дате (сначала старые)</option>
+            <option value="event_date_desc">По дате (сначала новые)</option>
+            <option value="title_asc">По названию (А→Я)</option>
+            <option value="title_desc">По названию (Я→А)</option>
+          </select>
+          <ChevronDown
+            size={14}
+            className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: v("text-muted") }}
+          />
+        </div>
       </div>
 
       {isLoading && (
@@ -317,19 +419,55 @@ export function TaxCalendarPage() {
         </div>
       )}
 
-      {upcomingEvents.length > 0 && (
+      {filteredUpcoming.length > 0 && (
         <div className="animate-fade-in">
           <h2 className="mb-3 text-lg font-semibold flex items-center gap-2" style={{ color: v("text-primary") }}>
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            Предстоящие
+            Предстоящие и прошедшие
           </h2>
           <div className="space-y-2">
-            {upcomingEvents.map((event, i) => (
+            {paginatedUpcoming.map((event, i) => (
               <div key={event.id} className={`animate-fade-in stagger-${(i % 6) + 1}`}>
                 {renderEventCard(event, false)}
               </div>
             ))}
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1 pt-4 pb-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="rounded-lg p-2 transition-colors disabled:opacity-30"
+                style={{ color: v("text-muted") }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm transition-all ${
+                    p === safePage ? "font-semibold shadow-sm" : "hover:bg-[var(--bg-hover)]"
+                  }`}
+                  style={{
+                    background: p === safePage ? v("bg-hover") : "transparent",
+                    color: p === safePage ? v("text-primary") : v("text-muted"),
+                    border: p === safePage ? `1px solid ${v("border-secondary")}` : "1px solid transparent",
+                  }}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="rounded-lg p-2 transition-colors disabled:opacity-30"
+                style={{ color: v("text-muted") }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -348,6 +486,14 @@ export function TaxCalendarPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Подтверждение удаления"
+        description={deleteTarget ? `Вы действительно хотите удалить событие "${deleteTarget.title}"?` : ""}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
+      />
 
       {openForm && (
         <div className="fixed inset-0 z-[90] grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>

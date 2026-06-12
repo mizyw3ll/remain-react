@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Pencil, Trash2, Download, Camera, Check, X, Loader2, FileText, Table, Share2, Link } from "lucide-react";
+import { Pencil, Trash2, Download, Camera, Check, X, Loader2, FileText, Table } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   createPlanBlockApi,
@@ -38,10 +38,6 @@ import {
   assignTagToPlanApi,
   unassignTagFromPlanApi,
   duplicateBlockApi,
-  enableSharingApi,
-  disableSharingApi,
-  getShareStatusApi,
-  type ShareStatus,
   type BusinessPlan,
   type BusinessPlanAnalytics,
   type PlanBlock,
@@ -53,7 +49,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { queryKeys } from "../lib/queryClient";
 import { BlockModal } from "../components/BlockModal";
 import { SortableBlock } from "../components/SortableBlock";
-import { useChartEmbedPoints } from "../components/BlockRenderer";
+import { useChartEmbedPoints } from "../hooks/useChartEmbedPoints";
 import { useFinancialPlansQuery } from "../hooks/useCachedData";
 import { ExpandableText } from "../components/ExpandableText";
 import { MarkdownPreview } from "../components/MarkdownPreview";
@@ -80,7 +76,11 @@ export function BusinessPlanDetailsPage() {
   const [blocks, setBlocks] = useState<PlanBlock[]>([]);
   const [analytics, setAnalytics] = useState<BusinessPlanAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: "plan" | "block"; id: number; title: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "plan" | "block" | "snapshot" | "comment";
+    id: number;
+    title: string;
+  } | null>(null);
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [planForm, setPlanForm] = useState({ title: "", description: "" });
   const location = useLocation();
@@ -141,11 +141,6 @@ export function BusinessPlanDetailsPage() {
 
   // Export format selection
   const [exportFormatOpen, setExportFormatOpen] = useState(false);
-
-  // Share
-  const [shareOpen, setShareOpen] = useState(false);
-  const [shareStatus, setShareStatus] = useState<ShareStatus | null>(null);
-  const [shareLoading, setShareLoading] = useState(false);
 
   const isEditingBlock = editingBlockId !== null;
   const { chartPointsById, chartPointsLoading } = useChartEmbedPoints(blocks);
@@ -382,10 +377,18 @@ export function BusinessPlanDetailsPage() {
         toast.success(ru.toasts.planDeleted);
         await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
         navigate("/business-plans");
-      } else {
+      } else if (deleteTarget.type === "block") {
         await deletePlanBlockApi(planId, deleteTarget.id);
         toast.success(ru.toasts.blockDeleted);
         await refreshBlocks();
+      } else if (deleteTarget.type === "snapshot") {
+        await deleteSnapshotApi(planId, deleteTarget.id);
+        toast.success(ru.toasts.snapshotDeleted);
+        await loadSnapshots();
+      } else {
+        await deleteCommentApi(planId, commentBlockId!, deleteTarget.id);
+        toast.success(ru.toasts.commentDeleteError);
+        await loadComments(commentBlockId!);
       }
     } catch {
       toast.error(ru.toasts.deleteError);
@@ -428,57 +431,6 @@ export function BusinessPlanDetailsPage() {
       }
       return { ...prev, [field]: value };
     });
-  }
-
-  async function handleEnableSharing() {
-    if (!planId) return;
-    try {
-      setShareLoading(true);
-      const status = await enableSharingApi(planId);
-      setShareStatus(status);
-      toast.success(ru.share.enabled);
-    } catch {
-      toast.error("Не удалось включить доступ");
-    } finally {
-      setShareLoading(false);
-    }
-  }
-
-  async function handleDisableSharing() {
-    if (!planId) return;
-    try {
-      setShareLoading(true);
-      await disableSharingApi(planId);
-      setShareStatus(null);
-      toast.success(ru.share.disabled);
-    } catch {
-      toast.error("Не удалось отключить доступ");
-    } finally {
-      setShareLoading(false);
-    }
-  }
-
-  async function loadShareStatus() {
-    if (!planId) return;
-    try {
-      const status = await getShareStatusApi(planId);
-      setShareStatus(status);
-    } catch {
-      // share not enabled
-    }
-  }
-
-  function handleCopyShareLink() {
-    if (!shareStatus?.share_token) return;
-    const url = `${window.location.origin}/shared/${shareStatus.share_token}`;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => {
-        toast.success(ru.share.copied);
-      })
-      .catch(() => {
-        toast.error("Не удалось скопировать ссылку");
-      });
   }
 
   async function handleExportPlan(format: "html" | "xlsx" | "csv" | "pdf" = "html") {
@@ -529,15 +481,8 @@ export function BusinessPlanDetailsPage() {
     }
   }
 
-  async function handleDeleteSnapshot(snapshotId: number) {
-    if (!planId) return;
-    try {
-      await deleteSnapshotApi(planId, snapshotId);
-      toast.success(ru.toasts.snapshotDeleted);
-      await loadSnapshots();
-    } catch {
-      toast.error(ru.toasts.snapshotDeleteError);
-    }
+  async function handleDeleteSnapshot(snapshotId: number, title: string) {
+    setDeleteTarget({ type: "snapshot", id: snapshotId, title });
   }
 
   async function handleRestoreSnapshot(snapshotId: number) {
@@ -597,14 +542,8 @@ export function BusinessPlanDetailsPage() {
     }
   }
 
-  async function handleDeleteComment(commentId: number) {
-    if (!planId || !commentBlockId) return;
-    try {
-      await deleteCommentApi(planId, commentBlockId, commentId);
-      await loadComments(commentBlockId);
-    } catch {
-      toast.error(ru.toasts.commentDeleteError);
-    }
+  async function handleDeleteComment(commentId: number, commentContent: string) {
+    setDeleteTarget({ type: "comment", id: commentId, title: commentContent.slice(0, 50) });
   }
 
   if (loading) return <div className="h-48 animate-pulse rounded-2xl" style={{ background: v("bg-hover") }} />;
@@ -622,7 +561,7 @@ export function BusinessPlanDetailsPage() {
         <div className="space-y-3">
           {/* Title row with buttons */}
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="flex-1 min-w-0">
               {isEditingPlan ? (
                 <input
                   className={tw.inputBase}
@@ -634,7 +573,7 @@ export function BusinessPlanDetailsPage() {
                 <ExpandableText text={plan.title} fontSize="text-2xl" fontWeight="font-semibold" color="text-primary" />
               )}
             </div>
-            <div className="shrink-0 flex flex-wrap gap-2">
+            <div className="shrink-0 flex flex-wrap gap-2 max-sm:w-full max-sm:justify-end">
               {isEditingPlan ? (
                 <>
                   <button className={tw.buttonPrimary} onClick={() => void savePlan()}>
@@ -738,23 +677,6 @@ export function BusinessPlanDetailsPage() {
                       </div>
                     )}
                   </div>
-                  <button
-                    className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
-                    style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = v("bg-hover");
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                    onClick={() => {
-                      setShareOpen(true);
-                      void loadShareStatus();
-                    }}
-                  >
-                    <Share2 size={16} />
-                    <span className="hidden sm:inline">{ru.share.share}</span>
-                  </button>
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
@@ -981,7 +903,15 @@ export function BusinessPlanDetailsPage() {
         title="Подтверждение удаления"
         description={
           deleteTarget
-            ? `Вы действительно хотите удалить ${deleteTarget.type === "plan" ? "бизнес-план" : "блок"} "${deleteTarget.title}"?`
+            ? `Вы действительно хотите удалить ${
+                deleteTarget.type === "plan"
+                  ? "бизнес-план"
+                  : deleteTarget.type === "block"
+                    ? "блок"
+                    : deleteTarget.type === "snapshot"
+                      ? "снимок"
+                      : "комментарий"
+              } "${deleteTarget.title}"?`
             : ""
         }
         onCancel={() => setDeleteTarget(null)}
@@ -1049,7 +979,7 @@ export function BusinessPlanDetailsPage() {
                       className="flex items-center justify-between rounded-xl border p-3"
                       style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
                     >
-                      <div className="min-w-0">
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium" style={{ color: v("text-primary") }}>
                           {s.title}
                         </p>
@@ -1073,7 +1003,7 @@ export function BusinessPlanDetailsPage() {
                         <button
                           className="rounded-lg border px-3 py-1 text-xs"
                           style={buttonStyle("danger", isDark)}
-                          onClick={() => void handleDeleteSnapshot(s.id)}
+                          onClick={() => void handleDeleteSnapshot(s.id, s.title)}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -1088,93 +1018,6 @@ export function BusinessPlanDetailsPage() {
                 className={tw.buttonSecondary}
                 style={buttonStyle("secondary", isDark)}
                 onClick={() => setSnapshotsOpen(false)}
-              >
-                {ru.modals.close}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {shareOpen && (
-        <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div
-            className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-md sm:p-5"
-            style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
-                {ru.share.share}
-              </h3>
-              <button
-                onClick={() => setShareOpen(false)}
-                className="rounded-lg p-1 transition-colors"
-                style={{ color: v("text-secondary") }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = v("bg-hover");
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="mt-4 space-y-4">
-              {shareStatus?.is_public ? (
-                <>
-                  <div
-                    className="flex items-center gap-2 rounded-xl border p-3"
-                    style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
-                  >
-                    <Link size={16} style={{ color: v("text-muted") }} />
-                    <input
-                      className="flex-1 bg-transparent text-sm outline-none"
-                      style={{ color: v("text-primary") }}
-                      value={`${window.location.origin}/shared/${shareStatus.share_token}`}
-                      readOnly
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      className="flex-1 rounded-lg border px-3 py-2 text-sm transition-colors"
-                      style={buttonStyle("primary", isDark)}
-                      onClick={handleCopyShareLink}
-                    >
-                      {ru.share.copy}
-                    </button>
-                    <button
-                      className="rounded-lg border px-3 py-2 text-sm transition-colors"
-                      style={buttonStyle("danger", isDark)}
-                      onClick={() => void handleDisableSharing()}
-                      disabled={shareLoading}
-                    >
-                      {shareLoading ? <Loader2 size={16} className="animate-spin" /> : ru.share.disable}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div>
-                  <p className="text-sm" style={{ color: v("text-secondary") }}>
-                    Доступ по ссылке выключен. Включите его, чтобы поделиться планом с другими.
-                  </p>
-                  <button
-                    className="mt-3 w-full rounded-lg border px-3 py-2 text-sm transition-colors"
-                    style={buttonStyle("primary", isDark)}
-                    onClick={() => void handleEnableSharing()}
-                    disabled={shareLoading}
-                  >
-                    {shareLoading ? <Loader2 size={16} className="animate-spin" /> : ru.share.enable}
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                className={tw.buttonSecondary}
-                style={buttonStyle("secondary", isDark)}
-                onClick={() => setShareOpen(false)}
               >
                 {ru.modals.close}
               </button>
@@ -1273,7 +1116,7 @@ export function BusinessPlanDetailsPage() {
                         <button
                           className="rounded-md border px-2 py-0.5 text-xs"
                           style={buttonStyle("danger", isDark)}
-                          onClick={() => void handleDeleteComment(c.id)}
+                          onClick={() => void handleDeleteComment(c.id, c.content)}
                         >
                           <Trash2 size={12} />
                         </button>

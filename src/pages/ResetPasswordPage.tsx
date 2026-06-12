@@ -42,8 +42,10 @@ export function ResetPasswordPage() {
       await resetPassword(token, password);
       setDone(true);
       toast.success("Пароль успешно изменен!");
-    } catch (err: any) {
-      const detail = err.response?.data?.detail || "Не удалось сменить пароль. Ссылка устарела.";
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+        "Не удалось сменить пароль. Ссылка устарела.";
       setError(detail);
       toast.error("Ошибка сброса пароля");
     } finally {

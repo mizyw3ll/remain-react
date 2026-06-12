@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Download, Trash2, Pencil, Bell, BellOff, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Download,
+  Trash2,
+  Pencil,
+  Bell,
+  BellOff,
+  Search,
+  ChevronDown,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import {
   getCalendarEventsApi,
@@ -14,6 +25,7 @@ import {
 } from "../api";
 import { buttonStyle, inputStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
+import { ConfirmModal } from "../components/ConfirmModal";
 
 const MONTHS = [
   "Январь",
@@ -138,12 +150,15 @@ export function CalendarPage() {
   const [editDesc, setEditDesc] = useState("");
   const [editNotify, setEditNotify] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("event_date");
+  const [sortBy, setSortBy] = useState("event_date_asc");
+  const [deleteTarget, setDeleteTarget] = useState<CalendarEvent | null>(null);
 
   const filteredEvents = useMemo(() => {
     const list = events.filter((e) => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
     list.sort((a, b) => {
-      if (sortBy === "title") return a.title.localeCompare(b.title);
+      if (sortBy === "title_asc") return a.title.localeCompare(b.title);
+      if (sortBy === "title_desc") return b.title.localeCompare(a.title);
+      if (sortBy === "event_date_desc") return new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
       return new Date(a.event_date).getTime() - new Date(b.event_date).getTime();
     });
     return list;
@@ -278,13 +293,16 @@ export function CalendarPage() {
     }
   }
 
-  async function handleDelete(eventId: number) {
+  async function confirmDelete() {
+    if (!deleteTarget) return;
     try {
-      await deleteCalendarEventApi(eventId);
+      await deleteCalendarEventApi(deleteTarget.id);
       toast.success("Событие удалено");
       await fetchEvents();
     } catch {
       toast.error("Ошибка удаления события");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -438,7 +456,7 @@ export function CalendarPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              void handleDelete(ev.id);
+                              setDeleteTarget(ev);
                             }}
                             className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all duration-200 hover:bg-red-500/10 shrink-0"
                             style={{ color: "#ef4444" }}
@@ -492,15 +510,24 @@ export function CalendarPage() {
               style={inputStyle(isDark)}
             />
           </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="rounded-xl border px-3 py-2 text-sm"
-            style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
-          >
-            <option value="event_date">По дате</option>
-            <option value="title">По названию</option>
-          </select>
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-xl border px-3 py-2 pr-8 text-sm appearance-none cursor-pointer"
+              style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+            >
+              <option value="event_date_asc">По дате (сначала старые)</option>
+              <option value="event_date_desc">По дате (сначала новые)</option>
+              <option value="title_asc">По названию (А→Я)</option>
+              <option value="title_desc">По названию (Я→А)</option>
+            </select>
+            <ChevronDown
+              size={14}
+              className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: v("text-muted") }}
+            />
+          </div>
         </div>
         {events.length === 0 ? (
           <p className="text-sm" style={{ color: v("text-muted") }}>
@@ -565,7 +592,7 @@ export function CalendarPage() {
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => void handleDelete(ev.id)}
+                      onClick={() => setDeleteTarget(ev)}
                       className="p-1.5 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-sm"
                       style={{ color: v("text-secondary") }}
                       onMouseEnter={(e) => {
@@ -584,6 +611,14 @@ export function CalendarPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Подтверждение удаления"
+        description={deleteTarget ? `Вы действительно хотите удалить событие "${deleteTarget.title}"?` : ""}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
+      />
 
       {/* Create modal */}
       {showCreate && (

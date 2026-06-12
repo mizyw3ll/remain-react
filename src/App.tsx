@@ -16,7 +16,6 @@ import { CrmPage } from "./pages/CrmPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
-import { SharedPlanPage } from "./pages/SharedPlanPage";
 
 const BusinessPlanDetailsPage = lazy(() =>
   import("./pages/BusinessPlanDetailsPage").then((m) => ({ default: m.BusinessPlanDetailsPage })),
@@ -34,7 +33,6 @@ function App() {
         <Route path="/" element={<HomePage onOpenAuth={() => setAuthModalOpen(true)} />} />
         <Route path="/verify" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/shared/:token" element={<SharedPlanPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/business-plans" element={<BusinessPlansPage />} />
           <Route

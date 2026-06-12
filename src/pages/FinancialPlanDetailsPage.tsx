@@ -356,7 +356,7 @@ export function FinancialPlanDetailsPage() {
         <div className="space-y-3">
           {/* Title row with buttons */}
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="flex-1 min-w-0">
               {isEditingChart ? (
                 <input
                   className={tw.inputBase}
@@ -373,7 +373,7 @@ export function FinancialPlanDetailsPage() {
                 />
               )}
             </div>
-            <div className="shrink-0 flex flex-wrap gap-2">
+            <div className="shrink-0 flex flex-wrap gap-2 max-sm:w-full max-sm:justify-end">
               <button
                 className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                 style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
@@ -772,7 +772,7 @@ export function FinancialPlanDetailsPage() {
                   e.currentTarget.style.borderColor = v("border-primary");
                 }}
               >
-                <div className="min-w-0">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm" style={{ color: v("text-secondary") }}>
                     {new Date(point.date).toLocaleString()}
                   </p>
@@ -836,7 +836,9 @@ export function FinancialPlanDetailsPage() {
         title="Подтверждение удаления"
         description={
           deleteTarget
-            ? `Вы действительно хотите удалить ${deleteTarget.type === "chart" ? "финансовый график" : "точку"} "${deleteTarget.title}"?`
+            ? `Вы действительно хотите удалить ${deleteTarget.type === "chart" ? "финансовый график" : "точку"} "${
+                deleteTarget.title
+              }"?`
             : ""
         }
         onCancel={() => setDeleteTarget(null)}

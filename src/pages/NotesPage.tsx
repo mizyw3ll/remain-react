@@ -1,7 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Folder, Trash2, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, Search } from "lucide-react";
+import {
+  Plus,
+  Folder,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  PanelLeftClose,
+  PanelLeft,
+  Search,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import {
   createNoteApi,
@@ -20,6 +30,7 @@ import { TagChip } from "../components/TagChip";
 import { MarkdownPreview } from "../components/MarkdownPreview";
 import { buttonStyle, inputStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
+import { ConfirmModal } from "../components/ConfirmModal";
 
 const PROJECT_COLORS = [
   "border-l-red-500",
@@ -42,10 +53,41 @@ export function NotesPage() {
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarAnimated, setSidebarAnimated] = useState(false);
+  useEffect(() => {
+    setSidebarAnimated(true); // eslint-disable-line react-hooks/set-state-in-effect
+  }, []);
+  const [searchParams] = useSearchParams();
+  const noteIdParam = searchParams.get("noteId");
+
+  const [calcPerPage, setCalcPerPage] = useState(() =>
+    Math.max(5, Math.min(10, Math.floor((window.innerHeight - 280) / 110))),
+  );
+  useEffect(() => {
+    function updatePerPage() {
+      setCalcPerPage(Math.max(5, Math.min(10, Math.floor((window.innerHeight - 280) / 110))));
+    }
+    updatePerPage();
+    window.addEventListener("resize", updatePerPage);
+    return () => window.removeEventListener("resize", updatePerPage);
+  }, []);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("updated_at_desc");
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "note" | "project"; id: number; title: string } | null>(
+    null,
+  );
+
+  const effectivePerPage = searchQuery || noteIdParam ? 100 : calcPerPage;
 
   const tagIdsParam = selectedTagId ? String(selectedTagId) : undefined;
-  const { data: notesData, isLoading: notesLoading } = useNotesQuery(selectedProject, tagIdsParam, page);
+  const { data: notesData, isLoading: notesLoading } = useNotesQuery(
+    selectedProject,
+    tagIdsParam,
+    page,
+    effectivePerPage,
+  );
   const notes = useMemo(() => notesData?.items ?? [], [notesData]);
   const totalNotes = notesData?.total ?? 0;
   const perPage = notesData?.per_page ?? 10;
@@ -76,11 +118,9 @@ export function NotesPage() {
   const [noteContent, setNoteContent] = useState("");
   const [noteProjectId, setNoteProjectId] = useState<number | null>(null);
   const [noteTags, setNoteTags] = useState<Tag[]>([]);
-  const [searchParams] = useSearchParams();
 
   // Open note from search result
   useEffect(() => {
-    const noteIdParam = searchParams.get("noteId");
     if (!noteIdParam || !notes.length || loading) return;
     const target = notes.find((n) => n.id === Number(noteIdParam));
     if (target) {
@@ -91,7 +131,7 @@ export function NotesPage() {
       setNoteTags(target.tags ?? []);
       setEditorOpen(true);
     }
-  }, [searchParams, notes, loading]);
+  }, [noteIdParam, notes, loading]);
 
   // Project create
   const [projectInput, setProjectInput] = useState("");
@@ -160,13 +200,7 @@ export function NotesPage() {
   }
 
   async function handleDeleteNote(note: Note) {
-    try {
-      await deleteNoteApi(note.id);
-      toast.success("Заметка удалена");
-      await refreshNotes();
-    } catch {
-      toast.error("Ошибка удаления заметки");
-    }
+    setDeleteTarget({ type: "note", id: note.id, title: note.title });
   }
 
   async function handleCreateProject() {
@@ -182,24 +216,37 @@ export function NotesPage() {
   }
 
   async function handleDeleteProject(project: Project) {
-    try {
-      await deleteProjectApi(project.id);
-      toast.success("Проект удалён");
-      if (selectedProject === project.id) setSelectedProject(null);
-      await Promise.all([refreshProjects(), refreshNotes()]);
-    } catch {
-      toast.error("Ошибка удаления проекта");
-    }
+    setDeleteTarget({ type: "project", id: project.id, title: project.name });
   }
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("updated_at");
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === "note") {
+        await deleteNoteApi(deleteTarget.id);
+        toast.success("Заметка удалена");
+        await refreshNotes();
+      } else {
+        await deleteProjectApi(deleteTarget.id);
+        toast.success("Проект удалён");
+        if (selectedProject === deleteTarget.id) setSelectedProject(null);
+        await Promise.all([refreshProjects(), refreshNotes()]);
+      }
+    } catch {
+      toast.error(deleteTarget.type === "note" ? "Ошибка удаления заметки" : "Ошибка удаления проекта");
+    } finally {
+      setDeleteTarget(null);
+    }
+  }
 
   const filteredNotes = useMemo(() => {
     const list = notes.filter((n) => n.title.toLowerCase().includes(searchQuery.toLowerCase()));
     list.sort((a, b) => {
-      if (sortBy === "title") return a.title.localeCompare(b.title);
-      if (sortBy === "created_at") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === "title_asc") return a.title.localeCompare(b.title);
+      if (sortBy === "title_desc") return b.title.localeCompare(a.title);
+      if (sortBy === "created_at_asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortBy === "created_at_desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === "updated_at_asc") return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
     return list;
@@ -224,7 +271,7 @@ export function NotesPage() {
         className={`
           shrink-0 rounded-2xl border overflow-y-auto
           fixed inset-y-0 left-0 z-40 w-64 p-4 shadow-2xl
-          transition-all duration-300 ease-out
+          ${sidebarAnimated ? "transition-all duration-300 ease-out" : ""}
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:static lg:z-auto lg:shadow-none lg:translate-x-0
           ${sidebarOpen ? "lg:w-64 lg:p-4" : "lg:w-10 lg:p-2"}
@@ -328,22 +375,20 @@ export function NotesPage() {
         )}
       </div>
 
-      {/* Floating sidebar toggle for mobile */}
-      {!sidebarOpen && (
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-          className="lg:hidden fixed bottom-4 left-4 z-30 grid h-9 w-9 place-items-center rounded-full border shadow-lg"
-          style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}
-        >
-          <PanelLeft size={16} />
-        </button>
-      )}
-
       {/* Main content */}
       <div className="flex-1 space-y-3 overflow-y-auto">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold" style={{ color: v("text-primary") }}>
+          <h1 className="text-xl font-semibold flex items-center gap-2" style={{ color: v("text-primary") }}>
+            {!sidebarOpen && (
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="grid h-8 w-8 place-items-center rounded-lg border transition-colors hover:bg-[var(--bg-hover)]"
+                style={{ borderColor: v("border-primary") }}
+              >
+                <PanelLeft size={16} />
+              </button>
+            )}
             {currentProject ? currentProject.name : "Все заметки"}
             {selectedTagId && allTags.find((t) => t.id === selectedTagId) && (
               <span className="ml-2 text-sm font-normal" style={{ color: v("text-muted") }}>
@@ -377,16 +422,24 @@ export function NotesPage() {
               style={inputStyle(isDark)}
             />
           </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="rounded-xl border px-3 py-2 text-sm"
-            style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
-          >
-            <option value="updated_at">Сначала новые</option>
-            <option value="title">По названию</option>
-            <option value="created_at">По дате создания</option>
-          </select>
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-xl border px-3 py-2 pr-8 text-sm appearance-none cursor-pointer"
+              style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+            >
+              <option value="updated_at_desc">Сначала новые</option>
+              <option value="updated_at_asc">Сначала старые</option>
+              <option value="title_asc">По названию (А→Я)</option>
+              <option value="title_desc">По названию (Я→А)</option>
+            </select>
+            <ChevronDown
+              size={14}
+              className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: v("text-muted") }}
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -503,6 +556,20 @@ export function NotesPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Подтверждение удаления"
+        description={
+          deleteTarget
+            ? `Вы действительно хотите удалить ${deleteTarget.type === "note" ? "заметку" : "проект"} "${
+                deleteTarget.title
+              }"?`
+            : ""
+        }
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
+      />
 
       {/* Editor Modal */}
       {editorOpen && (

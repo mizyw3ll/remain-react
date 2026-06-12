@@ -12,7 +12,7 @@ export function VerifyEmailPage() {
   useEffect(() => {
     const token = searchParams.get("token");
     if (!token) {
-      setStatus("error");
+      setStatus("error"); // eslint-disable-line react-hooks/set-state-in-effect
       setMessage("Ссылка не содержит токен верификации.");
       return;
     }

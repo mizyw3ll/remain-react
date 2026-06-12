@@ -21,23 +21,21 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  async function fetchUnread() {
-    try {
-      const { count } = await getUnreadCountApi();
-      setUnread(count);
-    } catch {}
+  function pollUnread() {
+    getUnreadCountApi()
+      .then(({ count }) => setUnread(count))
+      .catch(() => {});
   }
 
-  async function fetchNotifs() {
-    try {
-      const data = await getNotificationsApi();
-      setNotifs(data);
-    } catch {}
+  function fetchNotifs() {
+    getNotificationsApi()
+      .then((data) => setNotifs(data))
+      .catch(() => {});
   }
 
   useEffect(() => {
-    void fetchUnread();
-    pollingRef.current = setInterval(() => void fetchUnread(), 15000);
+    pollUnread();
+    pollingRef.current = setInterval(pollUnread, 15000);
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };

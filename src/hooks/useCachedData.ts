@@ -67,15 +67,15 @@ export function useProjectsQuery() {
   });
 }
 
-export function useNotesQuery(projectId?: number | null, tagIds?: string, page?: number) {
+export function useNotesQuery(projectId?: number | null, tagIds?: string, page?: number, perPage?: number) {
   return useQuery({
-    queryKey: queryKeys.notes(projectId, tagIds, page),
+    queryKey: queryKeys.notes(projectId, tagIds, page, perPage),
     queryFn: () =>
       getNotesApi({
         project_id: projectId ?? undefined,
         tag_ids: tagIds,
         page: page ?? 1,
-        per_page: 10,
+        per_page: perPage ?? 10,
       }),
     staleTime: 30 * 1000,
   });
@@ -93,7 +93,7 @@ export function useSearchQuery(query: string) {
   return useQuery({
     queryKey: queryKeys.search(query),
     queryFn: () => searchApi(query),
-    enabled: query.length >= 2,
+    enabled: query.length >= 1,
     staleTime: 10 * 1000,
   });
 }

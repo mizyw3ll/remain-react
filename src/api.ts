@@ -396,31 +396,6 @@ export async function exportFinancialChartApi(chartId: number, format: "xlsx" | 
   return response.data as Blob;
 }
 
-export type ShareStatus = {
-  share_token: string | null;
-  share_url: string | null;
-  is_public: boolean;
-};
-
-export async function enableSharingApi(planId: number) {
-  const { data } = await api.post<ShareStatus>(`/business/plans/${planId}/share/enable`);
-  return data;
-}
-
-export async function disableSharingApi(planId: number) {
-  await api.delete(`/business/plans/${planId}/share/disable`);
-}
-
-export async function getShareStatusApi(planId: number) {
-  const { data } = await api.get<ShareStatus>(`/business/plans/${planId}/share`);
-  return data;
-}
-
-export async function getSharedPlanApi(shareToken: string) {
-  const { data } = await api.get<BusinessPlan>(`/business/shared/${shareToken}`);
-  return data;
-}
-
 export async function exportBusinessPlanApi(planId: number, format: "html" | "xlsx" | "csv" | "pdf" = "html") {
   const response = await api.get(`/business/plans/${planId}/export`, {
     params: { format },
@@ -829,6 +804,12 @@ export type SearchFinancialChartResult = {
   type: "financial_chart";
 };
 
+export type SearchTaxEventResult = {
+  id: number;
+  title: string;
+  type: "tax_event";
+};
+
 export type SearchResults = {
   plans: SearchPlanResult[];
   blocks: SearchBlockResult[];
@@ -838,6 +819,7 @@ export type SearchResults = {
   contacts: SearchContactResult[];
   deals: SearchDealResult[];
   financial_charts: SearchFinancialChartResult[];
+  tax_events: SearchTaxEventResult[];
   total: number;
 };
 

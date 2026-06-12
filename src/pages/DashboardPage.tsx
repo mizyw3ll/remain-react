@@ -1,24 +1,11 @@
 ﻿import { Link } from "react-router-dom";
-import {
-  ScrollText,
-  PiggyBank,
-  FileText,
-  BarChart3,
-  Plus,
-  ArrowRight,
-  TrendingUp,
-  Calendar,
-  LayoutGrid,
-  Users,
-} from "lucide-react";
+import { ScrollText, PiggyBank, FileText, BarChart3, Plus, ArrowRight, TrendingUp, Calendar } from "lucide-react";
 import { v } from "../shared/theme";
-import { useTheme } from "../features/theme/ThemeContext";
 import { useDashboardQuery } from "../hooks/useCachedData";
 import { AnimatedCounter } from "../shared/components/AnimatedCounter";
 import { GlassCard } from "../shared/components/GlassCard";
 
 export function DashboardPage() {
-  const { theme: _theme } = useTheme();
   const { data: dashboard, isLoading } = useDashboardQuery();
 
   if (isLoading) {
@@ -138,7 +125,9 @@ export function DashboardPage() {
                   <Link
                     key={plan.id}
                     to={`/business-plans/${plan.id}`}
-                    className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 animate-fade-in stagger-${i + 1}`}
+                    className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 animate-fade-in stagger-${
+                      i + 1
+                    }`}
                     style={{ background: v("bg-card"), borderColor: v("border-primary") }}
                   >
                     <div className="flex items-start justify-between">
@@ -198,7 +187,9 @@ export function DashboardPage() {
                   <Link
                     key={chart.id}
                     to={`/financial-plans/${chart.id}`}
-                    className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-500/30 animate-fade-in stagger-${i + 1}`}
+                    className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-500/30 animate-fade-in stagger-${
+                      i + 1
+                    }`}
                     style={{ background: v("bg-card"), borderColor: v("border-primary") }}
                   >
                     <div className="flex items-start justify-between">
@@ -257,7 +248,9 @@ export function DashboardPage() {
                 <Link
                   key={note.id}
                   to="/notes"
-                  className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-amber-500/30 animate-fade-in stagger-${i + 1}`}
+                  className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-amber-500/30 animate-fade-in stagger-${
+                    i + 1
+                  }`}
                   style={{ background: v("bg-card"), borderColor: v("border-primary") }}
                 >
                   <div className="flex items-start justify-between">

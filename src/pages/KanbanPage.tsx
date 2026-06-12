@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Trash2, GripVertical, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Plus, Trash2, GripVertical, Pencil, ChevronLeft, ChevronRight, Search, ChevronDown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -32,6 +32,7 @@ import { GlassCard } from "../shared/components/GlassCard";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useKanbanBoardsQuery, useKanbanBoardQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
+import { ConfirmModal } from "../components/ConfirmModal";
 
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace("#", "");
@@ -49,7 +50,7 @@ function SortableCard({
 }: {
   card: BoardCard;
   columnColor?: string;
-  onDelete: (id: number) => void;
+  onDelete: (card: BoardCard) => void;
   onEdit: (card: BoardCard) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -102,7 +103,7 @@ function SortableCard({
         </button>
         <button
           type="button"
-          onClick={() => onDelete(card.id)}
+          onClick={() => onDelete(card)}
           className="p-1 rounded-lg transition-colors hover:bg-red-500/10"
           style={{ color: v("text-muted") }}
         >
@@ -144,7 +145,7 @@ function KanbanColumn({
 }: {
   column: BoardColumn;
   onAddCard: (columnId: number, title: string) => void;
-  onDeleteCard: (id: number) => void;
+  onDeleteCard: (card: BoardCard) => void;
   onEditCard: (card: BoardCard) => void;
 }) {
   const { theme } = useTheme();
@@ -277,6 +278,21 @@ export function KanbanPage() {
     window.addEventListener("resize", updateCols);
     return () => window.removeEventListener("resize", updateCols);
   }, []);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("created_at_desc");
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "board" | "card"; id: number; title: string } | null>(null);
+
+  const filteredBoards = useMemo(() => {
+    const list = boards.filter((b) => b.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    list.sort((a, b) => {
+      if (sortBy === "title_asc") return a.title.localeCompare(b.title);
+      if (sortBy === "title_desc") return b.title.localeCompare(a.title);
+      if (sortBy === "created_at_asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return list;
+  }, [boards, searchQuery, sortBy]);
+
   const boardsPerPage = cols * 4;
   const [boardPage, setBoardPage] = useState(1);
   const totalBoardPages = Math.max(1, Math.ceil(filteredBoards.length / boardsPerPage));
@@ -314,7 +330,7 @@ export function KanbanPage() {
   useEffect(() => {
     const boardIdParam = searchParams.get("boardId");
     if (boardIdParam) {
-      setSelectedBoardId(Number(boardIdParam));
+      setSelectedBoardId(Number(boardIdParam)); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [searchParams]);
   useEffect(() => {
@@ -323,25 +339,13 @@ export function KanbanPage() {
     for (const col of board.columns) {
       const found = col.cards.find((c) => c.id === Number(cardIdParam));
       if (found) {
-        setEditCard(found);
+        setEditCard(found); // eslint-disable-line react-hooks/set-state-in-effect
         setEditTitle(found.title);
         setEditDesc(found.description ?? "");
         break;
       }
     }
   }, [searchParams, board]);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("created_at");
-
-  const filteredBoards = useMemo(() => {
-    const list = boards.filter((b) => b.title.toLowerCase().includes(searchQuery.toLowerCase()));
-    list.sort((a, b) => {
-      if (sortBy === "title") return a.title.localeCompare(b.title);
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-    return list;
-  }, [boards, searchQuery, sortBy]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -371,18 +375,6 @@ export function KanbanPage() {
     }
   }
 
-  async function handleDeleteBoard(id: number) {
-    if (!confirm("Удалить доску? Все колонки и карточки будут удалены.")) return;
-    try {
-      await deleteBoardApi(id);
-      toast.success("Доска удалена");
-      if (selectedBoardId === id) setSelectedBoardId(null);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.kanbanBoards });
-    } catch {
-      toast.error("Ошибка при удалении доски");
-    }
-  }
-
   async function handleAddCard(columnId: number, title: string) {
     try {
       await createCardApi(columnId, { title });
@@ -392,12 +384,22 @@ export function KanbanPage() {
     }
   }
 
-  async function handleDeleteCard(cardId: number) {
+  async function confirmDelete() {
+    if (!deleteTarget) return;
     try {
-      await deleteCardApi(cardId);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.kanbanBoard(selectedBoardId!) });
+      if (deleteTarget.type === "board") {
+        await deleteBoardApi(deleteTarget.id);
+        toast.success("Доска удалена");
+        if (selectedBoardId === deleteTarget.id) setSelectedBoardId(null);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.kanbanBoards });
+      } else {
+        await deleteCardApi(deleteTarget.id);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.kanbanBoard(selectedBoardId!) });
+      }
     } catch {
-      toast.error("Ошибка");
+      toast.error("Ошибка при удалении");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -528,15 +530,24 @@ export function KanbanPage() {
             style={inputStyle(isDark)}
           />
         </div>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="rounded-xl border px-3 py-2 text-sm"
-          style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
-        >
-          <option value="created_at">Сначала новые</option>
-          <option value="title">По названию</option>
-        </select>
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-xl border px-3 py-2 pr-8 text-sm appearance-none cursor-pointer"
+            style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+          >
+            <option value="created_at_desc">Сначала новые</option>
+            <option value="created_at_asc">Сначала старые</option>
+            <option value="title_asc">По названию (А→Я)</option>
+            <option value="title_desc">По названию (Я→А)</option>
+          </select>
+          <ChevronDown
+            size={14}
+            className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: v("text-muted") }}
+          />
+        </div>
       </div>
 
       {boards.length === 0 && !showCreateBoard && (
@@ -683,7 +694,7 @@ export function KanbanPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      void handleDeleteBoard(b.id);
+                      setDeleteTarget({ type: "board", id: b.id, title: b.title });
                     }}
                     className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
                     style={{ color: v("text-muted") }}
@@ -763,7 +774,7 @@ export function KanbanPage() {
                   key={column.id}
                   column={column}
                   onAddCard={handleAddCard}
-                  onDeleteCard={handleDeleteCard}
+                  onDeleteCard={(card) => setDeleteTarget({ type: "card", id: card.id, title: card.title })}
                   onEditCard={openEditCard}
                 />
               ))}
@@ -772,6 +783,20 @@ export function KanbanPage() {
           <DragOverlay>{activeCard ? <CardOverlay card={activeCard} /> : null}</DragOverlay>
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Подтверждение удаления"
+        description={
+          deleteTarget
+            ? `Вы действительно хотите удалить ${deleteTarget.type === "board" ? "доску" : "карточку"} "${
+                deleteTarget.title
+              }"?`
+            : ""
+        }
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
+      />
 
       {/* Edit Card Modal */}
       {editCard && (

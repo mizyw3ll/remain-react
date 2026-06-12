@@ -1,5 +1,5 @@
 ﻿import { useSearchParams, Link } from "react-router-dom";
-import { ScrollText, FileText, Loader2, Columns, Layout, User, DollarSign, TrendingUp, Users } from "lucide-react";
+import { ScrollText, FileText, Loader2, Columns, Layout, User, DollarSign, TrendingUp, Calendar } from "lucide-react";
 import { useSearchQuery } from "../hooks/useCachedData";
 import { cardStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -275,6 +275,29 @@ export function SearchPage() {
                         </p>
                       )}
                     </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {results.tax_events.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>
+                Налоговые события ({results.tax_events.length})
+              </h2>
+              <div className="space-y-2">
+                {results.tax_events.map((event) => (
+                  <Link
+                    key={`tax-event-${event.id}`}
+                    to={`/tax-calendar?eventId=${event.id}`}
+                    className="flex items-center gap-3 rounded-xl border p-3 transition hover:-translate-y-0.5"
+                    style={cardStyle("business", isDark)}
+                  >
+                    <Calendar size={18} style={{ color: v("text-secondary") }} />
+                    <p className="font-medium" style={{ color: v("text-primary") }}>
+                      {event.title}
+                    </p>
                   </Link>
                 ))}
               </div>

@@ -72,7 +72,7 @@ export function ProtectedLayout() {
           )}
         </div>
 
-        <div className="fixed right-4 top-4 z-40 flex items-center gap-2 max-[639px]:left-24">
+        <div className="fixed right-4 top-4 z-40 flex items-center gap-2 max-[639px]:left-26">
           <div className="flex-1 sm:w-72 lg:w-96 sm:flex-none">
             <SearchBar />
           </div>

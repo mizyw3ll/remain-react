@@ -9,7 +9,7 @@ import { changePassword, requestVerification } from "../features/auth/authApi";
 import { ConfirmModal } from "./ConfirmModal";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { maskEmail } from "../lib/maskEmail";
-import type { SettingsTab } from "../context/SettingsUiContext";
+import type { SettingsTab } from "../context/SettingsContext";
 
 type Props = {
   open: boolean;
@@ -100,8 +100,9 @@ export function SettingsModal({ open, tab, onClose }: Props) {
       setOldPass("");
       setNewPass("");
       setConfirmPass("");
-    } catch (err: any) {
-      const detail = err.response?.data?.detail || "Не удалось сменить пароль";
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Не удалось сменить пароль";
       setPassError(detail);
     } finally {
       setPassBusy(false);
@@ -167,7 +168,9 @@ export function SettingsModal({ open, tab, onClose }: Props) {
             >
               <button
                 type="button"
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${panel === "main" ? "active" : ""}`}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${
+                  panel === "main" ? "active" : ""
+                }`}
                 style={{
                   background: panel === "main" ? "var(--bg-active)" : "transparent",
                   color: panel === "main" ? "var(--text-primary)" : "var(--text-muted)",
@@ -190,7 +193,9 @@ export function SettingsModal({ open, tab, onClose }: Props) {
               </button>
               <button
                 type="button"
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${panel === "profile" ? "active" : ""}`}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${
+                  panel === "profile" ? "active" : ""
+                }`}
                 style={{
                   background: panel === "profile" ? "var(--bg-active)" : "transparent",
                   color: panel === "profile" ? "var(--text-primary)" : "var(--text-muted)",
@@ -224,7 +229,9 @@ export function SettingsModal({ open, tab, onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => setTheme("dark")}
-                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${theme === "dark" ? "active-theme-dark" : ""}`}
+                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${
+                        theme === "dark" ? "active-theme-dark" : ""
+                      }`}
                       style={{
                         borderColor: theme === "dark" ? "rgba(34, 211, 238, 0.6)" : "var(--border-primary)",
                         background: theme === "dark" ? "rgba(34, 211, 238, 0.1)" : "var(--bg-secondary)",
@@ -237,7 +244,9 @@ export function SettingsModal({ open, tab, onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => setTheme("light")}
-                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${theme === "light" ? "active-theme-light" : ""}`}
+                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${
+                        theme === "light" ? "active-theme-light" : ""
+                      }`}
                       style={{
                         borderColor: theme === "light" ? "rgba(251, 191, 36, 0.6)" : "var(--border-primary)",
                         background: theme === "light" ? "rgba(251, 191, 36, 0.1)" : "var(--bg-secondary)",
