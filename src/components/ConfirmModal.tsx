@@ -28,14 +28,22 @@ export function ConfirmModal({
           borderColor: v("border-primary"),
         }}
       >
-        <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{title}</h3>
-        <p className="mt-2 text-sm" style={{ color: v("text-secondary") }}>{description}</p>
+        <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+          {title}
+        </h3>
+        <p className="mt-2 text-sm" style={{ color: v("text-secondary") }}>
+          {description}
+        </p>
         <div className="mt-5 flex justify-end gap-2">
           <button
             className="rounded-xl border px-4 py-2 text-sm transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
             onClick={onCancel}
           >
             Отмена
@@ -47,8 +55,12 @@ export function ConfirmModal({
               background: "rgba(220, 38, 38, 0.1)",
               color: "rgb(252, 165, 165)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(220, 38, 38, 0.1)"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(220, 38, 38, 0.1)";
+            }}
             onClick={onConfirm}
           >
             {confirmText}

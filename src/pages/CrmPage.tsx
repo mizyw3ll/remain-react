@@ -1,6 +1,19 @@
 ﻿import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Trash2, Phone, Mail, Building2, User, DollarSign, Calendar, Target, TrendingUp, Users, X } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Phone,
+  Mail,
+  Building2,
+  User,
+  DollarSign,
+  Calendar,
+  Target,
+  TrendingUp,
+  Users,
+  X,
+} from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -278,7 +291,11 @@ export function CrmPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => { resetContactForm(); setEditingContact(null); setShowContactForm(true); }}
+            onClick={() => {
+              resetContactForm();
+              setEditingContact(null);
+              setShowContactForm(true);
+            }}
             className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
             style={buttonStyle("primary", isDark)}
           >
@@ -287,7 +304,11 @@ export function CrmPage() {
           </button>
           <button
             type="button"
-            onClick={() => { resetDealForm(); setEditingDeal(null); setShowDealForm(true); }}
+            onClick={() => {
+              resetDealForm();
+              setEditingDeal(null);
+              setShowDealForm(true);
+            }}
             className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
             style={buttonStyle("primary", isDark)}
           >
@@ -309,9 +330,21 @@ export function CrmPage() {
               ...(tab === t ? { background: v("bg-active") } : {}),
             }}
           >
-            {t === "contacts" && <><Users size={16} /> Контакты ({contacts.length})</>}
-            {t === "deals" && <><Target size={16} /> Сделки ({deals.length})</>}
-            {t === "pipeline" && <><TrendingUp size={16} /> Воронка</>}
+            {t === "contacts" && (
+              <>
+                <Users size={16} /> Контакты ({contacts.length})
+              </>
+            )}
+            {t === "deals" && (
+              <>
+                <Target size={16} /> Сделки ({deals.length})
+              </>
+            )}
+            {t === "pipeline" && (
+              <>
+                <TrendingUp size={16} /> Воронка
+              </>
+            )}
           </button>
         ))}
       </div>
@@ -333,7 +366,9 @@ export function CrmPage() {
                     <User size={18} style={{ color: v("text-muted") }} />
                   </div>
                   <div>
-                    <p className="font-semibold" style={{ color: v("text-primary") }}>{contact.name}</p>
+                    <p className="font-semibold" style={{ color: v("text-primary") }}>
+                      {contact.name}
+                    </p>
                     {contact.company && (
                       <p className="text-sm flex items-center gap-1" style={{ color: v("text-muted") }}>
                         <Building2 size={12} /> {contact.company}
@@ -391,12 +426,20 @@ export function CrmPage() {
               style={cardStyle("note", isDark)}
             >
               <div>
-                <p className="font-semibold" style={{ color: v("text-primary") }}>{deal.title}</p>
+                <p className="font-semibold" style={{ color: v("text-primary") }}>
+                  {deal.title}
+                </p>
                 <div className="flex gap-2 mt-1">
-                  <span className="rounded-full px-2 py-0.5 text-xs text-white" style={{ background: getStatusColor(deal.status) }}>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-xs text-white"
+                    style={{ background: getStatusColor(deal.status) }}
+                  >
                     {getStatusLabel(deal.status)}
                   </span>
-                  <span className="rounded-full px-2 py-0.5 text-xs text-white" style={{ background: getPriorityColor(deal.priority) }}>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-xs text-white"
+                    style={{ background: getPriorityColor(deal.priority) }}
+                  >
                     {getPriorityLabel(deal.priority)}
                   </span>
                 </div>
@@ -442,29 +485,52 @@ export function CrmPage() {
       {tab === "pipeline" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="animate-fade-in stagger-1 rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg" style={cardStyle("business", isDark)}>
-              <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>{stats?.total_deals || 0}</p>
-              <p className="text-sm" style={{ color: v("text-muted") }}>Всего сделок</p>
+            <div
+              className="animate-fade-in stagger-1 rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg"
+              style={cardStyle("business", isDark)}
+            >
+              <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>
+                {stats?.total_deals || 0}
+              </p>
+              <p className="text-sm" style={{ color: v("text-muted") }}>
+                Всего сделок
+              </p>
             </div>
-            <div className="animate-fade-in stagger-2 rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg" style={cardStyle("business", isDark)}>
+            <div
+              className="animate-fade-in stagger-2 rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg"
+              style={cardStyle("business", isDark)}
+            >
               <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>
                 {(stats?.total_value || 0).toLocaleString()} ₽
               </p>
-              <p className="text-sm" style={{ color: v("text-muted") }}>Общая сумма</p>
+              <p className="text-sm" style={{ color: v("text-muted") }}>
+                Общая сумма
+              </p>
             </div>
             {DEAL_STATUSES.slice(0, 4).map((s, i) => (
-              <div key={s.value} className={`animate-fade-in stagger-${i + 3} rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg`} style={cardStyle("note", isDark)}>
+              <div
+                key={s.value}
+                className={`animate-fade-in stagger-${i + 3} rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg`}
+                style={cardStyle("note", isDark)}
+              >
                 <div className="w-8 h-1 rounded mx-auto mb-2" style={{ background: s.color }} />
                 <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>
                   {stats?.by_status[s.value] || 0}
                 </p>
-                <p className="text-sm" style={{ color: v("text-muted") }}>{s.label}</p>
+                <p className="text-sm" style={{ color: v("text-muted") }}>
+                  {s.label}
+                </p>
               </div>
             ))}
           </div>
 
-          <div className="animate-fade-in stagger-5 rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-lg" style={cardStyle("note", isDark)}>
-            <h3 className="mb-3 font-semibold" style={{ color: v("text-primary") }}>Воронка продаж</h3>
+          <div
+            className="animate-fade-in stagger-5 rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-lg"
+            style={cardStyle("note", isDark)}
+          >
+            <h3 className="mb-3 font-semibold" style={{ color: v("text-primary") }}>
+              Воронка продаж
+            </h3>
             <div className="relative space-y-3">
               {DEAL_STATUSES.map((s) => {
                 const count = stats?.by_status[s.value] || 0;
@@ -474,9 +540,14 @@ export function CrmPage() {
                   <div key={s.value}>
                     <div className="flex justify-between text-sm mb-1">
                       <span style={{ color: v("text-muted") }}>{s.label}</span>
-                      <span style={{ color: v("text-primary") }}>{count} ({pct}%)</span>
+                      <span style={{ color: v("text-primary") }}>
+                        {count} ({pct}%)
+                      </span>
                     </div>
-                    <div className="w-full h-6 rounded-lg overflow-hidden relative" style={{ background: v("bg-tertiary") }}>
+                    <div
+                      className="w-full h-6 rounded-lg overflow-hidden relative"
+                      style={{ background: v("bg-tertiary") }}
+                    >
                       <div
                         className="h-full rounded-lg transition-all duration-700 ease-out"
                         style={{
@@ -504,7 +575,14 @@ export function CrmPage() {
               <h2 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
                 {editingContact ? "Редактировать контакт" : "Добавить контакт"}
               </h2>
-              <button type="button" onClick={() => { setShowContactForm(false); setEditingContact(null); }} style={{ color: v("text-muted") }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowContactForm(false);
+                  setEditingContact(null);
+                }}
+                style={{ color: v("text-muted") }}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -559,13 +637,18 @@ export function CrmPage() {
               />
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={cIsLead} onChange={(e) => setCIsLead(e.target.checked)} />
-                <span className="text-sm" style={{ color: v("text-muted") }}>Потенциальный клиент</span>
+                <span className="text-sm" style={{ color: v("text-muted") }}>
+                  Потенциальный клиент
+                </span>
               </label>
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => { setShowContactForm(false); setEditingContact(null); }}
+                onClick={() => {
+                  setShowContactForm(false);
+                  setEditingContact(null);
+                }}
                 className="rounded-lg px-4 py-2 text-sm transition-colors"
                 style={buttonStyle("secondary", isDark)}
               >
@@ -573,7 +656,7 @@ export function CrmPage() {
               </button>
               <button
                 type="button"
-                onClick={() => editingContact ? updateContactMut.mutate() : createContactMut.mutate()}
+                onClick={() => (editingContact ? updateContactMut.mutate() : createContactMut.mutate())}
                 disabled={!cName || createContactMut.isPending || updateContactMut.isPending}
                 className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                 style={buttonStyle("primary", isDark)}
@@ -595,7 +678,14 @@ export function CrmPage() {
               <h2 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
                 {editingDeal ? "Редактировать сделку" : "Добавить сделку"}
               </h2>
-              <button type="button" onClick={() => { setShowDealForm(false); setEditingDeal(null); }} style={{ color: v("text-muted") }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDealForm(false);
+                  setEditingDeal(null);
+                }}
+                style={{ color: v("text-muted") }}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -624,7 +714,9 @@ export function CrmPage() {
               >
                 <option value="">Без контакта</option>
                 {contacts.map((c: Contact) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
               <select
@@ -634,7 +726,9 @@ export function CrmPage() {
                 style={inputStyle(isDark)}
               >
                 {DEAL_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
                 ))}
               </select>
               <div className="flex gap-2">
@@ -664,7 +758,9 @@ export function CrmPage() {
                 style={inputStyle(isDark)}
               >
                 {PRIORITIES.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
                 ))}
               </select>
               <input
@@ -678,7 +774,10 @@ export function CrmPage() {
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => { setShowDealForm(false); setEditingDeal(null); }}
+                onClick={() => {
+                  setShowDealForm(false);
+                  setEditingDeal(null);
+                }}
                 className="rounded-lg px-4 py-2 text-sm transition-colors"
                 style={buttonStyle("secondary", isDark)}
               >
@@ -686,7 +785,7 @@ export function CrmPage() {
               </button>
               <button
                 type="button"
-                onClick={() => editingDeal ? updateDealMut.mutate() : createDealMut.mutate()}
+                onClick={() => (editingDeal ? updateDealMut.mutate() : createDealMut.mutate())}
                 disabled={!dTitle || createDealMut.isPending || updateDealMut.isPending}
                 className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                 style={buttonStyle("primary", isDark)}

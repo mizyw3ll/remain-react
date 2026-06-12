@@ -145,33 +145,108 @@ export function RichTextEditor({
     >
       {!readOnly && (
         <div className="flex flex-wrap gap-1 border-b px-2 py-1.5" style={{ borderColor: v("border-primary") }}>
-          {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), <Bold size={14} />, ru.editor.bold)}
-          {btn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), <Italic size={14} />, ru.editor.italic)}
-          {btn(editor.isActive("strike"), () => editor.chain().focus().toggleStrike().run(), <Strikethrough size={14} />, ru.editor.strike)}
-          {btn(editor.isActive("highlight"), () => editor.chain().focus().toggleHighlight().run(), <Highlighter size={14} />, ru.editor.highlight)}
-          {btn(editor.isActive("subscript"), () => editor.chain().focus().toggleSubscript().run(), <SubscriptIcon size={14} />, ru.editor.subscript)}
-          {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), <Heading2 size={14} />, ru.editor.heading)}
-          {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), <List size={14} />, ru.editor.bulletList)}
-          {btn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered size={14} />, ru.editor.orderedList)}
-          {btn(editor.isActive("blockquote"), () => editor.chain().focus().toggleBlockquote().run(), <Quote size={14} />, ru.editor.quote)}
-          {btn(editor.isActive("code"), () => editor.chain().focus().toggleCode().run(), <Code size={14} />, ru.editor.code)}
-          {btn(editor.isActive("codeBlock"), () => editor.chain().focus().toggleCodeBlock().run(), <FileCode size={14} />, ru.editor.codeBlock)}
+          {btn(
+            editor.isActive("bold"),
+            () => editor.chain().focus().toggleBold().run(),
+            <Bold size={14} />,
+            ru.editor.bold,
+          )}
+          {btn(
+            editor.isActive("italic"),
+            () => editor.chain().focus().toggleItalic().run(),
+            <Italic size={14} />,
+            ru.editor.italic,
+          )}
+          {btn(
+            editor.isActive("strike"),
+            () => editor.chain().focus().toggleStrike().run(),
+            <Strikethrough size={14} />,
+            ru.editor.strike,
+          )}
+          {btn(
+            editor.isActive("highlight"),
+            () => editor.chain().focus().toggleHighlight().run(),
+            <Highlighter size={14} />,
+            ru.editor.highlight,
+          )}
+          {btn(
+            editor.isActive("subscript"),
+            () => editor.chain().focus().toggleSubscript().run(),
+            <SubscriptIcon size={14} />,
+            ru.editor.subscript,
+          )}
+          {btn(
+            editor.isActive("heading", { level: 2 }),
+            () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+            <Heading2 size={14} />,
+            ru.editor.heading,
+          )}
+          {btn(
+            editor.isActive("bulletList"),
+            () => editor.chain().focus().toggleBulletList().run(),
+            <List size={14} />,
+            ru.editor.bulletList,
+          )}
+          {btn(
+            editor.isActive("orderedList"),
+            () => editor.chain().focus().toggleOrderedList().run(),
+            <ListOrdered size={14} />,
+            ru.editor.orderedList,
+          )}
+          {btn(
+            editor.isActive("blockquote"),
+            () => editor.chain().focus().toggleBlockquote().run(),
+            <Quote size={14} />,
+            ru.editor.quote,
+          )}
+          {btn(
+            editor.isActive("code"),
+            () => editor.chain().focus().toggleCode().run(),
+            <Code size={14} />,
+            ru.editor.code,
+          )}
+          {btn(
+            editor.isActive("codeBlock"),
+            () => editor.chain().focus().toggleCodeBlock().run(),
+            <FileCode size={14} />,
+            ru.editor.codeBlock,
+          )}
           <div className="mx-1 w-px self-stretch" style={{ background: v("border-primary") }} />
-          {btn(false, () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(), <TableIcon size={14} />, ru.editor.table)}
+          {btn(
+            false,
+            () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+            <TableIcon size={14} />,
+            ru.editor.table,
+          )}
           {btn(false, () => editor.chain().focus().addRowAfter().run(), <Rows3 size={14} />, ru.editor.addRow)}
           {btn(false, () => editor.chain().focus().deleteRow().run(), <Trash2 size={14} />, ru.editor.deleteRow)}
           {btn(false, () => editor.chain().focus().addColumnAfter().run(), <Columns3 size={14} />, ru.editor.addColumn)}
           {btn(false, () => editor.chain().focus().deleteColumn().run(), <SquareX size={14} />, ru.editor.deleteColumn)}
           <div className="mx-1 w-px self-stretch" style={{ background: v("border-primary") }} />
-          {btn(false, () => fileInputRef.current?.click(), <Paperclip size={14} />, ru.editor.attachFile, !uploadContext)}
-          {btn(false, () => fileInputRef.current?.click(), <ImageIcon size={14} />, ru.editor.insertImage, !uploadContext)}
+          {btn(
+            false,
+            () => fileInputRef.current?.click(),
+            <Paperclip size={14} />,
+            ru.editor.attachFile,
+            !uploadContext,
+          )}
+          {btn(
+            false,
+            () => fileInputRef.current?.click(),
+            <ImageIcon size={14} />,
+            ru.editor.insertImage,
+            !uploadContext,
+          )}
           <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => void handleFilePick(e)} />
           <div className="mx-1 w-px self-stretch" style={{ background: v("border-primary") }} />
           {btn(false, () => editor.chain().focus().undo().run(), <Undo size={14} />, ru.editor.undo)}
           {btn(false, () => editor.chain().focus().redo().run(), <Redo size={14} />, ru.editor.redo)}
         </div>
       )}
-      <div className={`p-3 text-sm tiptap ${readOnly ? "" : tw.inputBase}`} style={readOnly ? { minHeight: 120 } : inputStyle(isDark)}>
+      <div
+        className={`p-3 text-sm tiptap ${readOnly ? "" : tw.inputBase}`}
+        style={readOnly ? { minHeight: 120 } : inputStyle(isDark)}
+      >
         <EditorContent editor={editor} />
       </div>
     </div>

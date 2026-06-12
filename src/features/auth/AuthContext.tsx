@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { User } from "../../api";
@@ -38,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadMe = useCallback(async () => {
     try {
       const cached = queryClient.getQueryData<User>(queryKeys.user);
-      const me = cached ?? await authApi.me();
+      const me = cached ?? (await authApi.me());
       queryClient.setQueryData(queryKeys.user, me);
       setUser(me);
     } catch {
@@ -53,21 +46,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void loadMe();
   }, [loadMe]);
 
-  const signin = useCallback(async (login: string, password: string) => {
-    await authApi.login(login, password);
-    const me = await authApi.me();
-    queryClient.setQueryData(queryKeys.user, me);
-    setUser(me);
-  }, [queryClient]);
+  const signin = useCallback(
+    async (login: string, password: string) => {
+      await authApi.login(login, password);
+      const me = await authApi.me();
+      queryClient.setQueryData(queryKeys.user, me);
+      setUser(me);
+    },
+    [queryClient],
+  );
 
   const signup = useCallback(
-    async (payload: {
-      email: string;
-      username: string;
-      password: string;
-      first_name?: string;
-      last_name?: string;
-    }) => {
+    async (payload: { email: string; username: string; password: string; first_name?: string; last_name?: string }) => {
       await authApi.register(payload);
       await signin(payload.email, payload.password);
     },

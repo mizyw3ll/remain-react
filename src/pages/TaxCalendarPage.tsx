@@ -111,7 +111,9 @@ export function TaxCalendarPage() {
             source_id: ev.id,
           }).catch(() => {});
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }, 30_000);
     return () => clearInterval(poll);
   }, []);
@@ -199,11 +201,16 @@ export function TaxCalendarPage() {
 
   function getTypeColor(type: string) {
     switch (type) {
-      case "tax": return "#ef4444";
-      case "insurance": return "#f59e0b";
-      case "report": return "#3b82f6";
-      case "payment": return "#10b981";
-      default: return v("text-secondary");
+      case "tax":
+        return "#ef4444";
+      case "insurance":
+        return "#f59e0b";
+      case "report":
+        return "#3b82f6";
+      case "payment":
+        return "#10b981";
+      default:
+        return v("text-secondary");
     }
   }
 
@@ -226,11 +233,7 @@ export function TaxCalendarPage() {
             background: isCompleted ? "#10b981" : "transparent",
           }}
         >
-          {isCompleted ? (
-            <Check size={14} color="#fff" />
-          ) : (
-            <Clock size={14} style={{ color: v("text-tertiary") }} />
-          )}
+          {isCompleted ? <Check size={14} color="#fff" /> : <Clock size={14} style={{ color: v("text-tertiary") }} />}
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -263,8 +266,12 @@ export function TaxCalendarPage() {
           onClick={() => openEditForm(event)}
           className="p-1.5 rounded-lg transition-all duration-200 hover:scale-110"
           style={{ color: v("text-secondary") }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = v("text-primary"); }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = v("text-secondary"); }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = v("text-primary");
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = v("text-secondary");
+          }}
         >
           <Pencil size={16} />
         </button>
@@ -361,7 +368,9 @@ export function TaxCalendarPage() {
                 style={inputStyle(isDark)}
               />
               {!form.title.trim() && form.title !== "" && (
-                <p className="text-xs" style={{ color: "#ef4444" }}>Название обязательно</p>
+                <p className="text-xs" style={{ color: "#ef4444" }}>
+                  Название обязательно
+                </p>
               )}
               <input
                 type="datetime-local"
@@ -377,7 +386,9 @@ export function TaxCalendarPage() {
                 style={inputStyle(isDark)}
               >
                 {EVENT_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
                 ))}
               </select>
               <input
@@ -395,7 +406,9 @@ export function TaxCalendarPage() {
                 style={inputStyle(isDark)}
               >
                 {NOTIFY_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
               <textarea
@@ -410,7 +423,10 @@ export function TaxCalendarPage() {
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => { setOpenForm(false); setEditingEvent(null); }}
+                onClick={() => {
+                  setOpenForm(false);
+                  setEditingEvent(null);
+                }}
                 className="rounded-lg px-4 py-2 text-sm transition-colors"
                 style={buttonStyle("secondary", isDark)}
               >

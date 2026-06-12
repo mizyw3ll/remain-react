@@ -119,24 +119,38 @@ export function BusinessPlansPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>Бизнес-планы</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>
+          Бизнес-планы
+        </h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setOpenImport(true)}
             className={`${tw.buttonSecondary} flex items-center gap-1.5`}
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
           >
             <Upload size={16} />
             <span className="hidden sm:inline whitespace-nowrap">Импорт</span>
           </button>
           <button
-            onClick={() => { setOpenTemplates(true); setTemplateCategoryFilter(null); void loadTemplates(); }}
+            onClick={() => {
+              setOpenTemplates(true);
+              setTemplateCategoryFilter(null);
+              void loadTemplates();
+            }}
             className={`${tw.buttonSecondary} flex items-center gap-1.5`}
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
           >
             <LayoutTemplate size={16} />
             <span className="hidden sm:inline whitespace-nowrap">Из шаблона</span>
@@ -195,8 +209,20 @@ export function BusinessPlansPage() {
             >
               <GlassCard accent="indigo">
                 <div className="mb-4 flex items-start gap-4">
-                  <div className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(99,102,241,0.12)" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div
+                    className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: "rgba(99,102,241,0.12)" }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#818cf8"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                       <line x1="16" y1="13" x2="8" y2="13" />
@@ -224,10 +250,7 @@ export function BusinessPlansPage() {
 
       {/* Create modal */}
       {openForm && (
-        <div
-          className={tw.modalOverlay}
-          style={{ background: "rgba(0,0,0,0.6)" }}
-        >
+        <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
           <div
             className={tw.modalContent}
             style={{
@@ -235,7 +258,9 @@ export function BusinessPlansPage() {
               borderColor: v("border-primary"),
             }}
           >
-            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>Создать план</h3>
+            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>
+              Создать план
+            </h3>
             <div className="space-y-3">
               <input
                 className={tw.inputBase}
@@ -245,7 +270,9 @@ export function BusinessPlansPage() {
                 onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               />
               {!form.title.trim() && form.title !== "" && (
-                <p className="text-xs" style={{ color: "#ef4444" }}>Название обязательно</p>
+                <p className="text-xs" style={{ color: "#ef4444" }}>
+                  Название обязательно
+                </p>
               )}
               <textarea
                 className={tw.inputBase}
@@ -268,11 +295,7 @@ export function BusinessPlansPage() {
                 >
                   Отмена
                 </button>
-                <button
-                  className={tw.buttonPrimary}
-                  disabled={!valid}
-                  onClick={() => void submit()}
-                >
+                <button className={tw.buttonPrimary} disabled={!valid} onClick={() => void submit()}>
                   Сохранить
                 </button>
               </div>
@@ -283,10 +306,7 @@ export function BusinessPlansPage() {
 
       {/* Templates modal */}
       {openTemplates && (
-        <div
-          className={tw.modalOverlay}
-          style={{ background: "rgba(0,0,0,0.6)" }}
-        >
+        <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
           <div
             className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-2xl sm:p-5"
             style={{
@@ -294,7 +314,9 @@ export function BusinessPlansPage() {
               borderColor: v("border-primary"),
             }}
           >
-            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>Выберите шаблон</h3>
+            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>
+              Выберите шаблон
+            </h3>
             {templatesLoading ? (
               <div className="flex h-40 items-center justify-center">
                 <Loader2 className="animate-spin" size={32} style={{ color: v("text-muted") }} />
@@ -322,16 +344,28 @@ export function BusinessPlansPage() {
                   ))}
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {(templateCategoryFilter ? templates.filter((t) => t.category === templateCategoryFilter) : templates).map((t) => (
+                  {(templateCategoryFilter
+                    ? templates.filter((t) => t.category === templateCategoryFilter)
+                    : templates
+                  ).map((t) => (
                     <button
                       key={t.id}
                       className="rounded-xl border p-4 text-left transition hover:opacity-90"
                       style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
                       onClick={() => void useTemplate(t.id)}
                     >
-                      <p className="text-sm font-semibold capitalize" style={{ color: v("text-primary") }}>{t.title}</p>
-                      <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>{t.description || "Без описания"}</p>
-                      <p className="mt-2 text-xs font-medium uppercase tracking-wide" style={{ color: v("text-secondary") }}>{t.category}</p>
+                      <p className="text-sm font-semibold capitalize" style={{ color: v("text-primary") }}>
+                        {t.title}
+                      </p>
+                      <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>
+                        {t.description || "Без описания"}
+                      </p>
+                      <p
+                        className="mt-2 text-xs font-medium uppercase tracking-wide"
+                        style={{ color: v("text-secondary") }}
+                      >
+                        {t.category}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -341,8 +375,12 @@ export function BusinessPlansPage() {
               <button
                 className={tw.buttonSecondary}
                 style={buttonStyle("secondary", isDark)}
-                onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = v("bg-hover");
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
                 onClick={() => setOpenTemplates(false)}
               >
                 Отмена
@@ -354,10 +392,7 @@ export function BusinessPlansPage() {
 
       {/* Import modal */}
       {openImport && (
-        <div
-          className={tw.modalOverlay}
-          style={{ background: "rgba(0,0,0,0.6)" }}
-        >
+        <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
           <div
             className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5"
             style={{
@@ -365,13 +400,18 @@ export function BusinessPlansPage() {
               borderColor: v("border-primary"),
             }}
           >
-            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>Импорт бизнес-плана</h3>
+            <h3 className="mb-3 text-lg font-semibold" style={{ color: v("text-primary") }}>
+              Импорт бизнес-плана
+            </h3>
             <div className="space-y-3">
               <p className="text-sm" style={{ color: v("text-muted") }}>
                 Загрузите файл в формате CSV, XLSX, HTML или PDF.
               </p>
               <div
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onDrop}
                 onClick={() => importFileRef.current?.click()}
@@ -409,8 +449,12 @@ export function BusinessPlansPage() {
               <button
                 className={tw.buttonSecondary}
                 style={buttonStyle("secondary", isDark)}
-                onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = v("bg-hover");
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
                 onClick={() => setOpenImport(false)}
                 disabled={importLoading}
               >

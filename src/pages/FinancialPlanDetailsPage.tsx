@@ -92,9 +92,7 @@ function buildChartData(points: ChartPoint[], timeframe: Timeframe): AggregatedP
   const now = Date.now();
   const { rangeMs, bucket } = TIMEFRAME_CONFIG[timeframe];
   const threshold = rangeMs > 0 ? now - rangeMs : 0;
-  const filteredPoints = rangeMs > 0
-    ? points.filter((point) => new Date(point.date).getTime() >= threshold)
-    : points;
+  const filteredPoints = rangeMs > 0 ? points.filter((point) => new Date(point.date).getTime() >= threshold) : points;
 
   // Sort points by date chronologically
   const sortedPoints = filteredPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -149,9 +147,7 @@ export function FinancialPlanDetailsPage() {
   const [analytics, setAnalytics] = useState<FinancialChartAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<Timeframe>("1W");
-  const [deleteTarget, setDeleteTarget] = useState<{ type: "chart" | "point"; id: number; title: string } | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "chart" | "point"; id: number; title: string } | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const [isEditingChart, setIsEditingChart] = useState(false);
@@ -381,8 +377,12 @@ export function FinancialPlanDetailsPage() {
               <button
                 className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                 style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = v("bg-hover");
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
                 onClick={() => void handleAiSummary()}
                 disabled={aiSummaryLoading}
               >
@@ -396,8 +396,12 @@ export function FinancialPlanDetailsPage() {
                   <button
                     className={tw.buttonSecondary}
                     style={buttonStyle("secondary", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => {
                       setChartForm({
                         title: chart.title,
@@ -416,8 +420,12 @@ export function FinancialPlanDetailsPage() {
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={buttonStyle("secondary", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => setIsEditingChart(true)}
                   >
                     <Pencil size={16} />
@@ -426,8 +434,12 @@ export function FinancialPlanDetailsPage() {
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={buttonStyle("danger", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => setDeleteTarget({ type: "chart", id: chart.id, title: chart.title })}
                   >
                     <Trash2 size={16} />
@@ -478,7 +490,8 @@ export function FinancialPlanDetailsPage() {
             <>
               <MarkdownPreview content={chart.description || "Без описания"} />
               <p className="text-sm" style={{ color: v("text-muted") }}>
-                Валюта: {currencies.find((currency) => currency.id === chart.currency_id)?.code ?? `ID ${chart.currency_id}`} |
+                Валюта:{" "}
+                {currencies.find((currency) => currency.id === chart.currency_id)?.code ?? `ID ${chart.currency_id}`} |
                 Статус:
                 <span style={{ color: chart.is_active ? "#16a34a" : v("text-muted") }}>
                   {chart.is_active ? " активен" : " неактивен"}
@@ -488,15 +501,24 @@ export function FinancialPlanDetailsPage() {
           )}
 
           {aiSummary && (
-            <div className="rounded-xl border p-4" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
+            <div
+              className="rounded-xl border p-4"
+              style={{ borderColor: v("border-primary"), background: v("bg-card") }}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold" style={{ color: v("text-primary") }}>AI-сводка</h3>
+                <h3 className="text-sm font-semibold" style={{ color: v("text-primary") }}>
+                  AI-сводка
+                </h3>
                 <div className="flex gap-2">
                   <button
                     className="rounded-lg border px-3 py-1.5 text-xs transition-colors"
                     style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => {
                       navigator.clipboard.writeText(aiSummary);
                       toast.success("Скопировано");
@@ -507,8 +529,12 @@ export function FinancialPlanDetailsPage() {
                   <button
                     className="rounded-lg border px-3 py-1.5 text-xs transition-colors"
                     style={buttonStyle("primary", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => {
                       setChartForm((prev) => ({ ...prev, description: aiSummary }));
                       setIsEditingChart(true);
@@ -527,10 +553,17 @@ export function FinancialPlanDetailsPage() {
       </article>
 
       {analytics && (
-        <article className="space-y-3 rounded-2xl border p-5" style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}>
+        <article
+          className="space-y-3 rounded-2xl border p-5"
+          style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}
+        >
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Обзор</h2>
-            <p className="text-xs" style={{ color: v("text-muted") }}>Быстрая аналитика графика</p>
+            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
+              Обзор
+            </h2>
+            <p className="text-xs" style={{ color: v("text-muted") }}>
+              Быстрая аналитика графика
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
@@ -539,10 +572,18 @@ export function FinancialPlanDetailsPage() {
               { label: "Net", value: analytics.net_total, fixed: 2 },
               { label: "Точек", value: analytics.points_count, fixed: 0 },
             ].map((metric) => (
-              <div key={metric.label} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
-                <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>{metric.label}</p>
+              <div
+                key={metric.label}
+                className="rounded-xl border p-3"
+                style={{ borderColor: v("border-primary"), background: v("bg-card") }}
+              >
+                <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>
+                  {metric.label}
+                </p>
                 <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>
-                  {metric.fixed === 0 ? Math.round(metric.value).toString() : Number(metric.value).toFixed(metric.fixed)}
+                  {metric.fixed === 0
+                    ? Math.round(metric.value).toString()
+                    : Number(metric.value).toFixed(metric.fixed)}
                 </p>
               </div>
             ))}
@@ -562,9 +603,10 @@ export function FinancialPlanDetailsPage() {
             <button
               key={tf}
               className="rounded-lg px-3 py-1.5 text-xs transition-colors"
-              style={timeframe === tf
-                ? { background: v("bg-active"), color: v("text-primary") }
-                : { background: v("bg-secondary"), color: v("text-secondary") }
+              style={
+                timeframe === tf
+                  ? { background: v("bg-active"), color: v("text-primary") }
+                  : { background: v("bg-secondary"), color: v("text-secondary") }
               }
               onClick={() => setTimeframe(tf)}
             >
@@ -575,8 +617,12 @@ export function FinancialPlanDetailsPage() {
             <button
               className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
               style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = v("bg-hover");
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
               onClick={() => void handleExport("csv")}
             >
               <Download size={14} /> CSV
@@ -590,7 +636,7 @@ export function FinancialPlanDetailsPage() {
             </button>
           </div>
         </div>
-          {/* Chart with horizontal scroll on mobile */}
+        {/* Chart with horizontal scroll on mobile */}
         {points.length < 2 ? (
           <div
             className="flex h-80 items-center justify-center rounded-xl border p-6"
@@ -614,7 +660,7 @@ export function FinancialPlanDetailsPage() {
             <ChartWrapper className="h-full min-w-[600px]">
               <ResponsiveContainer width="100%" height={320}>
                 <LineChart data={chartData}>
-                  <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+                  <svg style={{ position: "absolute", width: 0, height: 0 }}>
                     <defs>
                       <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={isDark ? "#a3a3a3" : "#5c5c5c"} stopOpacity={0.3} />
@@ -637,11 +683,24 @@ export function FinancialPlanDetailsPage() {
                         total?: number | null;
                       };
                       return (
-                        <div className="rounded-xl border p-3 text-xs" style={{ borderColor: v("border-secondary"), background: v("bg-secondary"), color: v("text-secondary") }}>
-                          <p className="mb-2 font-medium" style={{ color: v("text-primary") }}>{label}</p>
+                        <div
+                          className="rounded-xl border p-3 text-xs"
+                          style={{
+                            borderColor: v("border-secondary"),
+                            background: v("bg-secondary"),
+                            color: v("text-secondary"),
+                          }}
+                        >
+                          <p className="mb-2 font-medium" style={{ color: v("text-primary") }}>
+                            {label}
+                          </p>
                           {typeof item.income === "number" && <p>Доходы: {item.income.toFixed(2)}</p>}
                           {typeof item.expense === "number" && <p>Расходы: {item.expense.toFixed(2)}</p>}
-                          {typeof item.total === "number" && <p className="mt-1 font-semibold" style={{ color: v("text-primary") }}>Итог: {item.total.toFixed(2)}</p>}
+                          {typeof item.total === "number" && (
+                            <p className="mt-1 font-semibold" style={{ color: v("text-primary") }}>
+                              Итог: {item.total.toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       );
                     }}
@@ -666,7 +725,6 @@ export function FinancialPlanDetailsPage() {
                     animationDuration={500}
                     animationEasing="ease-out"
                   />
-
                 </LineChart>
               </ResponsiveContainer>
             </ChartWrapper>
@@ -676,16 +734,18 @@ export function FinancialPlanDetailsPage() {
 
       <article className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Точки графика</h2>
-          <button
-            className={tw.buttonPrimary}
-            onClick={openCreatePointModal}
-          >
+          <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
+            Точки графика
+          </h2>
+          <button className={tw.buttonPrimary} onClick={openCreatePointModal}>
             Добавить точку
           </button>
         </div>
         {points.length === 0 ? (
-          <div className="flex min-h-[150px] items-center justify-center rounded-xl border p-6" style={{ borderColor: v("border-primary"), background: v("bg-hover") }}>
+          <div
+            className="flex min-h-[150px] items-center justify-center rounded-xl border p-6"
+            style={{ borderColor: v("border-primary"), background: v("bg-hover") }}
+          >
             <div className="text-center">
               <p className="text-sm font-medium" style={{ color: v("text-secondary") }}>
                 У вас пока нет точек в этом графике
@@ -713,20 +773,24 @@ export function FinancialPlanDetailsPage() {
                 }}
               >
                 <div className="min-w-0">
-                  <p className="text-sm" style={{ color: v("text-secondary") }}>{new Date(point.date).toLocaleString()}</p>
+                  <p className="text-sm" style={{ color: v("text-secondary") }}>
+                    {new Date(point.date).toLocaleString()}
+                  </p>
                   <p className="text-xs" style={{ color: v("text-muted") }}>
                     {point.type === "income" ? "Доход" : "Расход"}: {point.amount}
                   </p>
-                  {point.description && (
-                    <ExpandableText text={point.description} className="mt-1" />
-                  )}
+                  {point.description && <ExpandableText text={point.description} className="mt-1" />}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     className="rounded-lg border px-3 py-1 text-xs transition-colors"
                     style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => startEdit(point)}
                   >
                     Редактировать
@@ -734,8 +798,12 @@ export function FinancialPlanDetailsPage() {
                   <button
                     className="rounded-lg border px-3 py-1 text-xs transition-colors"
                     style={buttonStyle("danger", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() =>
                       setDeleteTarget({
                         type: "point",

@@ -1,13 +1,6 @@
 export const RICH_TEXT_BLOCK_TYPES = ["general", "financial", "marketing", "operations"] as const;
 
-export const SMART_BLOCK_TYPES = [
-  "swot",
-  "timeline",
-  "metrics",
-  "markdown",
-  "checklist",
-  "chart_embed",
-] as const;
+export const SMART_BLOCK_TYPES = ["swot", "timeline", "metrics", "markdown", "checklist", "chart_embed"] as const;
 
 export type SwotData = {
   strengths: string[];

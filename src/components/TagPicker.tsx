@@ -82,13 +82,7 @@ export function TagPicker({ selectedTags, onChange }: TagPickerProps) {
     <div className="relative" ref={dropdownRef}>
       <div className="flex flex-wrap gap-1 items-center mb-1">
         {selectedTags.map((tag) => (
-          <TagChip
-            key={tag.id}
-            tag={tag}
-            removable
-            onRemove={() => toggleTag(tag)}
-            size="sm"
-          />
+          <TagChip key={tag.id} tag={tag} removable onRemove={() => toggleTag(tag)} size="sm" />
         ))}
         <button
           type="button"
@@ -102,20 +96,13 @@ export function TagPicker({ selectedTags, onChange }: TagPickerProps) {
       {open && (
         <div className="absolute z-50 mt-1 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3">
           <div className="mb-2">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Выберите тег
-            </p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Выберите тег</p>
             {available.length === 0 && selectedTags.length > 0 && (
               <p className="text-xs text-gray-400">Все теги уже назначены</p>
             )}
             <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
               {available.map((tag) => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  className="cursor-pointer"
-                >
+                <button key={tag.id} type="button" onClick={() => toggleTag(tag)} className="cursor-pointer">
                   <TagChip tag={tag} size="sm" />
                 </button>
               ))}
@@ -123,9 +110,7 @@ export function TagPicker({ selectedTags, onChange }: TagPickerProps) {
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Новый тег
-            </p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Новый тег</p>
             <div className="flex gap-1 mb-1">
               {COLOR_SWATCHES.map((c) => (
                 <button
@@ -163,9 +148,7 @@ export function TagPicker({ selectedTags, onChange }: TagPickerProps) {
 
           {allTags.length > 0 && (
             <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Все теги
-              </p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Все теги</p>
               <div className="flex flex-wrap gap-1">
                 {allTags.map((tag) => (
                   <div key={tag.id} className="flex items-center gap-0.5">

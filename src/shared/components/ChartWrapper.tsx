@@ -13,9 +13,5 @@ export function ChartWrapper({ children, className }: Props) {
     return () => clearTimeout(id);
   }, []);
 
-  return (
-    <div className={className}>
-      {ready ? children : null}
-    </div>
-  );
+  return <div className={className}>{ready ? children : null}</div>;
 }

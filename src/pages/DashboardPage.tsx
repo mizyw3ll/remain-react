@@ -1,5 +1,16 @@
 ﻿import { Link } from "react-router-dom";
-import { ScrollText, PiggyBank, FileText, BarChart3, Plus, ArrowRight, TrendingUp, Calendar, LayoutGrid, Users } from "lucide-react";
+import {
+  ScrollText,
+  PiggyBank,
+  FileText,
+  BarChart3,
+  Plus,
+  ArrowRight,
+  TrendingUp,
+  Calendar,
+  LayoutGrid,
+  Users,
+} from "lucide-react";
 import { v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useDashboardQuery } from "../hooks/useCachedData";
@@ -80,18 +91,24 @@ export function DashboardPage() {
       {/* Quick Actions */}
       <div className="animate-fade-in stagger-5">
         <div className="flex flex-wrap gap-3">
-          <Link to="/business-plans"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-400 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.97]">
+          <Link
+            to="/business-plans"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-400 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.97]"
+          >
             <Plus size={16} /> Новый бизнес-план
           </Link>
-          <Link to="/financial-plans"
+          <Link
+            to="/financial-plans"
             className="inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--bg-hover)] active:scale-[0.97]"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}>
+            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+          >
             <Plus size={16} /> Новый финансовый график
           </Link>
-          <Link to="/notes"
+          <Link
+            to="/notes"
             className="inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--bg-hover)] active:scale-[0.97]"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}>
+            style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+          >
             <Plus size={16} /> Новая заметка
           </Link>
         </div>
@@ -106,36 +123,55 @@ export function DashboardPage() {
               <ScrollText size={18} style={{ color: "#818cf8" }} />
               Бизнес-планы
             </h2>
-            <Link to="/business-plans" className="flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:text-indigo-400" style={{ color: v("text-muted") }}>
+            <Link
+              to="/business-plans"
+              className="flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:text-indigo-400"
+              style={{ color: v("text-muted") }}
+            >
               Все <ArrowRight size={12} />
             </Link>
           </div>
           {dashboard?.recent_plans && dashboard.recent_plans.length > 0 ? (
             <div className="space-y-2">
-              {dashboard.recent_plans.map((plan: { id: number; title: string; block_count: number; created_at: string }, i: number) => (
-                <Link key={plan.id} to={`/business-plans/${plan.id}`}
-                  className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 animate-fade-in stagger-${i + 1}`}
-                  style={{ background: v("bg-card"), borderColor: v("border-primary") }}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate" style={{ color: v("text-primary") }}>{plan.title}</p>
-                      <div className="mt-1 flex items-center gap-3">
-                        <span className="text-xs" style={{ color: v("text-muted") }}>{plan.block_count} блоков</span>
-                        <span className="text-xs" style={{ color: v("text-muted") }}>
-                          <Calendar size={10} className="mr-1 inline" />
-                          {new Date(plan.created_at).toLocaleDateString("ru-RU")}
-                        </span>
+              {dashboard.recent_plans.map(
+                (plan: { id: number; title: string; block_count: number; created_at: string }, i: number) => (
+                  <Link
+                    key={plan.id}
+                    to={`/business-plans/${plan.id}`}
+                    className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-500/30 animate-fade-in stagger-${i + 1}`}
+                    style={{ background: v("bg-card"), borderColor: v("border-primary") }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate" style={{ color: v("text-primary") }}>
+                          {plan.title}
+                        </p>
+                        <div className="mt-1 flex items-center gap-3">
+                          <span className="text-xs" style={{ color: v("text-muted") }}>
+                            {plan.block_count} блоков
+                          </span>
+                          <span className="text-xs" style={{ color: v("text-muted") }}>
+                            <Calendar size={10} className="mr-1 inline" />
+                            {new Date(plan.created_at).toLocaleDateString("ru-RU")}
+                          </span>
+                        </div>
                       </div>
+                      <ArrowRight
+                        size={14}
+                        className="ml-2 shrink-0 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-1"
+                        style={{ color: v("accent-primary") }}
+                      />
                     </div>
-                    <ArrowRight size={14} className="ml-2 shrink-0 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-1" style={{ color: v("accent-primary") }} />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ),
+              )}
             </div>
           ) : (
             <GlassCard hover={false}>
               <ScrollText size={24} className="mx-auto mb-2" style={{ color: v("text-muted") }} />
-              <p className="text-sm text-center" style={{ color: v("text-muted") }}>Нет бизнес-планов</p>
+              <p className="text-sm text-center" style={{ color: v("text-muted") }}>
+                Нет бизнес-планов
+              </p>
             </GlassCard>
           )}
         </div>
@@ -147,36 +183,55 @@ export function DashboardPage() {
               <TrendingUp size={18} style={{ color: "#34d399" }} />
               Фин. графики
             </h2>
-            <Link to="/financial-plans" className="flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:text-emerald-400" style={{ color: v("text-muted") }}>
+            <Link
+              to="/financial-plans"
+              className="flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:text-emerald-400"
+              style={{ color: v("text-muted") }}
+            >
               Все <ArrowRight size={12} />
             </Link>
           </div>
           {dashboard?.recent_charts && dashboard.recent_charts.length > 0 ? (
             <div className="space-y-2">
-              {dashboard.recent_charts.map((chart: { id: number; title: string; point_count: number; created_at: string }, i: number) => (
-                <Link key={chart.id} to={`/financial-plans/${chart.id}`}
-                  className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-500/30 animate-fade-in stagger-${i + 1}`}
-                  style={{ background: v("bg-card"), borderColor: v("border-primary") }}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate" style={{ color: v("text-primary") }}>{chart.title}</p>
-                      <div className="mt-1 flex items-center gap-3">
-                        <span className="text-xs" style={{ color: v("text-muted") }}>{chart.point_count} точек</span>
-                        <span className="text-xs" style={{ color: v("text-muted") }}>
-                          <Calendar size={10} className="mr-1 inline" />
-                          {new Date(chart.created_at).toLocaleDateString("ru-RU")}
-                        </span>
+              {dashboard.recent_charts.map(
+                (chart: { id: number; title: string; point_count: number; created_at: string }, i: number) => (
+                  <Link
+                    key={chart.id}
+                    to={`/financial-plans/${chart.id}`}
+                    className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-500/30 animate-fade-in stagger-${i + 1}`}
+                    style={{ background: v("bg-card"), borderColor: v("border-primary") }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate" style={{ color: v("text-primary") }}>
+                          {chart.title}
+                        </p>
+                        <div className="mt-1 flex items-center gap-3">
+                          <span className="text-xs" style={{ color: v("text-muted") }}>
+                            {chart.point_count} точек
+                          </span>
+                          <span className="text-xs" style={{ color: v("text-muted") }}>
+                            <Calendar size={10} className="mr-1 inline" />
+                            {new Date(chart.created_at).toLocaleDateString("ru-RU")}
+                          </span>
+                        </div>
                       </div>
+                      <ArrowRight
+                        size={14}
+                        className="ml-2 shrink-0 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-1"
+                        style={{ color: "#34d399" }}
+                      />
                     </div>
-                    <ArrowRight size={14} className="ml-2 shrink-0 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-1" style={{ color: "#34d399" }} />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ),
+              )}
             </div>
           ) : (
             <GlassCard hover={false}>
               <TrendingUp size={24} className="mx-auto mb-2" style={{ color: v("text-muted") }} />
-              <p className="text-sm text-center" style={{ color: v("text-muted") }}>Нет финансовых графиков</p>
+              <p className="text-sm text-center" style={{ color: v("text-muted") }}>
+                Нет финансовых графиков
+              </p>
             </GlassCard>
           )}
         </div>
@@ -188,19 +243,28 @@ export function DashboardPage() {
               <FileText size={18} style={{ color: "#fbbf24" }} />
               Заметки
             </h2>
-            <Link to="/notes" className="flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:text-amber-400" style={{ color: v("text-muted") }}>
+            <Link
+              to="/notes"
+              className="flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:text-amber-400"
+              style={{ color: v("text-muted") }}
+            >
               Все <ArrowRight size={12} />
             </Link>
           </div>
           {dashboard?.recent_notes && dashboard.recent_notes.length > 0 ? (
             <div className="space-y-2">
               {dashboard.recent_notes.map((note: { id: number; title: string; created_at: string }, i: number) => (
-                <Link key={note.id} to="/notes"
+                <Link
+                  key={note.id}
+                  to="/notes"
                   className={`group block rounded-xl border p-4 backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-amber-500/30 animate-fade-in stagger-${i + 1}`}
-                  style={{ background: v("bg-card"), borderColor: v("border-primary") }}>
+                  style={{ background: v("bg-card"), borderColor: v("border-primary") }}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate" style={{ color: v("text-primary") }}>{note.title}</p>
+                      <p className="font-medium truncate" style={{ color: v("text-primary") }}>
+                        {note.title}
+                      </p>
                       <div className="mt-1">
                         <span className="text-xs" style={{ color: v("text-muted") }}>
                           <Calendar size={10} className="mr-1 inline" />
@@ -208,7 +272,11 @@ export function DashboardPage() {
                         </span>
                       </div>
                     </div>
-                    <ArrowRight size={14} className="ml-2 shrink-0 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-1" style={{ color: "#fbbf24" }} />
+                    <ArrowRight
+                      size={14}
+                      className="ml-2 shrink-0 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-1"
+                      style={{ color: "#fbbf24" }}
+                    />
                   </div>
                 </Link>
               ))}
@@ -216,7 +284,9 @@ export function DashboardPage() {
           ) : (
             <GlassCard hover={false}>
               <FileText size={24} className="mx-auto mb-2" style={{ color: v("text-muted") }} />
-              <p className="text-sm text-center" style={{ color: v("text-muted") }}>Нет заметок</p>
+              <p className="text-sm text-center" style={{ color: v("text-muted") }}>
+                Нет заметок
+              </p>
             </GlassCard>
           )}
         </div>

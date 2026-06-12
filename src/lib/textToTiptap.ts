@@ -11,7 +11,10 @@ function parseBlocks(lines: string[]) {
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-    if (!line) { i++; continue; }
+    if (!line) {
+      i++;
+      continue;
+    }
 
     const hMatch = line.match(/^(#{1,6})\s+(.+)$/);
     if (hMatch) {
@@ -23,7 +26,10 @@ function parseBlocks(lines: string[]) {
     if (line.match(/^[-*+]\s+/)) {
       const items: object[] = [];
       while (i < lines.length && lines[i].match(/^[-*+]\s+/)) {
-        items.push({ type: "listItem", content: [{ type: "paragraph", content: parseInline(lines[i].replace(/^[-*+]\s+/, "")) }] });
+        items.push({
+          type: "listItem",
+          content: [{ type: "paragraph", content: parseInline(lines[i].replace(/^[-*+]\s+/, "")) }],
+        });
         i++;
       }
       nodes.push({ type: "bulletList", content: items });
@@ -34,7 +40,10 @@ function parseBlocks(lines: string[]) {
     if (oMatch) {
       const items: object[] = [];
       while (i < lines.length && lines[i].match(/^\d+[.)]\s+/)) {
-        items.push({ type: "listItem", content: [{ type: "paragraph", content: parseInline(lines[i].replace(/^\d+[.)]\s+/, "")) }] });
+        items.push({
+          type: "listItem",
+          content: [{ type: "paragraph", content: parseInline(lines[i].replace(/^\d+[.)]\s+/, "")) }],
+        });
         i++;
       }
       nodes.push({ type: "orderedList", content: items });

@@ -6,7 +6,15 @@ import { ru } from "../i18n/ru";
 import { tw, inputStyle, buttonStyle, v } from "../shared/theme";
 
 /* ─── SWOT ─── */
-export function SwotEditor({ value, onChange, isDark }: { value: object; onChange: (v: object) => void; isDark: boolean }) {
+export function SwotEditor({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: object;
+  onChange: (v: object) => void;
+  isDark: boolean;
+}) {
   const data: SwotData = normalizeSwotData(value);
   const quadrants: { key: keyof SwotData; label: string; color: string }[] = [
     { key: "strengths", label: ru.swot.strengths, color: "#16a34a" },
@@ -22,8 +30,14 @@ export function SwotEditor({ value, onChange, isDark }: { value: object; onChang
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {quadrants.map(({ key, label, color }) => (
-        <div key={key} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color }}>{label}</p>
+        <div
+          key={key}
+          className="rounded-xl border p-3"
+          style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+        >
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color }}>
+            {label}
+          </p>
           <div className="space-y-2">
             {(data[key] ?? [""]).map((item, idx) => (
               <div key={idx} className="flex gap-2">
@@ -74,8 +88,18 @@ interface Milestone {
   description: string;
 }
 
-export function TimelineEditor({ value, onChange, isDark }: { value: object; onChange: (v: object) => void; isDark: boolean }) {
-  const milestones: Milestone[] = ((value as { milestones?: Milestone[] })?.milestones) ?? [{ title: "", date: "", description: "" }];
+export function TimelineEditor({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: object;
+  onChange: (v: object) => void;
+  isDark: boolean;
+}) {
+  const milestones: Milestone[] = (value as { milestones?: Milestone[] })?.milestones ?? [
+    { title: "", date: "", description: "" },
+  ];
 
   function updateMilestones(next: Milestone[]) {
     onChange({ milestones: next });
@@ -84,9 +108,15 @@ export function TimelineEditor({ value, onChange, isDark }: { value: object; onC
   return (
     <div className="space-y-3">
       {milestones.map((m, idx) => (
-        <div key={idx} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
+        <div
+          key={idx}
+          className="rounded-xl border p-3"
+          style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold" style={{ color: v("text-muted") }}>{ru.timeline.milestone(idx + 1)}</span>
+            <span className="text-xs font-semibold" style={{ color: v("text-muted") }}>
+              {ru.timeline.milestone(idx + 1)}
+            </span>
             <button
               type="button"
               className="rounded-lg border px-2 py-1 text-xs"
@@ -158,8 +188,16 @@ interface Metric {
   change?: string;
 }
 
-export function MetricsEditor({ value, onChange, isDark }: { value: object; onChange: (v: object) => void; isDark: boolean }) {
-  const metrics: Metric[] = ((value as { metrics?: Metric[] })?.metrics) ?? [{ label: "", value: "", unit: "" }];
+export function MetricsEditor({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: object;
+  onChange: (v: object) => void;
+  isDark: boolean;
+}) {
+  const metrics: Metric[] = (value as { metrics?: Metric[] })?.metrics ?? [{ label: "", value: "", unit: "" }];
 
   function updateMetrics(next: Metric[]) {
     onChange({ metrics: next });
@@ -168,9 +206,15 @@ export function MetricsEditor({ value, onChange, isDark }: { value: object; onCh
   return (
     <div className="space-y-3">
       {metrics.map((m, idx) => (
-        <div key={idx} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
+        <div
+          key={idx}
+          className="rounded-xl border p-3"
+          style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold" style={{ color: v("text-muted") }}>{ru.metrics.metric(idx + 1)}</span>
+            <span className="text-xs font-semibold" style={{ color: v("text-muted") }}>
+              {ru.metrics.metric(idx + 1)}
+            </span>
             <button
               type="button"
               className="rounded-lg border px-2 py-1 text-xs"
@@ -245,8 +289,16 @@ export function MetricsEditor({ value, onChange, isDark }: { value: object; onCh
 }
 
 /* ─── Markdown ─── */
-export function MarkdownEditor({ value, onChange, isDark }: { value: object; onChange: (v: object) => void; isDark: boolean }) {
-  const md = ((value as { markdown?: string })?.markdown) ?? "";
+export function MarkdownEditor({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: object;
+  onChange: (v: object) => void;
+  isDark: boolean;
+}) {
+  const md = (value as { markdown?: string })?.markdown ?? "";
   const [preview, setPreview] = useState(false);
 
   return (
@@ -255,7 +307,11 @@ export function MarkdownEditor({ value, onChange, isDark }: { value: object; onC
         <button
           type="button"
           className="rounded-lg border px-3 py-1 text-xs"
-          style={!preview ? buttonStyle("primary", isDark) : { borderColor: v("border-secondary"), color: v("text-secondary") }}
+          style={
+            !preview
+              ? buttonStyle("primary", isDark)
+              : { borderColor: v("border-secondary"), color: v("text-secondary") }
+          }
           onClick={() => setPreview(false)}
         >
           {ru.markdown.edit}
@@ -263,7 +319,11 @@ export function MarkdownEditor({ value, onChange, isDark }: { value: object; onC
         <button
           type="button"
           className="rounded-lg border px-3 py-1 text-xs"
-          style={preview ? buttonStyle("primary", isDark) : { borderColor: v("border-secondary"), color: v("text-secondary") }}
+          style={
+            preview
+              ? buttonStyle("primary", isDark)
+              : { borderColor: v("border-secondary"), color: v("text-secondary") }
+          }
           onClick={() => setPreview(true)}
         >
           {ru.markdown.preview}
@@ -283,7 +343,11 @@ export function MarkdownEditor({ value, onChange, isDark }: { value: object; onC
           className="rounded-xl border p-3 text-sm"
           style={{ borderColor: v("border-primary"), background: v("bg-primary"), color: v("text-primary") }}
         >
-          {md ? <MarkdownPreview content={md} /> : <span style={{ color: v("text-muted") }}>{ru.markdown.emptyPreview}</span>}
+          {md ? (
+            <MarkdownPreview content={md} />
+          ) : (
+            <span style={{ color: v("text-muted") }}>{ru.markdown.emptyPreview}</span>
+          )}
         </div>
       )}
     </div>
@@ -296,8 +360,16 @@ interface CheckItem {
   checked: boolean;
 }
 
-export function ChecklistEditor({ value, onChange, isDark }: { value: object; onChange: (v: object) => void; isDark: boolean }) {
-  const items: CheckItem[] = ((value as { items?: CheckItem[] })?.items) ?? [{ text: "", checked: false }];
+export function ChecklistEditor({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: object;
+  onChange: (v: object) => void;
+  isDark: boolean;
+}) {
+  const items: CheckItem[] = (value as { items?: CheckItem[] })?.items ?? [{ text: "", checked: false }];
 
   function updateItems(next: CheckItem[]) {
     onChange({ items: next });

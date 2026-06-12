@@ -48,8 +48,9 @@ export function ExpandableText({
     <div className={`min-w-0 ${className}`}>
       <p
         ref={textRef}
-        className={`overflow-hidden ${fontSize} ${fontWeight} leading-relaxed break-words ${!isExpanded ? "line-clamp-3" : ""
-          }`}
+        className={`overflow-hidden ${fontSize} ${fontWeight} leading-relaxed break-words ${
+          !isExpanded ? "line-clamp-3" : ""
+        }`}
         style={{
           color: `var(--${color})`,
         }}

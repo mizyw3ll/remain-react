@@ -45,44 +45,76 @@ export function SortableBlock({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-base font-semibold break-words" style={{ color: v("text-primary") }}>{block.title}</h3>
-          <p className="text-xs capitalize" style={{ color: v("text-muted") }}>{block.block_type.replace("_", " ")}</p>
+          <h3 className="text-base font-semibold break-words" style={{ color: v("text-primary") }}>
+            {block.title}
+          </h3>
+          <p className="text-xs capitalize" style={{ color: v("text-muted") }}>
+            {block.block_type.replace("_", " ")}
+          </p>
         </div>
         <div className="shrink-0 flex gap-2">
           <button
             className="rounded-lg border px-3 py-1 text-xs transition-colors md:hidden"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary"), cursor: "grab" }}
-            {...attributes} {...listeners}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            onMouseDown={(e) => { e.currentTarget.style.cursor = "grabbing"; }}
-            onMouseUp={(e) => { e.currentTarget.style.cursor = "grab"; }}
+            {...attributes}
+            {...listeners}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.cursor = "grabbing";
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.cursor = "grab";
+            }}
           >
             <GripVertical size={16} />
           </button>
           <button
             className="rounded-lg border px-3 py-1 text-xs transition-colors hidden md:flex"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary"), cursor: "grab" }}
-            {...attributes} {...listeners}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            onMouseDown={(e) => { e.currentTarget.style.cursor = "grabbing"; }}
-            onMouseUp={(e) => { e.currentTarget.style.cursor = "grab"; }}
+            {...attributes}
+            {...listeners}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.cursor = "grabbing";
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.cursor = "grab";
+            }}
           >
             Перетащить
           </button>
-          <button className="rounded-lg border px-3 py-1 text-xs transition-colors"
+          <button
+            className="rounded-lg border px-3 py-1 text-xs transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
             onClick={() => onEdit(block)}
           >
             <Pencil size={14} />
           </button>
-          <button className="relative rounded-lg border px-3 py-1 text-xs transition-colors"
+          <button
+            className="relative rounded-lg border px-3 py-1 text-xs transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
             onClick={() => onComments(block)}
           >
             <MessageCircle size={14} />
@@ -95,19 +127,29 @@ export function SortableBlock({
               </span>
             )}
           </button>
-          <button className="rounded-lg border px-3 py-1 text-xs transition-colors"
+          <button
+            className="rounded-lg border px-3 py-1 text-xs transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
             onClick={() => onDuplicate(block)}
             title="Дублировать блок"
           >
             <Copy size={14} />
           </button>
-          <button className="rounded-lg border px-3 py-1 text-xs transition-colors"
+          <button
+            className="rounded-lg border px-3 py-1 text-xs transition-colors"
             style={buttonStyle("danger", isDark)}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
             onClick={() => onDelete(block)}
           >
             <Trash2 size={14} />

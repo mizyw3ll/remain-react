@@ -18,8 +18,12 @@ import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { SharedPlanPage } from "./pages/SharedPlanPage";
 
-const BusinessPlanDetailsPage = lazy(() => import("./pages/BusinessPlanDetailsPage").then(m => ({ default: m.BusinessPlanDetailsPage })));
-const FinancialPlanDetailsPage = lazy(() => import("./pages/FinancialPlanDetailsPage").then(m => ({ default: m.FinancialPlanDetailsPage })));
+const BusinessPlanDetailsPage = lazy(() =>
+  import("./pages/BusinessPlanDetailsPage").then((m) => ({ default: m.BusinessPlanDetailsPage })),
+);
+const FinancialPlanDetailsPage = lazy(() =>
+  import("./pages/FinancialPlanDetailsPage").then((m) => ({ default: m.FinancialPlanDetailsPage })),
+);
 
 function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -33,9 +37,23 @@ function App() {
         <Route path="/shared/:token" element={<SharedPlanPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/business-plans" element={<BusinessPlansPage />} />
-          <Route path="/business-plans/:id" element={<Suspense fallback={<div className="skeleton-card h-64 m-6" />}><BusinessPlanDetailsPage /></Suspense>} />
+          <Route
+            path="/business-plans/:id"
+            element={
+              <Suspense fallback={<div className="skeleton-card h-64 m-6" />}>
+                <BusinessPlanDetailsPage />
+              </Suspense>
+            }
+          />
           <Route path="/financial-plans" element={<FinancialPlansPage />} />
-          <Route path="/financial-plans/:id" element={<Suspense fallback={<div className="skeleton-card h-64 m-6" />}><FinancialPlanDetailsPage /></Suspense>} />
+          <Route
+            path="/financial-plans/:id"
+            element={
+              <Suspense fallback={<div className="skeleton-card h-64 m-6" />}>
+                <FinancialPlanDetailsPage />
+              </Suspense>
+            }
+          />
           <Route path="/notes" element={<NotesPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -49,14 +67,17 @@ function App() {
       </Routes>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
-      <Toaster position="top-right" toastOptions={{
-        style: {
-          background: "var(--bg-card)",
-          border: "1px solid var(--border-primary)",
-          color: "var(--text-primary)",
-          borderRadius: "12px",
-        },
-      }} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-primary)",
+            color: "var(--text-primary)",
+            borderRadius: "12px",
+          },
+        }}
+      />
     </>
   );
 }

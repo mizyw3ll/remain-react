@@ -153,12 +153,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    const config = error.config as typeof error.config & { metadata?: { startTime: number } } | undefined;
+    const config = error.config as (typeof error.config & { metadata?: { startTime: number } }) | undefined;
     if (config?.metadata?.startTime !== undefined) {
       const durationMs = performance.now() - config.metadata.startTime;
-      console.warn(
-        `[API error] ${config.method?.toUpperCase()} ${config.url} — ${durationMs.toFixed(0)}ms`,
-      );
+      console.warn(`[API error] ${config.method?.toUpperCase()} ${config.url} — ${durationMs.toFixed(0)}ms`);
     }
     return Promise.reject(error);
   },
@@ -168,11 +166,9 @@ export async function loginApi(login: string, password: string) {
   const body = new URLSearchParams();
   body.set("username", login);
   body.set("password", password);
-  const { data } = await api.post<{ access_token: string; token_type: string }>(
-    "/auth/login",
-    body,
-    { headers: { "Content-Type": "application/x-www-form-urlencoded" } },
-  );
+  const { data } = await api.post<{ access_token: string; token_type: string }>("/auth/login", body, {
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  });
   return data;
 }
 
@@ -201,18 +197,12 @@ export async function getBusinessPlansApi() {
   return data;
 }
 
-export async function createBusinessPlanApi(payload: {
-  title: string;
-  description?: string;
-}) {
+export async function createBusinessPlanApi(payload: { title: string; description?: string }) {
   const { data } = await api.post<BusinessPlan>("/business/plans", payload);
   return data;
 }
 
-export async function updateBusinessPlanApi(
-  id: number,
-  payload: Partial<Pick<BusinessPlan, "title" | "description">>,
-) {
+export async function updateBusinessPlanApi(id: number, payload: Partial<Pick<BusinessPlan, "title" | "description">>) {
   const { data } = await api.patch<BusinessPlan>(`/business/plans/${id}`, payload);
   return data;
 }
@@ -238,7 +228,15 @@ export async function getPlanBlocksApi(planId: number) {
 
 export async function createPlanBlockApi(
   planId: number,
-  payload: { title: string; content?: string; block_type: string; rich_content?: object; linked_financial_chart_ids?: number[]; due_date?: string | null; media_attachments?: MediaAttachment[] },
+  payload: {
+    title: string;
+    content?: string;
+    block_type: string;
+    rich_content?: object;
+    linked_financial_chart_ids?: number[];
+    due_date?: string | null;
+    media_attachments?: MediaAttachment[];
+  },
 ) {
   const { data } = await api.post<PlanBlock>(`/business/plans/${planId}/blocks`, {
     content: payload.content ?? "",
@@ -278,11 +276,9 @@ export async function updatePlanBlockApi(
 export async function uploadBlockAttachmentApi(planId: number, blockId: number, file: File) {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await api.post<MediaAttachment>(
-    `/business/plans/${planId}/blocks/${blockId}/attachments`,
-    form,
-    { headers: { "Content-Type": "multipart/form-data" } },
-  );
+  const { data } = await api.post<MediaAttachment>(`/business/plans/${planId}/blocks/${blockId}/attachments`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data;
 }
 
@@ -346,10 +342,9 @@ export async function getChartPointsApi(chartId: number) {
 
 export async function getChartPointsBatchApi(chartIds: number[]) {
   if (chartIds.length === 0) return {} as Record<number, ChartPoint[]>;
-  const { data } = await api.post<{ chart_id: number; points: ChartPoint[] }[]>(
-    "/financial/charts/points/batch",
-    { chart_ids: chartIds },
-  );
+  const { data } = await api.post<{ chart_id: number; points: ChartPoint[] }[]>("/financial/charts/points/batch", {
+    chart_ids: chartIds,
+  });
   const result: Record<number, ChartPoint[]> = {};
   for (const item of data) {
     result[item.chart_id] = item.points;
@@ -450,12 +445,18 @@ export async function saveSnapshotApi(planId: number, title?: string, note?: str
   const params: Record<string, string> = {};
   if (title) params.title = title;
   if (note) params.note = note;
-  const { data } = await api.post<{ detail: string; snapshot_id: number }>(`/business/plans/${planId}/snapshots`, null, { params });
+  const { data } = await api.post<{ detail: string; snapshot_id: number }>(
+    `/business/plans/${planId}/snapshots`,
+    null,
+    { params },
+  );
   return data;
 }
 
 export async function getSnapshotsApi(planId: number) {
-  const { data } = await api.get<{ id: number; title: string; note: string | null; created_at: string; created_by_id: number }[]>(`/business/plans/${planId}/snapshots`);
+  const { data } = await api.get<
+    { id: number; title: string; note: string | null; created_at: string; created_by_id: number }[]
+  >(`/business/plans/${planId}/snapshots`);
   return data;
 }
 
@@ -470,17 +471,36 @@ export async function restoreSnapshotApi(planId: number, snapshotId: number) {
 }
 
 export async function getCommentsApi(planId: number, blockId: number) {
-  const { data } = await api.get<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number }[]>(`/business/plans/${planId}/blocks/${blockId}/comments`);
+  const { data } = await api.get<
+    { id: number; content: string; resolved: boolean; created_at: string; user_id: number }[]
+  >(`/business/plans/${planId}/blocks/${blockId}/comments`);
   return data;
 }
 
 export async function createCommentApi(planId: number, blockId: number, content: string) {
-  const { data } = await api.post<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number }>(`/business/plans/${planId}/blocks/${blockId}/comments`, { content });
+  const { data } = await api.post<{
+    id: number;
+    content: string;
+    resolved: boolean;
+    created_at: string;
+    user_id: number;
+  }>(`/business/plans/${planId}/blocks/${blockId}/comments`, { content });
   return data;
 }
 
-export async function updateCommentApi(planId: number, blockId: number, commentId: number, payload: { content?: string; resolved?: boolean }) {
-  const { data } = await api.patch<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number }>(`/business/plans/${planId}/blocks/${blockId}/comments/${commentId}`, payload);
+export async function updateCommentApi(
+  planId: number,
+  blockId: number,
+  commentId: number,
+  payload: { content?: string; resolved?: boolean },
+) {
+  const { data } = await api.patch<{
+    id: number;
+    content: string;
+    resolved: boolean;
+    created_at: string;
+    user_id: number;
+  }>(`/business/plans/${planId}/blocks/${blockId}/comments/${commentId}`, payload);
   return data;
 }
 
@@ -584,7 +604,10 @@ export async function createProjectApi(payload: { name: string; description?: st
   return data;
 }
 
-export async function updateProjectApi(projectId: number, payload: { name?: string; description?: string; color_idx?: number }) {
+export async function updateProjectApi(
+  projectId: number,
+  payload: { name?: string; description?: string; color_idx?: number },
+) {
   const { data } = await api.patch<Project>(`/notes/projects/${projectId}`, payload);
   return data;
 }
@@ -600,7 +623,12 @@ export type PaginatedNotes = {
   per_page: number;
 };
 
-export async function getNotesApi(params?: { project_id?: number; tag_ids?: string; page?: number; per_page?: number }) {
+export async function getNotesApi(params?: {
+  project_id?: number;
+  tag_ids?: string;
+  page?: number;
+  per_page?: number;
+}) {
   const searchParams = new URLSearchParams();
   if (params?.project_id) searchParams.set("project_id", String(params.project_id));
   if (params?.tag_ids) searchParams.set("tag_ids", params.tag_ids);
@@ -611,7 +639,12 @@ export async function getNotesApi(params?: { project_id?: number; tag_ids?: stri
   return data;
 }
 
-export async function createNoteApi(payload: { title: string; content_markdown?: string; project_id?: number | null; tag_ids?: number[] }) {
+export async function createNoteApi(payload: {
+  title: string;
+  content_markdown?: string;
+  project_id?: number | null;
+  tag_ids?: number[];
+}) {
   const { data } = await api.post<Note>(`/notes`, payload);
   return data;
 }
@@ -621,7 +654,10 @@ export async function getNoteApi(noteId: number) {
   return data;
 }
 
-export async function updateNoteApi(noteId: number, payload: { title?: string; content_markdown?: string; project_id?: number | null; tag_ids?: number[] }) {
+export async function updateNoteApi(
+  noteId: number,
+  payload: { title?: string; content_markdown?: string; project_id?: number | null; tag_ids?: number[] },
+) {
   const { data } = await api.patch<Note>(`/notes/${noteId}`, payload);
   return data;
 }
@@ -656,12 +692,21 @@ export async function getCalendarEventsApi(fromDate?: string, toDate?: string) {
   return data;
 }
 
-export async function createCalendarEventApi(payload: { title: string; description?: string; event_date: string; event_type?: string; notify_before?: number | null }) {
+export async function createCalendarEventApi(payload: {
+  title: string;
+  description?: string;
+  event_date: string;
+  event_type?: string;
+  notify_before?: number | null;
+}) {
   const { data } = await api.post<CalendarEvent>(`/calendar/events`, payload);
   return data;
 }
 
-export async function updateCalendarEventApi(eventId: number, payload: { title?: string; description?: string; event_date?: string; notify_before?: number | null }) {
+export async function updateCalendarEventApi(
+  eventId: number,
+  payload: { title?: string; description?: string; event_date?: string; notify_before?: number | null },
+) {
   const { data } = await api.patch<CalendarEvent>(`/calendar/events/${eventId}`, payload);
   return data;
 }
@@ -892,7 +937,12 @@ export async function getUnreadCountApi() {
   return data;
 }
 
-export async function createNotificationApi(payload: { title: string; body?: string; source_type: string; source_id?: number }) {
+export async function createNotificationApi(payload: {
+  title: string;
+  body?: string;
+  source_type: string;
+  source_id?: number;
+}) {
   const { data } = await api.post<AppNotification>("/notifications", payload);
   return data;
 }
@@ -1068,7 +1118,7 @@ export async function createContactApi(payload: {
 
 export async function updateContactApi(
   id: number,
-  payload: Partial<Pick<Contact, "name" | "email" | "phone" | "company" | "position" | "notes" | "is_lead">>
+  payload: Partial<Pick<Contact, "name" | "email" | "phone" | "company" | "position" | "notes" | "is_lead">>,
 ) {
   const { data } = await api.patch<Contact>(`/crm/contacts/${id}`, payload);
   return data;
@@ -1100,7 +1150,9 @@ export async function createDealApi(payload: {
 
 export async function updateDealApi(
   id: number,
-  payload: Partial<Pick<Deal, "title" | "description" | "contact_id" | "status" | "value" | "currency" | "priority" | "due_date">>
+  payload: Partial<
+    Pick<Deal, "title" | "description" | "contact_id" | "status" | "value" | "currency" | "priority" | "due_date">
+  >,
 ) {
   const { data } = await api.patch<Deal>(`/crm/deals/${id}`, payload);
   return data;

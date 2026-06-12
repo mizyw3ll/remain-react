@@ -199,8 +199,7 @@ export const tw = {
   modalContent: "w-full max-w-lg rounded-2xl border p-6 backdrop-blur-xl",
   inputBase:
     "w-full rounded-xl border px-4 py-2.5 backdrop-blur-sm transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400",
-  buttonBase:
-    "rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-200 ease-out active:scale-[0.97]",
+  buttonBase: "rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-200 ease-out active:scale-[0.97]",
   buttonPrimary:
     "rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-200 ease-out hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.97]",
   buttonSecondary:
@@ -254,10 +253,7 @@ export function inputStyle(isDark: boolean) {
 }
 
 // Get button style object
-export function buttonStyle(
-  variant: "primary" | "secondary" | "danger",
-  isDark: boolean,
-) {
+export function buttonStyle(variant: "primary" | "secondary" | "danger", isDark: boolean) {
   const mode = isDark ? "dark" : "light";
   if (variant === "primary") {
     const t = theme.buttons.primary[mode];

@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getUnreadCountApi, getNotificationsApi, markNotificationReadApi, markAllNotificationsReadApi, type AppNotification } from "../api";
+import {
+  getUnreadCountApi,
+  getNotificationsApi,
+  markNotificationReadApi,
+  markAllNotificationsReadApi,
+  type AppNotification,
+} from "../api";
 import { v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
 
@@ -122,7 +128,9 @@ export function NotificationBell() {
           }}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold" style={{ color: textPrimary }}>Уведомления</span>
+            <span className="text-sm font-semibold" style={{ color: textPrimary }}>
+              Уведомления
+            </span>
             {unread > 0 && (
               <button
                 className="text-xs font-medium transition-colors hover:underline"
@@ -136,7 +144,9 @@ export function NotificationBell() {
 
           <div className="max-h-80 space-y-1 overflow-y-auto">
             {notifs.length === 0 ? (
-              <p className="py-4 text-center text-sm" style={{ color: textMuted }}>Нет уведомлений</p>
+              <p className="py-4 text-center text-sm" style={{ color: textMuted }}>
+                Нет уведомлений
+              </p>
             ) : (
               notifs.slice(0, 10).map((n) => (
                 <div
@@ -149,11 +159,15 @@ export function NotificationBell() {
                     background: !n.is_read ? "rgba(99,102,241,0.05)" : "transparent",
                     opacity: n.is_read ? 0.5 : 1,
                   }}
-                  onClick={() => !n.is_read ? void handleMarkRead(n.id) : undefined}
+                  onClick={() => (!n.is_read ? void handleMarkRead(n.id) : undefined)}
                 >
-                  <p className="text-sm font-medium leading-tight" style={{ color: textPrimary }}>{n.title}</p>
+                  <p className="text-sm font-medium leading-tight" style={{ color: textPrimary }}>
+                    {n.title}
+                  </p>
                   {n.body && (
-                    <p className="text-xs mt-0.5 line-clamp-2" style={{ color: textMuted }}>{n.body}</p>
+                    <p className="text-xs mt-0.5 line-clamp-2" style={{ color: textMuted }}>
+                      {n.body}
+                    </p>
                   )}
                   <p className="text-[10px] mt-1" style={{ color: textSecondary }}>
                     {new Date(n.created_at).toLocaleString("ru-RU")}

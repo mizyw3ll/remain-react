@@ -55,12 +55,7 @@ export function SharedPlanPage() {
           background: v("bg-secondary"),
         }}
       >
-        <ExpandableText
-          text={plan.title}
-          fontSize="text-2xl"
-          fontWeight="font-semibold"
-          color="text-primary"
-        />
+        <ExpandableText text={plan.title} fontSize="text-2xl" fontWeight="font-semibold" color="text-primary" />
         <div className="mt-2">
           <MarkdownPreview content={plan.description || ru.common.noDescription} />
         </div>
@@ -68,7 +63,9 @@ export function SharedPlanPage() {
 
       {plan.blocks && plan.blocks.length > 0 && (
         <article className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Блоки</h2>
+          <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
+            Блоки
+          </h2>
           <div className="space-y-2">
             {plan.blocks.map((block) => (
               <SortableBlock

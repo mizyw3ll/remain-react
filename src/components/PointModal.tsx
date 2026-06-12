@@ -15,15 +15,7 @@ interface PointModalProps {
   onCancel: () => void;
 }
 
-export function PointModal({
-  open,
-  title,
-  form,
-  isDark,
-  onFormChange,
-  onSave,
-  onCancel,
-}: PointModalProps) {
+export function PointModal({ open, title, form, isDark, onFormChange, onSave, onCancel }: PointModalProps) {
   if (!open) return null;
 
   const canSave = form.date && form.amount && !isNaN(Number(form.amount));
@@ -37,7 +29,9 @@ export function PointModal({
           borderColor: v("border-primary"),
         }}
       >
-        <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{title}</h3>
+        <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+          {title}
+        </h3>
 
         <div className="mt-4 space-y-3">
           <input
@@ -82,8 +76,12 @@ export function PointModal({
           <button
             className="w-full sm:w-auto rounded-xl border px-4 py-2 text-sm transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
             onClick={onCancel}
           >
             Отмена
@@ -92,8 +90,12 @@ export function PointModal({
             className="w-full sm:w-auto rounded-xl border px-4 py-2 text-sm transition-colors"
             style={buttonStyle("primary", isDark)}
             disabled={!canSave}
-            onMouseEnter={(e) => { if (canSave) e.currentTarget.style.opacity = "0.9"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onMouseEnter={(e) => {
+              if (canSave) e.currentTarget.style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1";
+            }}
             onClick={onSave}
           >
             Сохранить

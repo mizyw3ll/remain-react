@@ -14,12 +14,7 @@ import {
   type DragStartEvent,
   DragOverlay,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   createBoardApi,
@@ -181,9 +176,7 @@ function KanbanColumn({
       }}
     >
       <div className="flex items-center gap-2 mb-4">
-        {column.color && (
-          <div className="w-3 h-3 rounded-full" style={{ background: column.color }} />
-        )}
+        {column.color && <div className="w-3 h-3 rounded-full" style={{ background: column.color }} />}
         <p className="text-sm font-semibold flex-1" style={{ color: v("text-primary") }}>
           {column.title}
         </p>
@@ -249,8 +242,12 @@ function KanbanColumn({
           onClick={() => setShowAddCard(true)}
           className="mt-2 flex items-center gap-1 rounded-xl px-3 py-2 text-xs transition-all duration-200"
           style={{ color: v("text-muted") }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = v("bg-hover");
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
         >
           <Plus size={14} />
           Добавить карточку
@@ -336,9 +333,7 @@ export function KanbanPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   async function handleCreateBoard() {
     if (!newBoardTitle.trim()) return;
@@ -449,16 +444,17 @@ export function KanbanPage() {
     if (!targetCol) return;
 
     const targetCards = [...targetCol.cards];
-    const overIndex = overData?.type === "card"
-      ? targetCards.findIndex((c) => c.id === (overData.card as BoardCard).id)
-      : targetCards.length;
+    const overIndex =
+      overData?.type === "card"
+        ? targetCards.findIndex((c) => c.id === (overData.card as BoardCard).id)
+        : targetCards.length;
 
     if (activeCard.column_id === targetColumnId) {
       const oldIndex = targetCards.findIndex((c) => c.id === activeCard.id);
       if (oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex) {
         const newCards = arrayMove(targetCards, oldIndex, overIndex);
         const cardOrderUpdates = newCards.map((c, i) =>
-          moveCardApi(c.id, { column_id: targetColumnId, card_order: i })
+          moveCardApi(c.id, { column_id: targetColumnId, card_order: i }),
         );
         Promise.all(cardOrderUpdates).then(() => {
           queryClient.invalidateQueries({ queryKey: queryKeys.kanbanBoard(selectedBoardId!) });
@@ -477,7 +473,9 @@ export function KanbanPage() {
   if (isLoading) {
     return (
       <div className={tw.pageContainer}>
-        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>Доски</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>
+          Доски
+        </h1>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="skeleton-card h-12 rounded-xl" />
@@ -490,7 +488,9 @@ export function KanbanPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-4 max-w-full">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>Доски</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>
+          Доски
+        </h1>
         <button
           type="button"
           onClick={() => setShowCreateBoard(true)}
@@ -587,17 +587,36 @@ export function KanbanPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-w-0">
             {visibleBoards.map((b) => (
               <div key={b.id} className="relative group">
-                <GlassCard as="button" onClick={() => setSelectedBoardId(b.id === selectedBoardId ? null : b.id)}
-                  className={`text-left animate-fade-in min-w-0 w-full ${selectedBoardId === b.id ? "ring-2 ring-indigo-500/50" : ""}`}>
+                <GlassCard
+                  as="button"
+                  onClick={() => setSelectedBoardId(b.id === selectedBoardId ? null : b.id)}
+                  className={`text-left animate-fade-in min-w-0 w-full ${selectedBoardId === b.id ? "ring-2 ring-indigo-500/50" : ""}`}
+                >
                   <div className="flex items-start gap-4">
-                    <div className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: "rgba(99,102,241,0.12)" }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                    <div
+                      className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: "rgba(99,102,241,0.12)" }}
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#818cf8"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold truncate" style={{ color: v("text-primary") }}>{b.title}</p>
+                      <p className="text-base font-semibold truncate" style={{ color: v("text-primary") }}>
+                        {b.title}
+                      </p>
                       <p className="text-xs mt-1" style={{ color: v("text-muted") }}>
                         {new Date(b.created_at).toLocaleDateString("ru-RU")}
                       </p>
@@ -606,14 +625,21 @@ export function KanbanPage() {
                 </GlassCard>
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    onClick={(e) => { e.stopPropagation(); setEditBoard(b); setEditBoardTitle(b.title); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditBoard(b);
+                      setEditBoardTitle(b.title);
+                    }}
                     className="p-1.5 rounded-lg transition-colors hover:bg-blue-500/10"
                     style={{ color: v("text-muted") }}
                   >
                     <Pencil size={14} />
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); void handleDeleteBoard(b.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDeleteBoard(b.id);
+                    }}
                     className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
                     style={{ color: v("text-muted") }}
                   >
@@ -635,7 +661,9 @@ export function KanbanPage() {
               </button>
               {boardPageNumbers.map((p, i) =>
                 p === "..." ? (
-                  <span key={`e${i}`} className="px-1 text-xs" style={{ color: v("text-muted") }}>...</span>
+                  <span key={`e${i}`} className="px-1 text-xs" style={{ color: v("text-muted") }}>
+                    ...
+                  </span>
                 ) : (
                   <button
                     key={p}
@@ -651,7 +679,7 @@ export function KanbanPage() {
                   >
                     {p}
                   </button>
-                )
+                ),
               )}
               <button
                 onClick={() => setBoardPage((p) => Math.min(totalBoardPages, p + 1))}
@@ -665,8 +693,6 @@ export function KanbanPage() {
           )}
         </>
       )}
-
-
 
       {board && (
         <div className="flex flex-col flex-1 min-h-0">
@@ -698,9 +724,7 @@ export function KanbanPage() {
               ))}
             </div>
           </DndContext>
-          <DragOverlay>
-            {activeCard ? <CardOverlay card={activeCard} /> : null}
-          </DragOverlay>
+          <DragOverlay>{activeCard ? <CardOverlay card={activeCard} /> : null}</DragOverlay>
         </div>
       )}
 

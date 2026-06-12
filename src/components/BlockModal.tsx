@@ -57,7 +57,12 @@ function canSaveBlock(form: BlockModalProps["form"]): boolean {
     return true;
   }
   if (form.block_type === "swot") {
-    const data = form.rich_content as { strengths?: string[]; weaknesses?: string[]; opportunities?: string[]; threats?: string[] };
+    const data = form.rich_content as {
+      strengths?: string[];
+      weaknesses?: string[];
+      opportunities?: string[];
+      threats?: string[];
+    };
     return Object.values(data ?? {}).some((arr) => arr?.some((s) => s.trim()));
   }
   if (form.block_type === "timeline") {
@@ -139,15 +144,21 @@ export function BlockModal({
         }}
       >
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{title}</h3>
+          <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+            {title}
+          </h3>
           {editingBlockId && onImproveWithAI ? (
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-colors"
               style={buttonStyle("secondary", isDark)}
               disabled={Boolean(aiImproving)}
-              onMouseEnter={(e) => { if (!aiImproving) e.currentTarget.style.background = v("bg-hover"); }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              onMouseEnter={(e) => {
+                if (!aiImproving) e.currentTarget.style.background = v("bg-hover");
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
               onClick={() => void onImproveWithAI()}
             >
               {aiImproving ? <Loader2 size={14} className="animate-spin" /> : null}
@@ -172,24 +183,19 @@ export function BlockModal({
             onChange={(e) => onFormChange("block_type", e.target.value)}
           >
             {BLOCK_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
             ))}
           </select>
 
           <div className="pt-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
-              Теги блока
-            </label>
-            <TagPicker
-              selectedTags={form.tags}
-              onChange={(tags) => onFormChange("tags", tags)}
-            />
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Теги блока</label>
+            <TagPicker selectedTags={form.tags} onChange={(tags) => onFormChange("tags", tags)} />
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
-              Дедлайн
-            </label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Дедлайн</label>
             <input
               type="date"
               className={tw.inputBase}
@@ -210,12 +216,20 @@ export function BlockModal({
               />
               {editingBlockId && (
                 <div className="space-y-2 rounded-xl border p-3" style={{ borderColor: v("border-secondary") }}>
-                  <p className="text-sm font-medium" style={{ color: v("text-secondary") }}>{ru.editor.attachments}</p>
+                  <p className="text-sm font-medium" style={{ color: v("text-secondary") }}>
+                    {ru.editor.attachments}
+                  </p>
                   {form.media_attachments.length > 0 && (
                     <ul className="space-y-1">
                       {form.media_attachments.map((a) => (
                         <li key={a.id} className="flex items-center justify-between gap-2 text-xs">
-                          <a href={a.url} target="_blank" rel="noreferrer" className="truncate" style={{ color: v("text-primary") }}>
+                          <a
+                            href={a.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="truncate"
+                            style={{ color: v("text-primary") }}
+                          >
                             {a.name}
                           </a>
                           <button
@@ -258,17 +272,27 @@ export function BlockModal({
           )}
 
           {form.block_type === "timeline" && (
-            <TimelineEditor value={form.rich_content} onChange={(v) => onFormChange("rich_content", v)} isDark={isDark} />
+            <TimelineEditor
+              value={form.rich_content}
+              onChange={(v) => onFormChange("rich_content", v)}
+              isDark={isDark}
+            />
           )}
 
           {form.block_type === "metrics" && (
-            <MetricsEditor value={form.rich_content} onChange={(v) => onFormChange("rich_content", v)} isDark={isDark} />
+            <MetricsEditor
+              value={form.rich_content}
+              onChange={(v) => onFormChange("rich_content", v)}
+              isDark={isDark}
+            />
           )}
 
-          {form.block_type === "chart_embed" && (
-            financialCharts.length > 0 ? (
+          {form.block_type === "chart_embed" &&
+            (financialCharts.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-sm" style={{ color: v("text-muted") }}>{ru.blocks.chartEmbed.select}</p>
+                <p className="text-sm" style={{ color: v("text-muted") }}>
+                  {ru.blocks.chartEmbed.select}
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {financialCharts.map((chart) => (
                     <label
@@ -287,7 +311,11 @@ export function BlockModal({
                           onFormChange("linked_financial_chart_ids", newIds);
                         }}
                       />
-                      <span className="line-clamp-2 break-all min-w-0" style={{ color: v("text-secondary") }} title={chart.title}>
+                      <span
+                        className="line-clamp-2 break-all min-w-0"
+                        style={{ color: v("text-secondary") }}
+                        title={chart.title}
+                      >
                         {chart.title}
                       </span>
                     </label>
@@ -295,18 +323,28 @@ export function BlockModal({
                 </div>
               </div>
             ) : (
-              <p className="text-sm rounded-xl border p-3" style={{ borderColor: v("border-secondary"), color: v("text-muted") }}>
+              <p
+                className="text-sm rounded-xl border p-3"
+                style={{ borderColor: v("border-secondary"), color: v("text-muted") }}
+              >
                 {ru.blocks.chartEmbed.noCharts}
               </p>
-            )
-          )}
+            ))}
 
           {form.block_type === "markdown" && (
-            <MarkdownEditor value={form.rich_content} onChange={(v) => onFormChange("rich_content", v)} isDark={isDark} />
+            <MarkdownEditor
+              value={form.rich_content}
+              onChange={(v) => onFormChange("rich_content", v)}
+              isDark={isDark}
+            />
           )}
 
           {form.block_type === "checklist" && (
-            <ChecklistEditor value={form.rich_content} onChange={(v) => onFormChange("rich_content", v)} isDark={isDark} />
+            <ChecklistEditor
+              value={form.rich_content}
+              onChange={(v) => onFormChange("rich_content", v)}
+              isDark={isDark}
+            />
           )}
         </div>
 
@@ -314,8 +352,12 @@ export function BlockModal({
           <button
             className="w-full sm:w-auto rounded-xl border px-4 py-2 text-sm transition-colors"
             style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = v("bg-hover");
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
             onClick={onCancel}
           >
             {ru.common.cancel}
@@ -324,8 +366,12 @@ export function BlockModal({
             className="w-full sm:w-auto rounded-xl border px-4 py-2 text-sm transition-colors"
             style={buttonStyle("primary", isDark)}
             disabled={!canSave}
-            onMouseEnter={(e) => { if (canSave) e.currentTarget.style.opacity = "0.9"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onMouseEnter={(e) => {
+              if (canSave) e.currentTarget.style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1";
+            }}
             onClick={onSave}
           >
             {ru.common.save}

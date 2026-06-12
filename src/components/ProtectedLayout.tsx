@@ -16,9 +16,13 @@ export function ProtectedLayout() {
   const navigate = useNavigate();
   const { open, tab, openModal, closeModal } = useSettingsModalState();
 
-  const isDetailPage = location.pathname.includes('/business-plans/') || location.pathname.includes('/financial-plans/');
-  const backPath = location.pathname.includes('/business-plans/') ? '/business-plans' :
-    location.pathname.includes('/financial-plans/') ? '/financial-plans' : null;
+  const isDetailPage =
+    location.pathname.includes("/business-plans/") || location.pathname.includes("/financial-plans/");
+  const backPath = location.pathname.includes("/business-plans/")
+    ? "/business-plans"
+    : location.pathname.includes("/financial-plans/")
+      ? "/financial-plans"
+      : null;
 
   useEffect(() => {
     const onResize = () => {
@@ -40,9 +44,9 @@ export function ProtectedLayout() {
             type="button"
             className="grid h-9 w-9 place-items-center rounded-lg border transition-colors hover:bg-[var(--bg-hover)] shrink-0"
             style={{
-              borderColor: 'var(--border-secondary)',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-secondary)',
+              borderColor: "var(--border-secondary)",
+              background: "var(--bg-secondary)",
+              color: "var(--text-secondary)",
             }}
             onClick={() => setSidebarOpen(true)}
             aria-label="Открыть меню"
@@ -55,9 +59,9 @@ export function ProtectedLayout() {
               type="button"
               className="grid h-9 w-9 place-items-center rounded-lg border transition-colors hover:bg-[var(--bg-hover)] shrink-0"
               style={{
-                borderColor: 'var(--border-secondary)',
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-secondary)',
+                borderColor: "var(--border-secondary)",
+                background: "var(--bg-secondary)",
+                color: "var(--text-secondary)",
               }}
               onClick={() => navigate(backPath)}
               aria-label="Назад к списку"
@@ -95,7 +99,7 @@ export function ProtectedLayout() {
 
         <div className="min-h-screen p-4 pt-16 md:p-6 md:pt-20">
           {loading ? (
-            <div className="grid min-h-[50vh] place-items-center" style={{ color: 'var(--text-muted)' }}>
+            <div className="grid min-h-[50vh] place-items-center" style={{ color: "var(--text-muted)" }}>
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
                 <span className="text-sm">Загрузка...</span>

@@ -32,14 +32,24 @@ function SwotRenderer({ block }: { block: PlanBlock }) {
       {quadrants.map(({ key, label, color }) => {
         const items = (data[key] ?? []).filter((i) => i.trim());
         return (
-          <div key={key} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color }}>{label}</p>
+          <div
+            key={key}
+            className="rounded-xl border p-3"
+            style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+          >
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color }}>
+              {label}
+            </p>
             {items.length === 0 ? (
-              <p className="text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.swot}</p>
+              <p className="text-xs" style={{ color: v("text-muted") }}>
+                {ru.blocks.empty.swot}
+              </p>
             ) : (
               <ul className="list-disc pl-4 space-y-0.5">
                 {items.map((item, i) => (
-                  <li key={i} className="text-sm" style={{ color: v("text-secondary") }}>{item}</li>
+                  <li key={i} className="text-sm" style={{ color: v("text-secondary") }}>
+                    {item}
+                  </li>
                 ))}
               </ul>
             )}
@@ -52,17 +62,31 @@ function SwotRenderer({ block }: { block: PlanBlock }) {
 
 /* ─── Timeline ─── */
 function TimelineRenderer({ block }: { block: PlanBlock }) {
-  const events = ((block.rich_content as { events?: { date: string; title: string; description?: string }[] })?.events) ?? [];
+  const events =
+    (block.rich_content as { events?: { date: string; title: string; description?: string }[] })?.events ?? [];
   const valid = events.filter((e) => e.title.trim());
-  if (valid.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.timeline}</p>;
+  if (valid.length === 0)
+    return (
+      <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>
+        {ru.blocks.empty.timeline}
+      </p>
+    );
   return (
     <div className="mt-2 space-y-2">
       {valid.map((event, i) => (
         <div key={i} className="flex gap-3">
-          <div className="w-20 shrink-0 text-xs font-medium" style={{ color: v("text-muted") }}>{event.date}</div>
+          <div className="w-20 shrink-0 text-xs font-medium" style={{ color: v("text-muted") }}>
+            {event.date}
+          </div>
           <div>
-            <p className="text-sm font-medium" style={{ color: v("text-primary") }}>{event.title}</p>
-            {event.description && <p className="text-xs" style={{ color: v("text-secondary") }}>{event.description}</p>}
+            <p className="text-sm font-medium" style={{ color: v("text-primary") }}>
+              {event.title}
+            </p>
+            {event.description && (
+              <p className="text-xs" style={{ color: v("text-secondary") }}>
+                {event.description}
+              </p>
+            )}
           </div>
         </div>
       ))}
@@ -72,15 +96,29 @@ function TimelineRenderer({ block }: { block: PlanBlock }) {
 
 /* ─── Metrics ─── */
 function MetricsRenderer({ block }: { block: PlanBlock }) {
-  const metrics = ((block.rich_content as { metrics?: { label: string; value: string; change?: string }[] })?.metrics) ?? [];
+  const metrics =
+    (block.rich_content as { metrics?: { label: string; value: string; change?: string }[] })?.metrics ?? [];
   const valid = metrics.filter((m) => m.label.trim());
-  if (valid.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.metrics}</p>;
+  if (valid.length === 0)
+    return (
+      <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>
+        {ru.blocks.empty.metrics}
+      </p>
+    );
   return (
     <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
       {valid.map((m, i) => (
-        <div key={i} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
-          <p className="text-xs" style={{ color: v("text-muted") }}>{m.label}</p>
-          <p className="text-lg font-semibold" style={{ color: v("text-primary") }}>{m.value}</p>
+        <div
+          key={i}
+          className="rounded-xl border p-3"
+          style={{ borderColor: v("border-primary"), background: v("bg-card") }}
+        >
+          <p className="text-xs" style={{ color: v("text-muted") }}>
+            {m.label}
+          </p>
+          <p className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+            {m.value}
+          </p>
           {m.change && (
             <p className="text-xs" style={{ color: v("text-secondary") }}>
               {m.change}
@@ -93,15 +131,19 @@ function MetricsRenderer({ block }: { block: PlanBlock }) {
 }
 
 /* ─── Chart Embed ─── */
-function ChartMiniView({
-  points,
-  loading,
-}: {
-  points?: ChartPoint[];
-  loading?: boolean;
-}) {
-  if (loading) return <div className="flex h-24 items-center justify-center"><Loader2 className="animate-spin" size={16} style={{ color: v("text-muted") }} /></div>;
-  if (!points || points.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>Нет данных</p>;
+function ChartMiniView({ points, loading }: { points?: ChartPoint[]; loading?: boolean }) {
+  if (loading)
+    return (
+      <div className="flex h-24 items-center justify-center">
+        <Loader2 className="animate-spin" size={16} style={{ color: v("text-muted") }} />
+      </div>
+    );
+  if (!points || points.length === 0)
+    return (
+      <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>
+        Нет данных
+      </p>
+    );
 
   const grouped: Record<string, { date: string; income: number; expense: number }> = {};
   for (const p of points) {
@@ -123,8 +165,24 @@ function ChartMiniView({
             contentStyle={{ fontSize: 11, background: "#1c1c1c", border: "1px solid #2a2a2a", borderRadius: 6 }}
             formatter={(value, name) => [Number(value).toFixed(2), name === "income" ? "Доход" : "Расход"]}
           />
-          <Area type="monotone" dataKey="income" stroke="#16a34a" fill="#16a34a" fillOpacity={0.15} strokeWidth={1.5} dot={false} />
-          <Area type="monotone" dataKey="expense" stroke="#dc2626" fill="#dc2626" fillOpacity={0.12} strokeWidth={1.5} dot={false} />
+          <Area
+            type="monotone"
+            dataKey="income"
+            stroke="#16a34a"
+            fill="#16a34a"
+            fillOpacity={0.15}
+            strokeWidth={1.5}
+            dot={false}
+          />
+          <Area
+            type="monotone"
+            dataKey="expense"
+            stroke="#dc2626"
+            fill="#dc2626"
+            fillOpacity={0.12}
+            strokeWidth={1.5}
+            dot={false}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </ChartWrapper>
@@ -143,17 +201,29 @@ function ChartEmbedRenderer({
   chartPointsLoading?: boolean;
 }) {
   const linked = financialCharts.filter((c) => block.linked_financial_chart_ids.includes(c.id));
-  if (linked.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.charts}</p>;
+  if (linked.length === 0)
+    return (
+      <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>
+        {ru.blocks.empty.charts}
+      </p>
+    );
 
   return (
     <div className="mt-2 grid gap-3 sm:grid-cols-2">
       {linked.map((chart) => (
-        <div key={chart.id} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
-          <Link to={`/financial-plans/${chart.id}`} className="text-sm font-semibold hover:underline" style={{ color: v("text-primary") }}>{chart.title}</Link>
-          <ChartMiniView
-            points={chartPointsById?.[chart.id]}
-            loading={chartPointsLoading}
-          />
+        <div
+          key={chart.id}
+          className="rounded-xl border p-3"
+          style={{ borderColor: v("border-primary"), background: v("bg-card") }}
+        >
+          <Link
+            to={`/financial-plans/${chart.id}`}
+            className="text-sm font-semibold hover:underline"
+            style={{ color: v("text-primary") }}
+          >
+            {chart.title}
+          </Link>
+          <ChartMiniView points={chartPointsById?.[chart.id]} loading={chartPointsLoading} />
         </div>
       ))}
     </div>
@@ -162,8 +232,13 @@ function ChartEmbedRenderer({
 
 /* ─── Markdown ─── */
 function MarkdownRenderer({ block }: { block: PlanBlock }) {
-  const md = ((block.rich_content as { markdown?: string })?.markdown) ?? "";
-  if (!md.trim()) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.markdown}</p>;
+  const md = (block.rich_content as { markdown?: string })?.markdown ?? "";
+  if (!md.trim())
+    return (
+      <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>
+        {ru.blocks.empty.markdown}
+      </p>
+    );
   return (
     <div className="mt-2">
       <MarkdownPreview content={md} />
@@ -173,15 +248,23 @@ function MarkdownRenderer({ block }: { block: PlanBlock }) {
 
 /* ─── Checklist ─── */
 function ChecklistRenderer({ block }: { block: PlanBlock }) {
-  const items = ((block.rich_content as { items?: { text: string; checked: boolean }[] })?.items) ?? [];
+  const items = (block.rich_content as { items?: { text: string; checked: boolean }[] })?.items ?? [];
   const valid = items.filter((i) => i.text.trim());
-  if (valid.length === 0) return <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>{ru.blocks.empty.checklist}</p>;
+  if (valid.length === 0)
+    return (
+      <p className="mt-2 text-xs" style={{ color: v("text-muted") }}>
+        {ru.blocks.empty.checklist}
+      </p>
+    );
   return (
     <div className="mt-2 space-y-1">
       {valid.map((item, i) => (
         <div key={i} className="flex items-center gap-2">
           <input type="checkbox" checked={item.checked} readOnly className="shrink-0" />
-          <span className={`text-sm ${item.checked ? "line-through" : ""}`} style={{ color: item.checked ? v("text-muted") : v("text-secondary") }}>
+          <span
+            className={`text-sm ${item.checked ? "line-through" : ""}`}
+            style={{ color: item.checked ? v("text-muted") : v("text-secondary") }}
+          >
             {item.text}
           </span>
         </div>
@@ -208,7 +291,13 @@ function DefaultRenderer({ block, isDark }: { block: PlanBlock; isDark: boolean 
 }
 
 /* ─── Main dispatcher ─── */
-export function BlockRenderer({ block, financialCharts, isDark, chartPointsById, chartPointsLoading }: BlockRendererProps) {
+export function BlockRenderer({
+  block,
+  financialCharts,
+  isDark,
+  chartPointsById,
+  chartPointsLoading,
+}: BlockRendererProps) {
   switch (block.block_type) {
     case "swot":
       return <SwotRenderer block={block} />;
@@ -241,11 +330,7 @@ export function useChartEmbedPoints(blocks: PlanBlock[]) {
 
   useEffect(() => {
     const chartIds = [
-      ...new Set(
-        blocks
-          .filter((b) => b.block_type === "chart_embed")
-          .flatMap((b) => b.linked_financial_chart_ids),
-      ),
+      ...new Set(blocks.filter((b) => b.block_type === "chart_embed").flatMap((b) => b.linked_financial_chart_ids)),
     ];
     if (chartIds.length === 0) {
       setChartPointsById({});
@@ -255,10 +340,18 @@ export function useChartEmbedPoints(blocks: PlanBlock[]) {
     let cancelled = false;
     setLoading(true);
     getChartPointsBatchApi(chartIds)
-      .then((data) => { if (!cancelled) setChartPointsById(data); })
-      .catch(() => { if (!cancelled) setChartPointsById({}); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((data) => {
+        if (!cancelled) setChartPointsById(data);
+      })
+      .catch(() => {
+        if (!cancelled) setChartPointsById({});
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [blocks]);
 
   return { chartPointsById, chartPointsLoading: loading };

@@ -3,9 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import {
-  createFinancialPlanApi,
-} from "../api";
+import { createFinancialPlanApi } from "../api";
 import { useCurrenciesQuery, useFinancialPlansQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
 import { cardStyle, cardHoverStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
@@ -52,8 +50,10 @@ export function FinancialPlansPage() {
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>Финансовые планы</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>
+          Финансовые планы
+        </h1>
         <div className="flex items-center gap-2">
           <button
             className={`${tw.buttonPrimary} flex items-center gap-1.5`}
@@ -106,22 +106,35 @@ export function FinancialPlansPage() {
             >
               <GlassCard accent="emerald">
                 <div className="mb-4 flex items-start gap-4">
-                  <div className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(16,185,129,0.12)" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div
+                    className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: "rgba(16,185,129,0.12)" }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#34d399"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <line x1="12" y1="1" x2="12" y2="23" />
                       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                     </svg>
                   </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3 min-w-0">
-                        <h2 className="text-lg font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
-                          {plan.title}
-                        </h2>
-                        <span
-                          className="shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-medium whitespace-nowrap"
-                        style={plan.is_active
-                          ? { background: "rgba(34, 197, 94, 0.15)", color: "#16a34a" }
-                          : { background: v("bg-active"), color: v("text-muted") }
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3 min-w-0">
+                      <h2 className="text-lg font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
+                        {plan.title}
+                      </h2>
+                      <span
+                        className="shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-medium whitespace-nowrap"
+                        style={
+                          plan.is_active
+                            ? { background: "rgba(34, 197, 94, 0.15)", color: "#16a34a" }
+                            : { background: v("bg-active"), color: v("text-muted") }
                         }
                       >
                         {plan.is_active ? "Активен" : "Неактивен"}
@@ -142,10 +155,7 @@ export function FinancialPlansPage() {
       )}
 
       {openForm && (
-        <div
-          className={tw.modalOverlay}
-          style={{ background: "rgba(0,0,0,0.6)" }}
-        >
+        <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
           <div
             className={tw.modalContent}
             style={{
@@ -165,7 +175,9 @@ export function FinancialPlansPage() {
                 onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               />
               {!form.title.trim() && form.title !== "" && (
-                <p className="text-xs" style={{ color: "#ef4444" }}>Название обязательно</p>
+                <p className="text-xs" style={{ color: "#ef4444" }}>
+                  Название обязательно
+                </p>
               )}
               <input
                 className={tw.inputBase}
@@ -188,7 +200,9 @@ export function FinancialPlansPage() {
                 ))}
               </select>
               {form.currency_id === 0 && (
-                <p className="text-xs" style={{ color: "#ef4444" }}>Выберите валюту</p>
+                <p className="text-xs" style={{ color: "#ef4444" }}>
+                  Выберите валюту
+                </p>
               )}
               <label className="flex items-center gap-2 text-sm" style={{ color: v("text-secondary") }}>
                 <input
@@ -212,11 +226,7 @@ export function FinancialPlansPage() {
                 >
                   Отмена
                 </button>
-                <button
-                  className={tw.buttonPrimary}
-                  disabled={!valid}
-                  onClick={() => void submit()}
-                >
+                <button className={tw.buttonPrimary} disabled={!valid} onClick={() => void submit()}>
                   Сохранить
                 </button>
               </div>

@@ -5,16 +5,18 @@ export async function login(login: string, password: string) {
   const data = new URLSearchParams();
   data.append("username", login);
   data.append("password", password);
-  const response = await api.post<{ access_token: string; token_type: string }>(
-    "/auth/login", data,
-    { headers: { "Content-Type": "application/x-www-form-urlencoded" } },
-  );
+  const response = await api.post<{ access_token: string; token_type: string }>("/auth/login", data, {
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  });
   return response.data;
 }
 
 export async function register(payload: {
-  email: string; username: string; password: string;
-  first_name?: string; last_name?: string;
+  email: string;
+  username: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
 }) {
   const response = await api.post<User>("/auth/register", payload);
   return response.data;

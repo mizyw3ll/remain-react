@@ -1,6 +1,19 @@
 ﻿import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { LogOut, Menu, MoreHorizontal, PiggyBank, ScrollText, Settings, Home, FileText, Calendar, Receipt, LayoutGrid, Users } from "lucide-react";
+import {
+  LogOut,
+  Menu,
+  MoreHorizontal,
+  PiggyBank,
+  ScrollText,
+  Settings,
+  Home,
+  FileText,
+  Calendar,
+  Receipt,
+  LayoutGrid,
+  Users,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import type { SettingsTab } from "../context/SettingsUiContext";
@@ -34,19 +47,21 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
       <aside
         className={`theme-sidebar fixed inset-y-0 left-0 z-50 w-[240px] border-r transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"}`}
         style={{
-          background: 'var(--bg-sidebar)',
-          borderColor: 'var(--border-primary)',
-          color: 'var(--text-primary)',
+          background: "var(--bg-sidebar)",
+          borderColor: "var(--border-primary)",
+          color: "var(--text-primary)",
         }}
       >
         <div className="flex h-full flex-col p-3">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Меню</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
+              Меню
+            </p>
             <button
               type="button"
               onClick={onClose}
               className="rounded-lg p-2 transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: "var(--text-muted)" }}
               aria-label="Закрыть меню"
             >
               <Menu size={18} />
@@ -61,10 +76,15 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
             <NavButton to="/tax-calendar" icon={<Receipt size={18} />} text="Налоги" onNavigate={onClose} />
             <NavButton to="/kanban" icon={<LayoutGrid size={18} />} text="Kanban" onNavigate={onClose} />
             <NavButton to="/crm" icon={<Users size={18} />} text="CRM" onNavigate={onClose} />
-            <NavButton to="/financial-plans" icon={<PiggyBank size={18} />} text="Финансовые планы" onNavigate={onClose} />
+            <NavButton
+              to="/financial-plans"
+              icon={<PiggyBank size={18} />}
+              text="Финансовые планы"
+              onNavigate={onClose}
+            />
           </nav>
 
-          <div className="my-3 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+          <div className="my-3 border-t" style={{ borderColor: "var(--border-primary)" }} />
 
           <div className="mt-auto space-y-2">
             {user && (
@@ -72,35 +92,41 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
                 ref={accountRef}
                 className="relative cursor-pointer select-none rounded-xl border p-3 transition-colors hover:bg-[var(--bg-hover)]"
                 style={{
-                  background: 'var(--bg-secondary)',
-                  borderColor: 'var(--border-muted)',
+                  background: "var(--bg-secondary)",
+                  borderColor: "var(--border-muted)",
                 }}
                 onClick={() => setAccountOpen((p) => !p)}
               >
                 <div className="flex items-center gap-2">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold"
-                    style={{ background: 'var(--accent-primary)', color: 'var(--bg-body)' }}>
+                  <div
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold"
+                    style={{ background: "var(--accent-primary)", color: "var(--bg-body)" }}
+                  >
                     {(user.first_name || user.username).charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{user.first_name || user.username}</p>
-                    <p className="truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>{user.email}</p>
+                    <p className="truncate text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                      {user.first_name || user.username}
+                    </p>
+                    <p className="truncate text-xs" style={{ color: "var(--text-tertiary)" }}>
+                      {user.email}
+                    </p>
                   </div>
-                  <MoreHorizontal size={18} style={{ color: 'var(--text-muted)' }} />
+                  <MoreHorizontal size={18} style={{ color: "var(--text-muted)" }} />
                 </div>
 
                 {accountOpen ? (
                   <div
                     className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-xl border shadow-xl animate-scale-in"
                     style={{
-                      background: 'var(--bg-secondary)',
-                      borderColor: 'var(--border-primary)',
+                      background: "var(--bg-secondary)",
+                      borderColor: "var(--border-primary)",
                     }}
                   >
                     <button
                       type="button"
                       className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-                      style={{ color: 'var(--text-secondary)' }}
+                      style={{ color: "var(--text-secondary)" }}
                       onClick={() => {
                         setAccountOpen(false);
                         onOpenSettings("main");
@@ -113,8 +139,8 @@ export function Sidebar({ open, onClose, onOpenSettings }: SidebarProps) {
                       type="button"
                       className="flex w-full items-center gap-2 border-t px-3 py-2.5 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                       style={{
-                        color: 'var(--text-secondary)',
-                        borderColor: 'var(--border-muted)',
+                        color: "var(--text-secondary)",
+                        borderColor: "var(--border-muted)",
                       }}
                       onClick={() => {
                         setAccountOpen(false);
@@ -161,9 +187,10 @@ function NavButton({
       to={to}
       onClick={onNavigate}
       className={({ isActive }) =>
-        `flex h-11 items-center rounded-xl px-3 transition-all duration-200 ${isActive
-          ? "bg-[var(--bg-active)] text-[var(--text-primary)] shadow-[inset_0_0_0_1px_var(--border-secondary)]"
-          : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+        `flex h-11 items-center rounded-xl px-3 transition-all duration-200 ${
+          isActive
+            ? "bg-[var(--bg-active)] text-[var(--text-primary)] shadow-[inset_0_0_0_1px_var(--border-secondary)]"
+            : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
         }`
       }
     >

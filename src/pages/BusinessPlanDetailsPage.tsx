@@ -9,11 +9,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Pencil, Trash2, Download, Camera, Check, X, Loader2, FileText, Table, Share2, Link } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -77,16 +73,14 @@ export function BusinessPlanDetailsPage() {
   const isDark = theme === "dark";
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 10 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 10 } }),
   );
 
   const [plan, setPlan] = useState<BusinessPlan | null>(null);
   const [blocks, setBlocks] = useState<PlanBlock[]>([]);
   const [analytics, setAnalytics] = useState<BusinessPlanAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: "plan" | "block"; id: number; title: string } | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "plan" | "block"; id: number; title: string } | null>(null);
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [planForm, setPlanForm] = useState({ title: "", description: "" });
   const location = useLocation();
@@ -128,14 +122,18 @@ export function BusinessPlanDetailsPage() {
 
   // Snapshots
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
-  const [snapshots, setSnapshots] = useState<{ id: number; title: string; note: string | null; created_at: string; created_by_id: number }[]>([]);
+  const [snapshots, setSnapshots] = useState<
+    { id: number; title: string; note: string | null; created_at: string; created_by_id: number }[]
+  >([]);
   const [snapshotsLoading, setSnapshotsLoading] = useState(false);
   const [snapshotTitle, setSnapshotTitle] = useState("");
   const [snapshotNote, setSnapshotNote] = useState("");
 
   // Comments
   const [commentBlockId, setCommentBlockId] = useState<number | null>(null);
-  const [comments, setComments] = useState<{ id: number; content: string; resolved: boolean; created_at: string; user_id: number; username?: string | null }[]>([]);
+  const [comments, setComments] = useState<
+    { id: number; content: string; resolved: boolean; created_at: string; user_id: number; username?: string | null }[]
+  >([]);
   const [commentText, setCommentText] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -204,7 +202,16 @@ export function BusinessPlanDetailsPage() {
 
   function openCreateBlockModal() {
     setEditingBlockId(null);
-    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [], tags: [], due_date: null });
+    setBlockForm({
+      title: "",
+      content: "",
+      block_type: "general",
+      rich_content: {},
+      media_attachments: [],
+      linked_financial_chart_ids: [],
+      tags: [],
+      due_date: null,
+    });
     setBlockModalOpen(true);
   }
 
@@ -272,7 +279,16 @@ export function BusinessPlanDetailsPage() {
 
       setBlockModalOpen(false);
       setEditingBlockId(null);
-      setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [], tags: [], due_date: null });
+      setBlockForm({
+        title: "",
+        content: "",
+        block_type: "general",
+        rich_content: {},
+        media_attachments: [],
+        linked_financial_chart_ids: [],
+        tags: [],
+        due_date: null,
+      });
       await refreshBlocks();
     } catch {
       toast.error(isEditingBlock ? ru.toasts.blockUpdateError : ru.toasts.blockCreateError);
@@ -326,7 +342,16 @@ export function BusinessPlanDetailsPage() {
   function handleCancelBlockEdit() {
     setBlockModalOpen(false);
     setEditingBlockId(null);
-    setBlockForm({ title: "", content: "", block_type: "general", rich_content: {}, media_attachments: [], linked_financial_chart_ids: [], tags: [], due_date: null });
+    setBlockForm({
+      title: "",
+      content: "",
+      block_type: "general",
+      rich_content: {},
+      media_attachments: [],
+      linked_financial_chart_ids: [],
+      tags: [],
+      due_date: null,
+    });
   }
 
   async function onDragEnd(event: DragEndEvent) {
@@ -338,7 +363,10 @@ export function BusinessPlanDetailsPage() {
     const next = arrayMove(blocks, oldIndex, newIndex);
     setBlocks(next);
     try {
-      await reorderPlanBlocksApi(planId, next.map((block) => block.id));
+      await reorderPlanBlocksApi(
+        planId,
+        next.map((block) => block.id),
+      );
       toast.success(ru.toasts.orderUpdated);
     } catch {
       toast.error(ru.toasts.orderError);
@@ -443,11 +471,14 @@ export function BusinessPlanDetailsPage() {
   function handleCopyShareLink() {
     if (!shareStatus?.share_token) return;
     const url = `${window.location.origin}/shared/${shareStatus.share_token}`;
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success(ru.share.copied);
-    }).catch(() => {
-      toast.error("Не удалось скопировать ссылку");
-    });
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        toast.success(ru.share.copied);
+      })
+      .catch(() => {
+        toast.error("Не удалось скопировать ссылку");
+      });
   }
 
   async function handleExportPlan(format: "html" | "xlsx" | "csv" | "pdf" = "html") {
@@ -600,12 +631,7 @@ export function BusinessPlanDetailsPage() {
                   onChange={(e) => setPlanForm((prev) => ({ ...prev, title: e.target.value }))}
                 />
               ) : (
-                <ExpandableText
-                  text={plan.title}
-                  fontSize="text-2xl"
-                  fontWeight="font-semibold"
-                  color="text-primary"
-                />
+                <ExpandableText text={plan.title} fontSize="text-2xl" fontWeight="font-semibold" color="text-primary" />
               )}
             </div>
             <div className="shrink-0 flex flex-wrap gap-2">
@@ -617,8 +643,12 @@ export function BusinessPlanDetailsPage() {
                   <button
                     className={tw.buttonSecondary}
                     style={buttonStyle("secondary", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => {
                       setPlanForm({ title: plan.title, description: plan.description ?? "" });
                       setIsEditingPlan(false);
@@ -633,20 +663,31 @@ export function BusinessPlanDetailsPage() {
                     <button
                       className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                       style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = v("bg-hover");
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
                       onClick={() => setExportFormatOpen(!exportFormatOpen)}
                     >
                       <Download size={16} />
                       <span className="hidden sm:inline">{ru.modals.export}</span>
                     </button>
                     {exportFormatOpen && (
-                      <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border p-1" style={{ borderColor: v("border-primary"), background: v("bg-sidebar") }}>
+                      <div
+                        className="absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border p-1"
+                        style={{ borderColor: v("border-primary"), background: v("bg-sidebar") }}
+                      >
                         <button
                           className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                           style={{ color: v("text-secondary") }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = v("bg-hover");
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                          }}
                           onClick={() => void handleExportPlan("html")}
                         >
                           <FileText size={14} />
@@ -655,8 +696,12 @@ export function BusinessPlanDetailsPage() {
                         <button
                           className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                           style={{ color: v("text-secondary") }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = v("bg-hover");
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                          }}
                           onClick={() => void handleExportPlan("xlsx")}
                         >
                           <Table size={14} />
@@ -665,8 +710,12 @@ export function BusinessPlanDetailsPage() {
                         <button
                           className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                           style={{ color: v("text-secondary") }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = v("bg-hover");
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                          }}
                           onClick={() => void handleExportPlan("csv")}
                         >
                           <Table size={14} />
@@ -675,8 +724,12 @@ export function BusinessPlanDetailsPage() {
                         <button
                           className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                           style={{ color: v("text-secondary") }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = v("bg-hover");
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                          }}
                           onClick={() => void handleExportPlan("pdf")}
                         >
                           <FileText size={14} />
@@ -688,9 +741,16 @@ export function BusinessPlanDetailsPage() {
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                    onClick={() => { setShareOpen(true); void loadShareStatus(); }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                    onClick={() => {
+                      setShareOpen(true);
+                      void loadShareStatus();
+                    }}
                   >
                     <Share2 size={16} />
                     <span className="hidden sm:inline">{ru.share.share}</span>
@@ -698,9 +758,16 @@ export function BusinessPlanDetailsPage() {
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                    onClick={() => { setSnapshotsOpen(true); void loadSnapshots(); }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                    onClick={() => {
+                      setSnapshotsOpen(true);
+                      void loadSnapshots();
+                    }}
                   >
                     <Camera size={16} />
                     <span className="hidden sm:inline">{ru.modals.snapshots}</span>
@@ -708,8 +775,12 @@ export function BusinessPlanDetailsPage() {
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={buttonStyle("secondary", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = v("bg-hover");
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => setIsEditingPlan(true)}
                   >
                     <Pencil size={16} />
@@ -718,8 +789,12 @@ export function BusinessPlanDetailsPage() {
                   <button
                     className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
                     style={buttonStyle("danger", isDark)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
                     onClick={() => setDeleteTarget({ type: "plan", id: plan.id, title: plan.title })}
                   >
                     <Trash2 size={16} />
@@ -744,9 +819,7 @@ export function BusinessPlanDetailsPage() {
 
           {plan && (
             <div className="mt-3">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
-                Теги плана
-              </label>
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Теги плана</label>
               <TagPicker
                 selectedTags={(plan.tags ?? []) as Tag[]}
                 onChange={async (tags) => {
@@ -776,10 +849,17 @@ export function BusinessPlanDetailsPage() {
       </article>
 
       {analytics && (
-        <article className="space-y-3 rounded-2xl border p-5" style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}>
+        <article
+          className="space-y-3 rounded-2xl border p-5"
+          style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}
+        >
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Обзор</h2>
-            <p className="text-xs" style={{ color: v("text-muted") }}>Быстрая аналитика плана</p>
+            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
+              Обзор
+            </h2>
+            <p className="text-xs" style={{ color: v("text-muted") }}>
+              Быстрая аналитика плана
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
@@ -789,40 +869,53 @@ export function BusinessPlanDetailsPage() {
               ["Вложений", analytics.attachments_count],
               ["Связей с графиками", analytics.linked_financial_charts_count],
             ].map(([label, value]) => (
-              <div key={label as string} className="rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-card") }}>
-                <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>{label as string}</p>
-                <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>{value as number}</p>
+              <div
+                key={label as string}
+                className="rounded-xl border p-3"
+                style={{ borderColor: v("border-primary"), background: v("bg-card") }}
+              >
+                <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>
+                  {label as string}
+                </p>
+                <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>
+                  {value as number}
+                </p>
               </div>
             ))}
           </div>
-
         </article>
       )}
 
       <article className="space-y-3">
         <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>Блоки</h2>
+          <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
+            Блоки
+          </h2>
           <div className="flex flex-wrap gap-2">
             <button
               className="rounded-lg border px-3 py-2 text-sm transition-colors"
               style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = v("bg-hover");
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
               onClick={() => void generatePlanOutlineWithAI()}
               disabled={aiGeneratingPlan}
             >
               {aiGeneratingPlan ? "AI..." : "AI: структура"}
             </button>
-            <button
-              className={tw.buttonPrimary}
-              onClick={openCreateBlockModal}
-            >
+            <button className={tw.buttonPrimary} onClick={openCreateBlockModal}>
               Добавить блок
             </button>
           </div>
-          </div>
+        </div>
         {blocks.length === 0 ? (
-          <div className="flex min-h-[150px] items-center justify-center rounded-xl border p-6" style={{ borderColor: v("border-primary"), background: v("bg-hover") }}>
+          <div
+            className="flex min-h-[150px] items-center justify-center rounded-xl border p-6"
+            style={{ borderColor: v("border-primary"), background: v("bg-hover") }}
+          >
             <div className="text-center">
               <p className="text-sm font-medium" style={{ color: v("text-secondary") }}>
                 У вас пока нет блоков в этом плане
@@ -846,7 +939,10 @@ export function BusinessPlanDetailsPage() {
                     chartPointsLoading={chartPointsLoading}
                     onEdit={handleEditBlock}
                     onDelete={(item) => setDeleteTarget({ type: "block", id: item.id, title: item.title })}
-                    onComments={(item) => { setCommentBlockId(item.id); void loadComments(item.id); }}
+                    onComments={(item) => {
+                      setCommentBlockId(item.id);
+                      void loadComments(item.id);
+                    }}
                     onDuplicate={async (item) => {
                       if (!planId) return;
                       try {
@@ -895,10 +991,17 @@ export function BusinessPlanDetailsPage() {
       {/* Snapshots Modal */}
       {snapshotsOpen && (
         <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
+          <div
+            className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5"
+            style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}
+          >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{ru.modals.snapshots}</h3>
-              <span className="text-xs" style={{ color: v("text-muted") }}>{snapshots.length}/20</span>
+              <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+                {ru.modals.snapshots}
+              </h3>
+              <span className="text-xs" style={{ color: v("text-muted") }}>
+                {snapshots.length}/20
+              </span>
             </div>
             <div className="mt-3 space-y-2">
               <input
@@ -924,26 +1027,56 @@ export function BusinessPlanDetailsPage() {
                 {ru.modals.saveSnapshot}
               </button>
               {snapshots.length >= 20 && (
-                <p className="text-xs" style={{ color: v("text-muted") }}>{ru.modals.snapshotLimitReached}</p>
+                <p className="text-xs" style={{ color: v("text-muted") }}>
+                  {ru.modals.snapshotLimitReached}
+                </p>
               )}
             </div>
             {snapshotsLoading ? (
-              <div className="flex h-40 items-center justify-center"><Loader2 className="animate-spin" size={24} style={{ color: v("text-muted") }} /></div>
+              <div className="flex h-40 items-center justify-center">
+                <Loader2 className="animate-spin" size={24} style={{ color: v("text-muted") }} />
+              </div>
             ) : (
               <div className="mt-3 space-y-2">
-                  {snapshots.length === 0 ? (
-                  <p className="text-sm" style={{ color: v("text-muted") }}>{ru.modals.noSnapshots}</p>
+                {snapshots.length === 0 ? (
+                  <p className="text-sm" style={{ color: v("text-muted") }}>
+                    {ru.modals.noSnapshots}
+                  </p>
                 ) : (
                   snapshots.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between rounded-xl border p-3"
+                      style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+                    >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium" style={{ color: v("text-primary") }}>{s.title}</p>
-                        {s.note && <p className="text-xs" style={{ color: v("text-muted") }}>{s.note}</p>}
-                        <p className="text-xs" style={{ color: v("text-muted") }}>{new Date(s.created_at).toLocaleString()}</p>
+                        <p className="text-sm font-medium" style={{ color: v("text-primary") }}>
+                          {s.title}
+                        </p>
+                        {s.note && (
+                          <p className="text-xs" style={{ color: v("text-muted") }}>
+                            {s.note}
+                          </p>
+                        )}
+                        <p className="text-xs" style={{ color: v("text-muted") }}>
+                          {new Date(s.created_at).toLocaleString()}
+                        </p>
                       </div>
                       <div className="shrink-0 flex gap-2">
-                        <button className="rounded-lg border px-3 py-1 text-xs" style={buttonStyle("primary", isDark)} onClick={() => void handleRestoreSnapshot(s.id)}>{ru.modals.restore}</button>
-                        <button className="rounded-lg border px-3 py-1 text-xs" style={buttonStyle("danger", isDark)} onClick={() => void handleDeleteSnapshot(s.id)}><Trash2 size={14} /></button>
+                        <button
+                          className="rounded-lg border px-3 py-1 text-xs"
+                          style={buttonStyle("primary", isDark)}
+                          onClick={() => void handleRestoreSnapshot(s.id)}
+                        >
+                          {ru.modals.restore}
+                        </button>
+                        <button
+                          className="rounded-lg border px-3 py-1 text-xs"
+                          style={buttonStyle("danger", isDark)}
+                          onClick={() => void handleDeleteSnapshot(s.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
                   ))
@@ -951,7 +1084,13 @@ export function BusinessPlanDetailsPage() {
               </div>
             )}
             <div className="mt-4 flex justify-end">
-              <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setSnapshotsOpen(false)}>{ru.modals.close}</button>
+              <button
+                className={tw.buttonSecondary}
+                style={buttonStyle("secondary", isDark)}
+                onClick={() => setSnapshotsOpen(false)}
+              >
+                {ru.modals.close}
+              </button>
             </div>
           </div>
         </div>
@@ -960,17 +1099,35 @@ export function BusinessPlanDetailsPage() {
       {/* Share Modal */}
       {shareOpen && (
         <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-md sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
+          <div
+            className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-md sm:p-5"
+            style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}
+          >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{ru.share.share}</h3>
-              <button onClick={() => setShareOpen(false)} className="rounded-lg p-1 transition-colors" style={{ color: v("text-secondary") }} onMouseEnter={(e) => { e.currentTarget.style.background = v("bg-hover"); }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+              <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+                {ru.share.share}
+              </h3>
+              <button
+                onClick={() => setShareOpen(false)}
+                className="rounded-lg p-1 transition-colors"
+                style={{ color: v("text-secondary") }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = v("bg-hover");
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
                 <X size={18} />
               </button>
             </div>
             <div className="mt-4 space-y-4">
               {shareStatus?.is_public ? (
                 <>
-                  <div className="flex items-center gap-2 rounded-xl border p-3" style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
+                  <div
+                    className="flex items-center gap-2 rounded-xl border p-3"
+                    style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+                  >
                     <Link size={16} style={{ color: v("text-muted") }} />
                     <input
                       className="flex-1 bg-transparent text-sm outline-none"
@@ -1014,7 +1171,13 @@ export function BusinessPlanDetailsPage() {
               )}
             </div>
             <div className="mt-4 flex justify-end">
-              <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setShareOpen(false)}>{ru.modals.close}</button>
+              <button
+                className={tw.buttonSecondary}
+                style={buttonStyle("secondary", isDark)}
+                onClick={() => setShareOpen(false)}
+              >
+                {ru.modals.close}
+              </button>
             </div>
           </div>
         </div>
@@ -1023,19 +1186,34 @@ export function BusinessPlanDetailsPage() {
       {/* Comments Modal */}
       {commentBlockId !== null && (
         <div className={tw.modalOverlay} style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
-            <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>{ru.modals.comments}</h3>
+          <div
+            className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-lg sm:p-5"
+            style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}
+          >
+            <h3 className="text-lg font-semibold" style={{ color: v("text-primary") }}>
+              {ru.modals.comments}
+            </h3>
             {commentsLoading ? (
-              <div className="flex h-40 items-center justify-center"><Loader2 className="animate-spin" size={24} style={{ color: v("text-muted") }} /></div>
+              <div className="flex h-40 items-center justify-center">
+                <Loader2 className="animate-spin" size={24} style={{ color: v("text-muted") }} />
+              </div>
             ) : (
               <div className="mt-3 space-y-2 max-h-[400px] overflow-y-auto">
                 {comments.length === 0 ? (
-                  <p className="text-sm" style={{ color: v("text-muted") }}>{ru.modals.noComments}</p>
+                  <p className="text-sm" style={{ color: v("text-muted") }}>
+                    {ru.modals.noComments}
+                  </p>
                 ) : (
                   comments.map((c) => (
-                    <div key={c.id} className={`rounded-xl border p-3 ${c.resolved ? "opacity-60" : ""}`} style={{ borderColor: v("border-primary"), background: v("bg-primary") }}>
+                    <div
+                      key={c.id}
+                      className={`rounded-xl border p-3 ${c.resolved ? "opacity-60" : ""}`}
+                      style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
+                    >
                       <div className="flex items-center gap-2 text-xs" style={{ color: v("text-muted") }}>
-                        <span className="font-medium" style={{ color: v("text-primary") }}>{c.username || `User #${c.user_id}`}</span>
+                        <span className="font-medium" style={{ color: v("text-primary") }}>
+                          {c.username || `User #${c.user_id}`}
+                        </span>
                         <span>{new Date(c.created_at).toLocaleString()}</span>
                       </div>
                       {editingCommentId === c.id ? (
@@ -1052,26 +1230,51 @@ export function BusinessPlanDetailsPage() {
                               if (e.key === "Escape") setEditingCommentId(null);
                             }}
                           />
-                          <button className="rounded-md border px-2 py-0.5 text-xs" style={buttonStyle("primary", isDark)} onClick={() => void handleUpdateCommentText(c.id, editingCommentText)}>
+                          <button
+                            className="rounded-md border px-2 py-0.5 text-xs"
+                            style={buttonStyle("primary", isDark)}
+                            onClick={() => void handleUpdateCommentText(c.id, editingCommentText)}
+                          >
                             <Check size={12} />
                           </button>
-                          <button className="rounded-md border px-2 py-0.5 text-xs" style={buttonStyle("secondary", isDark)} onClick={() => setEditingCommentId(null)}>
+                          <button
+                            className="rounded-md border px-2 py-0.5 text-xs"
+                            style={buttonStyle("secondary", isDark)}
+                            onClick={() => setEditingCommentId(null)}
+                          >
                             <X size={12} />
                           </button>
                         </div>
                       ) : (
-                        <p className="mt-1 text-sm" style={{ color: v("text-secondary") }}>{c.content}</p>
+                        <p className="mt-1 text-sm" style={{ color: v("text-secondary") }}>
+                          {c.content}
+                        </p>
                       )}
                       <div className="mt-2 flex items-center gap-2">
-                        <button className="rounded-md border px-2 py-0.5 text-xs" style={{ borderColor: v("border-secondary"), color: v("text-muted") }} onClick={() => void handleToggleResolveComment(c.id, c.resolved)}>
+                        <button
+                          className="rounded-md border px-2 py-0.5 text-xs"
+                          style={{ borderColor: v("border-secondary"), color: v("text-muted") }}
+                          onClick={() => void handleToggleResolveComment(c.id, c.resolved)}
+                        >
                           {c.resolved ? <X size={12} /> : <Check size={12} />}
                         </button>
                         {editingCommentId !== c.id && (
-                          <button className="rounded-md border px-2 py-0.5 text-xs" style={{ borderColor: v("border-secondary"), color: v("text-muted") }} onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.content); }}>
+                          <button
+                            className="rounded-md border px-2 py-0.5 text-xs"
+                            style={{ borderColor: v("border-secondary"), color: v("text-muted") }}
+                            onClick={() => {
+                              setEditingCommentId(c.id);
+                              setEditingCommentText(c.content);
+                            }}
+                          >
                             <Pencil size={12} />
                           </button>
                         )}
-                        <button className="rounded-md border px-2 py-0.5 text-xs" style={buttonStyle("danger", isDark)} onClick={() => void handleDeleteComment(c.id)}>
+                        <button
+                          className="rounded-md border px-2 py-0.5 text-xs"
+                          style={buttonStyle("danger", isDark)}
+                          onClick={() => void handleDeleteComment(c.id)}
+                        >
                           <Trash2 size={12} />
                         </button>
                       </div>
@@ -1087,12 +1290,26 @@ export function BusinessPlanDetailsPage() {
                 placeholder={ru.modals.addComment}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") void handleAddComment(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleAddComment();
+                }}
               />
-              <button className={tw.buttonPrimary} style={buttonStyle("primary", isDark)} onClick={() => void handleAddComment()}>{ru.modals.postComment}</button>
+              <button
+                className={tw.buttonPrimary}
+                style={buttonStyle("primary", isDark)}
+                onClick={() => void handleAddComment()}
+              >
+                {ru.modals.postComment}
+              </button>
             </div>
             <div className="mt-3 flex justify-end">
-              <button className={tw.buttonSecondary} style={buttonStyle("secondary", isDark)} onClick={() => setCommentBlockId(null)}>{ru.modals.close}</button>
+              <button
+                className={tw.buttonSecondary}
+                style={buttonStyle("secondary", isDark)}
+                onClick={() => setCommentBlockId(null)}
+              >
+                {ru.modals.close}
+              </button>
             </div>
           </div>
         </div>

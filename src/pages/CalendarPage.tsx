@@ -16,8 +16,18 @@ import { buttonStyle, inputStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
 
 const MONTHS = [
-  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+  "Январь",
+  "Февраль",
+  "Март",
+  "Апрель",
+  "Май",
+  "Июнь",
+  "Июль",
+  "Август",
+  "Сентябрь",
+  "Октябрь",
+  "Ноябрь",
+  "Декабрь",
 ];
 
 const DAYS_OF_WEEK = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
@@ -52,8 +62,11 @@ function formatDateTime(iso: string) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("ru-RU", {
-    day: "numeric", month: "long", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -153,27 +166,41 @@ export function CalendarPage() {
       if (pending.length > 0) {
         toast.success(`🔔 ${pending.length} напоминание(й) о событиях`);
       }
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }, []);
 
-  useEffect(() => { void fetchEvents(); }, [year, month]);
+  useEffect(() => {
+    void fetchEvents();
+  }, [year, month]);
 
   useEffect(() => {
     void checkNotifications();
     pollingRef.current = setInterval(() => void checkNotifications(), 30000);
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, [checkNotifications]);
 
   const days = getMonthDays(year, month);
 
   function prevMonth() {
-    if (month === 0) { setYear(year - 1); setMonth(11); }
-    else { setMonth(month - 1); }
+    if (month === 0) {
+      setYear(year - 1);
+      setMonth(11);
+    } else {
+      setMonth(month - 1);
+    }
   }
 
   function nextMonth() {
-    if (month === 11) { setYear(year + 1); setMonth(0); }
-    else { setMonth(month + 1); }
+    if (month === 11) {
+      setYear(year + 1);
+      setMonth(0);
+    } else {
+      setMonth(month + 1);
+    }
   }
 
   function getEventsForDate(d: Date | null) {
@@ -202,7 +229,9 @@ export function CalendarPage() {
       setNewNotify(0);
       setNewDate(getLocalDatetimeStr());
       await fetchEvents();
-    } catch { toast.error("Ошибка создания события"); }
+    } catch {
+      toast.error("Ошибка создания события");
+    }
   }
 
   function openEdit(event: CalendarEvent) {
@@ -229,7 +258,9 @@ export function CalendarPage() {
       toast.success("Событие обновлено");
       setEditEvent(null);
       await fetchEvents();
-    } catch { toast.error("Ошибка обновления события"); }
+    } catch {
+      toast.error("Ошибка обновления события");
+    }
   }
 
   async function handleDelete(eventId: number) {
@@ -237,7 +268,9 @@ export function CalendarPage() {
       await deleteCalendarEventApi(eventId);
       toast.success("Событие удалено");
       await fetchEvents();
-    } catch { toast.error("Ошибка удаления события"); }
+    } catch {
+      toast.error("Ошибка удаления события");
+    }
   }
 
   return (
@@ -277,9 +310,7 @@ export function CalendarPage() {
           background: isDark
             ? "linear-gradient(145deg, rgba(25,25,40,0.92), rgba(18,18,30,0.85))"
             : "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,247,255,0.85))",
-          boxShadow: isDark
-            ? "0 8px 40px rgba(0,0,0,0.35)"
-            : "0 8px 40px rgba(99,102,241,0.1)",
+          boxShadow: isDark ? "0 8px 40px rgba(0,0,0,0.35)" : "0 8px 40px rgba(99,102,241,0.1)",
         }}
       >
         {/* Month nav */}
@@ -329,16 +360,16 @@ export function CalendarPage() {
               <div
                 key={i}
                 className={`min-h-[95px] rounded-xl border p-1.5 transition-all duration-200 hover:scale-[1.02] hover:z-10 ${
-                  isToday
-                    ? "border-indigo-500/60 ring-2 ring-indigo-500/20"
-                    : "border-transparent"
+                  isToday ? "border-indigo-500/60 ring-2 ring-indigo-500/20" : "border-transparent"
                 } ${past ? "opacity-35" : ""}`}
                 style={{
                   background: d
                     ? isToday
                       ? "linear-gradient(145deg, rgba(99,102,241,0.12), rgba(139,92,246,0.06))"
                       : past
-                        ? (isDark ? "rgba(35,35,50,0.25)" : "rgba(200,200,220,0.15)")
+                        ? isDark
+                          ? "rgba(35,35,50,0.25)"
+                          : "rgba(200,200,220,0.15)"
                         : weekend && !isDark
                           ? "rgba(99,102,241,0.03)"
                           : v("bg-card")
@@ -349,7 +380,16 @@ export function CalendarPage() {
                 {d && (
                   <>
                     <div className="relative mb-1 inline-flex items-center justify-center group/number">
-                      <span className="absolute inset-0 scale-0 rounded-full transition-transform duration-200 group-hover/number:scale-100" style={{ background: isToday ? "rgba(129,140,248,0.15)" : isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }} />
+                      <span
+                        className="absolute inset-0 scale-0 rounded-full transition-transform duration-200 group-hover/number:scale-100"
+                        style={{
+                          background: isToday
+                            ? "rgba(129,140,248,0.15)"
+                            : isDark
+                              ? "rgba(255,255,255,0.06)"
+                              : "rgba(0,0,0,0.04)",
+                        }}
+                      />
                       <p
                         className={`relative text-xs font-semibold z-10 size-6 inline-flex items-center justify-center ${
                           isOtherMonth ? "opacity-30" : ""
@@ -379,7 +419,10 @@ export function CalendarPage() {
                             <Bell size={8} style={{ color: "rgba(250,204,21,0.8)", flexShrink: 0 }} />
                           )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); void handleDelete(ev.id); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleDelete(ev.id);
+                            }}
                             className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all duration-200 hover:bg-red-500/10 shrink-0"
                             style={{ color: "#ef4444" }}
                           >
@@ -409,9 +452,7 @@ export function CalendarPage() {
           background: isDark
             ? "linear-gradient(145deg, rgba(25,25,40,0.92), rgba(18,18,30,0.85))"
             : "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,247,255,0.85))",
-          boxShadow: isDark
-            ? "0 8px 40px rgba(0,0,0,0.35)"
-            : "0 8px 40px rgba(99,102,241,0.1)",
+          boxShadow: isDark ? "0 8px 40px rgba(0,0,0,0.35)" : "0 8px 40px rgba(99,102,241,0.1)",
         }}
       >
         <h3 className="text-sm font-bold flex items-center gap-2 mb-4" style={{ color: v("text-primary") }}>
@@ -419,7 +460,9 @@ export function CalendarPage() {
           Все события месяца
         </h3>
         {events.length === 0 ? (
-          <p className="text-sm" style={{ color: v("text-muted") }}>Нет событий</p>
+          <p className="text-sm" style={{ color: v("text-muted") }}>
+            Нет событий
+          </p>
         ) : (
           <div className="space-y-2">
             {events.map((ev, idx) => {
@@ -430,9 +473,7 @@ export function CalendarPage() {
                   className={`animate-fade-in stagger-${(idx % 6) + 1} flex items-center justify-between rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${isPast ? "" : ""}`}
                   style={{
                     borderColor: v("border-secondary"),
-                    background: isPast
-                      ? (isDark ? "rgba(35,35,50,0.3)" : "rgba(200,200,220,0.12)")
-                      : v("bg-card"),
+                    background: isPast ? (isDark ? "rgba(35,35,50,0.3)" : "rgba(200,200,220,0.12)") : v("bg-card"),
                     opacity: isPast ? 0.45 : 1,
                   }}
                 >
@@ -440,15 +481,17 @@ export function CalendarPage() {
                     <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: v("text-primary") }}>
                       <span
                         className="inline-block h-2 w-2 rounded-full shrink-0"
-                        style={{ background: getEventColor(ev.title).match(/rgba\((\d+,\d+,\d+)/)?.[1] ? `rgb(${getEventColor(ev.title).match(/rgba\((\d+,\d+,\d+)/)![1]})` : "#6366f1" }}
+                        style={{
+                          background: getEventColor(ev.title).match(/rgba\((\d+,\d+,\d+)/)?.[1]
+                            ? `rgb(${getEventColor(ev.title).match(/rgba\((\d+,\d+,\d+)/)![1]})`
+                            : "#6366f1",
+                        }}
                       />
                       {ev.title}
                       {ev.notify_before && !ev.notified_at && (
                         <BellOff size={12} style={{ color: "rgba(250,204,21,0.7)" }} />
                       )}
-                      {ev.notified_at && (
-                        <Bell size={12} style={{ color: "rgba(74,222,128,0.7)" }} />
-                      )}
+                      {ev.notified_at && <Bell size={12} style={{ color: "rgba(74,222,128,0.7)" }} />}
                     </p>
                     <p className="text-xs" style={{ color: v("text-muted") }}>
                       {formatDateTime(ev.event_date)}
@@ -461,8 +504,12 @@ export function CalendarPage() {
                       onClick={() => openEdit(ev)}
                       className="p-1.5 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-sm"
                       style={{ color: v("text-secondary") }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = v("text-primary"); }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = v("text-secondary"); }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = v("text-primary");
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = v("text-secondary");
+                      }}
                     >
                       <Pencil size={14} />
                     </button>
@@ -470,8 +517,12 @@ export function CalendarPage() {
                       onClick={() => void handleDelete(ev.id)}
                       className="p-1.5 rounded-lg transition-all duration-200 hover:scale-110 hover:shadow-sm"
                       style={{ color: v("text-secondary") }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = v("text-secondary"); }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#ef4444";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = v("text-secondary");
+                      }}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -485,7 +536,10 @@ export function CalendarPage() {
 
       {/* Create modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-[120] grid place-items-center p-4 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="fixed inset-0 z-[120] grid place-items-center p-4 backdrop-blur-sm"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
           <div
             className="w-full max-w-md rounded-2xl border p-6 backdrop-blur-xl transition-all duration-300 hover:shadow-2xl"
             style={{
@@ -496,27 +550,62 @@ export function CalendarPage() {
               boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: v("text-primary") }}>Новое событие</h3>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: v("text-primary") }}>
+              Новое событие
+            </h3>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Название *</label>
-                <input className={tw.inputBase} style={inputStyle(isDark)} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Название события" />
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Название *
+                </label>
+                <input
+                  className={tw.inputBase}
+                  style={inputStyle(isDark)}
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Название события"
+                />
               </div>
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Дата и время *</label>
-                <input type="datetime-local" className={tw.inputBase} style={inputStyle(isDark)} value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Дата и время *
+                </label>
+                <input
+                  type="datetime-local"
+                  className={tw.inputBase}
+                  style={inputStyle(isDark)}
+                  value={newDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                />
               </div>
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Напоминание</label>
-                <select className={tw.inputBase} style={inputStyle(isDark)} value={newNotify} onChange={(e) => setNewNotify(Number(e.target.value))}>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Напоминание
+                </label>
+                <select
+                  className={tw.inputBase}
+                  style={inputStyle(isDark)}
+                  value={newNotify}
+                  onChange={(e) => setNewNotify(Number(e.target.value))}
+                >
                   {NOTIFY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Описание</label>
-                <textarea className={`${tw.inputBase} min-h-[80px]`} style={inputStyle(isDark)} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Описание (необязательно)" />
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Описание
+                </label>
+                <textarea
+                  className={`${tw.inputBase} min-h-[80px]`}
+                  style={inputStyle(isDark)}
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="Описание (необязательно)"
+                />
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
@@ -524,13 +613,17 @@ export function CalendarPage() {
                 className="rounded-xl border px-4 py-2 text-sm transition-all duration-200 hover:scale-105"
                 style={{ borderColor: v("border-secondary"), color: v("text-secondary"), background: v("bg-card") }}
                 onClick={() => setShowCreate(false)}
-              >Отмена</button>
+              >
+                Отмена
+              </button>
               <button
                 className="rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105"
                 style={buttonStyle("primary", isDark)}
                 disabled={!newTitle.trim()}
                 onClick={() => void handleCreate()}
-              >Сохранить</button>
+              >
+                Сохранить
+              </button>
             </div>
           </div>
         </div>
@@ -538,7 +631,10 @@ export function CalendarPage() {
 
       {/* Edit modal */}
       {editEvent && (
-        <div className="fixed inset-0 z-[120] grid place-items-center p-4 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="fixed inset-0 z-[120] grid place-items-center p-4 backdrop-blur-sm"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
           <div
             className="w-full max-w-md rounded-2xl border p-6 backdrop-blur-xl transition-all duration-300 hover:shadow-2xl"
             style={{
@@ -549,27 +645,62 @@ export function CalendarPage() {
               boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: v("text-primary") }}>Редактировать событие</h3>
+            <h3 className="text-lg font-semibold mb-4" style={{ color: v("text-primary") }}>
+              Редактировать событие
+            </h3>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Название *</label>
-                <input className={tw.inputBase} style={inputStyle(isDark)} value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Название события" />
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Название *
+                </label>
+                <input
+                  className={tw.inputBase}
+                  style={inputStyle(isDark)}
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Название события"
+                />
               </div>
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Дата и время *</label>
-                <input type="datetime-local" className={tw.inputBase} style={inputStyle(isDark)} value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Дата и время *
+                </label>
+                <input
+                  type="datetime-local"
+                  className={tw.inputBase}
+                  style={inputStyle(isDark)}
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                />
               </div>
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Напоминание</label>
-                <select className={tw.inputBase} style={inputStyle(isDark)} value={editNotify} onChange={(e) => setEditNotify(Number(e.target.value))}>
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Напоминание
+                </label>
+                <select
+                  className={tw.inputBase}
+                  style={inputStyle(isDark)}
+                  value={editNotify}
+                  onChange={(e) => setEditNotify(Number(e.target.value))}
+                >
                   {NOTIFY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>Описание</label>
-                <textarea className={`${tw.inputBase} min-h-[80px]`} style={inputStyle(isDark)} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Описание (необязательно)" />
+                <label className="text-xs font-medium block mb-1" style={{ color: v("text-muted") }}>
+                  Описание
+                </label>
+                <textarea
+                  className={`${tw.inputBase} min-h-[80px]`}
+                  style={inputStyle(isDark)}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  placeholder="Описание (необязательно)"
+                />
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
@@ -577,13 +708,17 @@ export function CalendarPage() {
                 className="rounded-xl border px-4 py-2 text-sm transition-all duration-200 hover:scale-105"
                 style={{ borderColor: v("border-secondary"), color: v("text-secondary"), background: v("bg-card") }}
                 onClick={() => setEditEvent(null)}
-              >Отмена</button>
+              >
+                Отмена
+              </button>
               <button
                 className="rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105"
                 style={buttonStyle("primary", isDark)}
                 disabled={!editTitle.trim()}
                 onClick={() => void handleEdit()}
-              >Сохранить</button>
+              >
+                Сохранить
+              </button>
             </div>
           </div>
         </div>

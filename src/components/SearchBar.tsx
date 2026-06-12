@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Loader2, Briefcase, Layout, FileText, Columns, DollarSign, Users, TrendingUp, User } from "lucide-react";
+import { Search, Loader2, Briefcase, Layout, FileText, Columns, DollarSign, TrendingUp, User } from "lucide-react";
 import { useSearchQuery } from "../hooks/useCachedData";
 import { inputStyle, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -43,9 +43,13 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
     if (!debouncedQuery) return text;
     const parts = text.split(new RegExp(`(${debouncedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
     return parts.map((part, i) =>
-      part.toLowerCase() === debouncedQuery.toLowerCase()
-        ? <span key={i} className="font-bold" style={{ color: "rgba(99,102,241,0.9)" }}>{part}</span>
-        : part
+      part.toLowerCase() === debouncedQuery.toLowerCase() ? (
+        <span key={i} className="font-bold" style={{ color: "rgba(99,102,241,0.9)" }}>
+          {part}
+        </span>
+      ) : (
+        part
+      ),
     );
   }
 
@@ -95,7 +99,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
             <>
               {results.plans.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <Briefcase size={12} />
                     Бизнес-планы
                   </div>
@@ -115,7 +122,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.blocks.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <Layout size={12} />
                     Блоки
                   </div>
@@ -138,7 +148,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.notes.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <FileText size={12} />
                     Заметки
                   </div>
@@ -158,7 +171,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.boards.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <Columns size={12} />
                     Доски
                   </div>
@@ -178,7 +194,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.cards.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <Layout size={12} />
                     Карточки
                   </div>
@@ -201,7 +220,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.contacts.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <User size={12} />
                     Контакты
                   </div>
@@ -226,7 +248,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.deals.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <DollarSign size={12} />
                     Сделки
                   </div>
@@ -251,7 +276,10 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.financial_charts.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
+                    style={{ color: v("text-tertiary") }}
+                  >
                     <TrendingUp size={12} />
                     Финансовые планы
                   </div>

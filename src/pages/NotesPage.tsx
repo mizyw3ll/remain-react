@@ -227,7 +227,9 @@ export function NotesPage() {
         {/* Sidebar header */}
         <div className="flex items-center justify-between">
           {sidebarOpen && (
-            <h2 className="text-sm font-semibold" style={{ color: v("text-primary") }}>Проекты</h2>
+            <h2 className="text-sm font-semibold" style={{ color: v("text-primary") }}>
+              Проекты
+            </h2>
           )}
           <div className={`flex items-center gap-1 ${sidebarOpen ? "" : "mx-auto"}`}>
             {sidebarOpen && (
@@ -278,7 +280,9 @@ export function NotesPage() {
                 type="text"
                 value={projectInput}
                 onChange={(e) => setProjectInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") void handleCreateProject(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleCreateProject();
+                }}
                 placeholder="Новый проект"
                 className="flex-1 px-2 py-1 text-xs border rounded"
                 style={inputStyle(isDark)}
@@ -354,8 +358,12 @@ export function NotesPage() {
         ) : filteredNotes.length === 0 ? (
           <div className="flex items-center justify-center h-40 animate-fade-in">
             <div className="text-center">
-              <p className="text-sm font-medium" style={{ color: v("text-primary") }}>Нет заметок</p>
-              <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>Создайте первую заметку</p>
+              <p className="text-sm font-medium" style={{ color: v("text-primary") }}>
+                Нет заметок
+              </p>
+              <p className="mt-1 text-xs" style={{ color: v("text-muted") }}>
+                Создайте первую заметку
+              </p>
             </div>
           </div>
         ) : (
@@ -369,7 +377,9 @@ export function NotesPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-sm" style={{ color: v("text-primary") }}>{note.title}</h3>
+                    <h3 className="font-semibold text-sm" style={{ color: v("text-primary") }}>
+                      {note.title}
+                    </h3>
                     {note.content_markdown && (
                       <div className="mt-1 text-xs line-clamp-2" style={{ color: v("text-muted") }}>
                         <MarkdownPreview content={note.content_markdown} />
@@ -390,7 +400,10 @@ export function NotesPage() {
                     </div>
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); void handleDeleteNote(note); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDeleteNote(note);
+                    }}
                     className="p-1 text-gray-400 hover:text-red-500 shrink-0"
                   >
                     <Trash2 size={14} />
@@ -413,7 +426,9 @@ export function NotesPage() {
             </button>
             {pageNumbers.map((p, i) =>
               p === "..." ? (
-                <span key={`e${i}`} className="px-1 text-xs" style={{ color: v("text-muted") }}>...</span>
+                <span key={`e${i}`} className="px-1 text-xs" style={{ color: v("text-muted") }}>
+                  ...
+                </span>
               ) : (
                 <button
                   key={p}
@@ -429,7 +444,7 @@ export function NotesPage() {
                 >
                   {p}
                 </button>
-              )
+              ),
             )}
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -446,7 +461,10 @@ export function NotesPage() {
       {/* Editor Modal */}
       {editorOpen && (
         <div className="fixed inset-0 z-[120] grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-2xl sm:p-5" style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}>
+          <div
+            className="w-full max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:max-w-2xl sm:p-5"
+            style={{ background: v("bg-sidebar"), borderColor: v("border-primary") }}
+          >
             <h3 className="text-lg font-semibold mb-3" style={{ color: v("text-primary") }}>
               {editingNote ? "Редактировать заметку" : "Новая заметка"}
             </h3>
@@ -460,7 +478,9 @@ export function NotesPage() {
                 placeholder="Заголовок"
               />
               {!noteTitle.trim() && noteTitle !== "" && (
-                <p className="text-xs" style={{ color: "#ef4444" }}>Заголовок обязателен</p>
+                <p className="text-xs" style={{ color: "#ef4444" }}>
+                  Заголовок обязателен
+                </p>
               )}
 
               <select
@@ -471,7 +491,9 @@ export function NotesPage() {
               >
                 <option value="">Без проекта</option>
                 {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
                 ))}
               </select>
 
@@ -493,7 +515,9 @@ export function NotesPage() {
                 />
                 {noteContent && (
                   <div className="mt-2 rounded-xl border p-3" style={{ borderColor: v("border-secondary") }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: v("text-muted") }}>Предпросмотр:</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: v("text-muted") }}>
+                      Предпросмотр:
+                    </p>
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       <MarkdownPreview content={noteContent} />
                     </div>

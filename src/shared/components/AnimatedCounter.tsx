@@ -10,7 +10,14 @@ type AnimatedCounterProps = {
   className?: string;
 };
 
-export function AnimatedCounter({ value, suffix, prefix, decimals = 0, duration = 800, className }: AnimatedCounterProps) {
+export function AnimatedCounter({
+  value,
+  suffix,
+  prefix,
+  decimals = 0,
+  duration = 800,
+  className,
+}: AnimatedCounterProps) {
   const [display, setDisplay] = useState(0);
   const startRef = useRef(0);
   const startTime = useRef(0);
@@ -36,7 +43,9 @@ export function AnimatedCounter({ value, suffix, prefix, decimals = 0, duration 
 
   return (
     <span className={clsx("animate-count-up", className)}>
-      {prefix}{formatted}{suffix}
+      {prefix}
+      {formatted}
+      {suffix}
     </span>
   );
 }

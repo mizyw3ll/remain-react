@@ -24,7 +24,8 @@ export function VerifyEmailPage() {
         toast.success("Email подтвержден!");
       })
       .catch((err) => {
-        const detail = err.response?.data?.detail || "Не удалось подтвердить email. Ссылка устарела или недействительна.";
+        const detail =
+          err.response?.data?.detail || "Не удалось подтвердить email. Ссылка устарела или недействительна.";
         setStatus("error");
         setMessage(detail);
         toast.error("Ошибка подтверждения email");
