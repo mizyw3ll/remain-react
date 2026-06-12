@@ -15,8 +15,8 @@ export const queryKeys = {
   currencies: ["currencies"] as const,
   businessPlans: ["businessPlans"] as const,
   financialPlans: ["financialPlans"] as const,
-  notes: (projectId?: number | null, tagIds?: string) =>
-    ["notes", projectId ?? "all", tagIds ?? ""] as const,
+  notes: (projectId?: number | null, tagIds?: string, page?: number) =>
+    ["notes", projectId ?? "all", tagIds ?? "", page ?? 1] as const,
   projects: ["projects"] as const,
   dashboard: ["dashboard"] as const,
   search: (query: string) => ["search", query] as const,
