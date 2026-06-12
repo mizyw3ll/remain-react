@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Trash2, GripVertical, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, GripVertical, Pencil, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -279,10 +279,10 @@ export function KanbanPage() {
   }, []);
   const boardsPerPage = cols * 4;
   const [boardPage, setBoardPage] = useState(1);
-  const totalBoardPages = Math.max(1, Math.ceil(boards.length / boardsPerPage));
+  const totalBoardPages = Math.max(1, Math.ceil(filteredBoards.length / boardsPerPage));
   const safeBoardPage = Math.min(boardPage, totalBoardPages);
   const boardStartIdx = (safeBoardPage - 1) * boardsPerPage;
-  const visibleBoards = boards.slice(boardStartIdx, boardStartIdx + boardsPerPage);
+  const visibleBoards = filteredBoards.slice(boardStartIdx, boardStartIdx + boardsPerPage);
   const boardPageNumbers = useMemo(() => {
     const pages: (number | "...")[] = [];
     if (totalBoardPages <= 7) {
@@ -298,6 +298,17 @@ export function KanbanPage() {
     }
     return pages;
   }, [safeBoardPage, totalBoardPages]);
+
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [newBoardTitle, setNewBoardTitle] = useState("");
+  const [editBoard, setEditBoard] = useState<{ id: number; title: string } | null>(null);
+  const [editBoardTitle, setEditBoardTitle] = useState("");
+  const [activeCard, setActiveCard] = useState<BoardCard | null>(null);
+  const [editCard, setEditCard] = useState<BoardCard | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+
+  const sortedColumns = (board?.columns ?? []).sort((a, b) => a.column_order - b.column_order);
 
   const [searchParams] = useSearchParams();
   useEffect(() => {
@@ -320,18 +331,17 @@ export function KanbanPage() {
     }
   }, [searchParams, board]);
 
-  const [showCreateBoard, setShowCreateBoard] = useState(false);
-  const [newBoardTitle, setNewBoardTitle] = useState("");
-  const [editBoard, setEditBoard] = useState<{ id: number; title: string } | null>(null);
-  const [editBoardTitle, setEditBoardTitle] = useState("");
-  const [activeCard, setActiveCard] = useState<BoardCard | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
 
-  const sortedColumns = (board?.columns ?? []).sort((a, b) => a.column_order - b.column_order);
-
-  // Edit card modal
-  const [editCard, setEditCard] = useState<BoardCard | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDesc, setEditDesc] = useState("");
+  const filteredBoards = useMemo(() => {
+    const list = boards.filter((b) => b.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    list.sort((a, b) => {
+      if (sortBy === "title") return a.title.localeCompare(b.title);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return list;
+  }, [boards, searchQuery, sortBy]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -502,9 +512,42 @@ export function KanbanPage() {
         </button>
       </div>
 
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-xs">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: v("text-tertiary") }}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Поиск по названию..."
+            className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
+            style={inputStyle(isDark)}
+          />
+        </div>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="rounded-xl border px-3 py-2 text-sm"
+          style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+        >
+          <option value="created_at">Сначала новые</option>
+          <option value="title">По названию</option>
+        </select>
+      </div>
+
       {boards.length === 0 && !showCreateBoard && (
         <p className="text-sm" style={{ color: v("text-tertiary") }}>
           Нет досок. Создайте первую.
+        </p>
+      )}
+
+      {boards.length > 0 && filteredBoards.length === 0 && (
+        <p className="text-sm" style={{ color: v("text-muted") }}>
+          Ничего не найдено
         </p>
       )}
 
@@ -590,7 +633,9 @@ export function KanbanPage() {
                 <GlassCard
                   as="button"
                   onClick={() => setSelectedBoardId(b.id === selectedBoardId ? null : b.id)}
-                  className={`text-left animate-fade-in min-w-0 w-full ${selectedBoardId === b.id ? "ring-2 ring-indigo-500/50" : ""}`}
+                  className={`text-left animate-fade-in min-w-0 w-full ${
+                    selectedBoardId === b.id ? "ring-2 ring-indigo-500/50" : ""
+                  }`}
                 >
                   <div className="flex items-start gap-4">
                     <div

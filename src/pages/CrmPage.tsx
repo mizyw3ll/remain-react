@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Plus,
@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Users,
   X,
+  Search,
 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -78,13 +79,39 @@ export function CrmPage() {
   const [dCurrency, setDCurrency] = useState("RUB");
   const [dPriority, setDPriority] = useState("medium");
   const [dDueDate, setDDueDate] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contactSortBy, setContactSortBy] = useState("name");
+  const [dealSortBy, setDealSortBy] = useState("value");
+
+  const filteredContacts = useMemo(() => {
+    const list = contacts.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.company || "").toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+    list.sort((a, b) => {
+      if (contactSortBy === "created_at") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return a.name.localeCompare(b.name);
+    });
+    return list;
+  }, [contacts, searchQuery, contactSortBy]);
+
+  const filteredDeals = useMemo(() => {
+    const list = deals.filter((d) => d.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    list.sort((a, b) => {
+      if (dealSortBy === "created_at") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return (b.value || 0) - (a.value || 0);
+    });
+    return list;
+  }, [deals, searchQuery, dealSortBy]);
+
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const contactIdParam = searchParams.get("contactId");
     const dealIdParam = searchParams.get("dealId");
     if (contactIdParam) {
-      setTab("contacts");
+      setTab("contacts"); // eslint-disable-line react-hooks/set-state-in-effect
       const found = contacts.find((c) => c.id === Number(contactIdParam));
       if (found) {
         setEditingContact(found);
@@ -350,136 +377,214 @@ export function CrmPage() {
       </div>
 
       {tab === "contacts" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {contacts.map((contact: Contact, i) => (
-            <div
-              key={contact.id}
-              className={`animate-fade-in stagger-${(i % 6) + 1} rounded-xl border p-4 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/5`}
-              style={cardStyle("note", isDark)}
+        <>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-xs">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: v("text-tertiary") }}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Поиск по имени или компании..."
+                className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
+                style={inputStyle(isDark)}
+              />
+            </div>
+            <select
+              value={contactSortBy}
+              onChange={(e) => setContactSortBy(e.target.value)}
+              className="rounded-xl border px-3 py-2 text-sm"
+              style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: v("bg-tertiary") }}
-                  >
-                    <User size={18} style={{ color: v("text-muted") }} />
+              <option value="name">По имени</option>
+              <option value="created_at">Сначала новые</option>
+            </select>
+          </div>
+          {filteredContacts.length === 0 ? (
+            <p className="text-sm" style={{ color: v("text-muted") }}>
+              {searchQuery ? "Ничего не найдено" : "Нет контактов"}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredContacts.map((contact: Contact, i) => (
+                <div
+                  key={contact.id}
+                  className={`animate-fade-in stagger-${
+                    (i % 6) + 1
+                  } rounded-xl border p-4 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/5`}
+                  style={cardStyle("note", isDark)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ background: v("bg-tertiary") }}
+                      >
+                        <User size={18} style={{ color: v("text-muted") }} />
+                      </div>
+                      <div>
+                        <p className="font-semibold" style={{ color: v("text-primary") }}>
+                          {contact.name}
+                        </p>
+                        {contact.company && (
+                          <p className="text-sm flex items-center gap-1" style={{ color: v("text-muted") }}>
+                            <Building2 size={12} /> {contact.company}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {contact.is_lead && (
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs"
+                        style={{ background: "#3b82f6", color: "#fff" }}
+                      >
+                        Лид
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <p className="font-semibold" style={{ color: v("text-primary") }}>
-                      {contact.name}
-                    </p>
-                    {contact.company && (
+                  <div className="mt-3 space-y-1">
+                    {contact.email && (
                       <p className="text-sm flex items-center gap-1" style={{ color: v("text-muted") }}>
-                        <Building2 size={12} /> {contact.company}
+                        <Mail size={12} /> {contact.email}
+                      </p>
+                    )}
+                    {contact.phone && (
+                      <p className="text-sm flex items-center gap-1" style={{ color: v("text-muted") }}>
+                        <Phone size={12} /> {contact.phone}
                       </p>
                     )}
                   </div>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditContact(contact)}
+                      className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
+                      style={buttonStyle("secondary", isDark)}
+                    >
+                      Изменить
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteContactMut.mutate(contact.id)}
+                      className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
+                      style={buttonStyle("danger", isDark)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                {contact.is_lead && (
-                  <span className="rounded-full px-2 py-0.5 text-xs" style={{ background: "#3b82f6", color: "#fff" }}>
-                    Лид
-                  </span>
-                )}
-              </div>
-              <div className="mt-3 space-y-1">
-                {contact.email && (
-                  <p className="text-sm flex items-center gap-1" style={{ color: v("text-muted") }}>
-                    <Mail size={12} /> {contact.email}
-                  </p>
-                )}
-                {contact.phone && (
-                  <p className="text-sm flex items-center gap-1" style={{ color: v("text-muted") }}>
-                    <Phone size={12} /> {contact.phone}
-                  </p>
-                )}
-              </div>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => openEditContact(contact)}
-                  className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
-                  style={buttonStyle("secondary", isDark)}
-                >
-                  Изменить
-                </button>
-                <button
-                  type="button"
-                  onClick={() => deleteContactMut.mutate(contact.id)}
-                  className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
-                  style={buttonStyle("danger", isDark)}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {tab === "deals" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {deals.map((deal: Deal, i) => (
-            <div
-              key={deal.id}
-              className={`animate-fade-in stagger-${(i % 6) + 1} rounded-xl border p-4 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/5`}
-              style={cardStyle("note", isDark)}
-            >
-              <div>
-                <p className="font-semibold" style={{ color: v("text-primary") }}>
-                  {deal.title}
-                </p>
-                <div className="flex gap-2 mt-1">
-                  <span
-                    className="rounded-full px-2 py-0.5 text-xs text-white"
-                    style={{ background: getStatusColor(deal.status) }}
-                  >
-                    {getStatusLabel(deal.status)}
-                  </span>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-xs text-white"
-                    style={{ background: getPriorityColor(deal.priority) }}
-                  >
-                    {getPriorityLabel(deal.priority)}
-                  </span>
-                </div>
-              </div>
-              {deal.value != null && (
-                <p className="mt-2 text-sm font-medium flex items-center gap-1" style={{ color: v("text-primary") }}>
-                  <DollarSign size={14} /> {deal.value.toLocaleString()} {deal.currency}
-                </p>
-              )}
-              {deal.contact && (
-                <p className="text-sm mt-1 flex items-center gap-1" style={{ color: v("text-muted") }}>
-                  <User size={12} /> {deal.contact.name}
-                </p>
-              )}
-              {deal.due_date && (
-                <p className="text-sm mt-1 flex items-center gap-1" style={{ color: v("text-muted") }}>
-                  <Calendar size={12} /> {deal.due_date}
-                </p>
-              )}
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => openEditDeal(deal)}
-                  className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
-                  style={buttonStyle("secondary", isDark)}
-                >
-                  Изменить
-                </button>
-                <button
-                  type="button"
-                  onClick={() => deleteDealMut.mutate(deal.id)}
-                  className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
-                  style={buttonStyle("danger", isDark)}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+        <>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-xs">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: v("text-tertiary") }}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Поиск по названию..."
+                className="w-full rounded-xl border py-2 pl-9 pr-3 text-sm"
+                style={inputStyle(isDark)}
+              />
             </div>
-          ))}
-        </div>
+            <select
+              value={dealSortBy}
+              onChange={(e) => setDealSortBy(e.target.value)}
+              className="rounded-xl border px-3 py-2 text-sm"
+              style={{ background: v("bg-secondary"), borderColor: v("border-primary"), color: v("text-primary") }}
+            >
+              <option value="value">По сумме</option>
+              <option value="created_at">Сначала новые</option>
+            </select>
+          </div>
+          {filteredDeals.length === 0 ? (
+            <p className="text-sm" style={{ color: v("text-muted") }}>
+              {searchQuery ? "Ничего не найдено" : "Нет сделок"}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDeals.map((deal: Deal, i) => (
+                <div
+                  key={deal.id}
+                  className={`animate-fade-in stagger-${
+                    (i % 6) + 1
+                  } rounded-xl border p-4 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/5`}
+                  style={cardStyle("note", isDark)}
+                >
+                  <div>
+                    <p className="font-semibold" style={{ color: v("text-primary") }}>
+                      {deal.title}
+                    </p>
+                    <div className="flex gap-2 mt-1">
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs text-white"
+                        style={{ background: getStatusColor(deal.status) }}
+                      >
+                        {getStatusLabel(deal.status)}
+                      </span>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs text-white"
+                        style={{ background: getPriorityColor(deal.priority) }}
+                      >
+                        {getPriorityLabel(deal.priority)}
+                      </span>
+                    </div>
+                  </div>
+                  {deal.value != null && (
+                    <p
+                      className="mt-2 text-sm font-medium flex items-center gap-1"
+                      style={{ color: v("text-primary") }}
+                    >
+                      <DollarSign size={14} /> {deal.value.toLocaleString()} {deal.currency}
+                    </p>
+                  )}
+                  {deal.contact && (
+                    <p className="text-sm mt-1 flex items-center gap-1" style={{ color: v("text-muted") }}>
+                      <User size={12} /> {deal.contact.name}
+                    </p>
+                  )}
+                  {deal.due_date && (
+                    <p className="text-sm mt-1 flex items-center gap-1" style={{ color: v("text-muted") }}>
+                      <Calendar size={12} /> {deal.due_date}
+                    </p>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditDeal(deal)}
+                      className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
+                      style={buttonStyle("secondary", isDark)}
+                    >
+                      Изменить
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteDealMut.mutate(deal.id)}
+                      className="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
+                      style={buttonStyle("danger", isDark)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {tab === "pipeline" && (
@@ -510,7 +615,9 @@ export function CrmPage() {
             {DEAL_STATUSES.slice(0, 4).map((s, i) => (
               <div
                 key={s.value}
-                className={`animate-fade-in stagger-${i + 3} rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg`}
+                className={`animate-fade-in stagger-${
+                  i + 3
+                } rounded-xl border p-4 text-center backdrop-blur-sm transition-all duration-200 hover:shadow-lg`}
                 style={cardStyle("note", isDark)}
               >
                 <div className="w-8 h-1 rounded mx-auto mb-2" style={{ background: s.color }} />
