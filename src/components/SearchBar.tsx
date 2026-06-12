@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Briefcase, Layout, FileText, Columns, DollarSign, Users, TrendingUp, User } from "lucide-react";
 import { useSearchQuery } from "../hooks/useCachedData";
 import { inputStyle, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -39,6 +39,16 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
   const hasResults = results && results.total > 0;
   const showDropdown = debouncedQuery.length >= 2 && (isLoading || hasResults);
 
+  function highlightText(text: string) {
+    if (!debouncedQuery) return text;
+    const parts = text.split(new RegExp(`(${debouncedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === debouncedQuery.toLowerCase()
+        ? <span key={i} className="font-bold" style={{ color: "rgba(99,102,241,0.9)" }}>{part}</span>
+        : part
+    );
+  }
+
   return (
     <div className="relative">
       <form onSubmit={handleSubmit}>
@@ -69,7 +79,7 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
       {showDropdown && (
         <div
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border py-1"
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-xl border py-1"
           style={{
             background: v("bg-secondary"),
             borderColor: v("border-primary"),
@@ -85,10 +95,11 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
             <>
               {results.plans.length > 0 && (
                 <div>
-                  <div className="px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <Briefcase size={12} />
                     Бизнес-планы
                   </div>
-                  {results.plans.map((plan: { id: number; title: string }) => (
+                  {results.plans.map((plan) => (
                     <button
                       key={`plan-${plan.id}`}
                       type="button"
@@ -96,7 +107,7 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
                       className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ color: v("text-primary") }}
                     >
-                      {plan.title}
+                      {highlightText(plan.title)}
                     </button>
                   ))}
                 </div>
@@ -104,18 +115,19 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.blocks.length > 0 && (
                 <div>
-                  <div className="px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <Layout size={12} />
                     Блоки
                   </div>
-                  {results.blocks.map((block: { id: number; title: string; plan_id: number; plan_title: string }) => (
+                  {results.blocks.map((block) => (
                     <button
                       key={`block-${block.id}`}
                       type="button"
-                      onClick={() => handleResultClick(`/business-plans/${block.plan_id}`)}
+                      onClick={() => handleResultClick(`/business-plans/${block.plan_id}#block-${block.id}`)}
                       className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ color: v("text-primary") }}
                     >
-                      <span className="font-medium">{block.title}</span>
+                      <span className="font-medium">{highlightText(block.title)}</span>
                       <span className="ml-2 text-xs" style={{ color: v("text-tertiary") }}>
                         ({block.plan_title})
                       </span>
@@ -126,25 +138,140 @@ export function SearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
               {results.notes.length > 0 && (
                 <div>
-                  <div className="px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <FileText size={12} />
                     Заметки
                   </div>
-                  {results.notes.map((note: { id: number; title: string }) => (
+                  {results.notes.map((note) => (
                     <button
                       key={`note-${note.id}`}
                       type="button"
-                      onClick={() => handleResultClick(`/notes`)}
+                      onClick={() => handleResultClick(`/notes?noteId=${note.id}`)}
                       className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ color: v("text-primary") }}
                     >
-                      {note.title}
+                      {highlightText(note.title)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {results.boards.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <Columns size={12} />
+                    Доски
+                  </div>
+                  {results.boards.map((board) => (
+                    <button
+                      key={`board-${board.id}`}
+                      type="button"
+                      onClick={() => handleResultClick(`/kanban?boardId=${board.id}`)}
+                      className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                      style={{ color: v("text-primary") }}
+                    >
+                      {highlightText(board.title)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {results.cards.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <Layout size={12} />
+                    Карточки
+                  </div>
+                  {results.cards.map((card) => (
+                    <button
+                      key={`card-${card.id}`}
+                      type="button"
+                      onClick={() => handleResultClick(`/kanban?boardId=${card.board_id}&cardId=${card.id}`)}
+                      className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                      style={{ color: v("text-primary") }}
+                    >
+                      <span className="font-medium">{highlightText(card.title)}</span>
+                      <span className="ml-2 text-xs" style={{ color: v("text-tertiary") }}>
+                        ({card.board_title})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {results.contacts.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <User size={12} />
+                    Контакты
+                  </div>
+                  {results.contacts.map((contact) => (
+                    <button
+                      key={`contact-${contact.id}`}
+                      type="button"
+                      onClick={() => handleResultClick(`/crm?contactId=${contact.id}`)}
+                      className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                      style={{ color: v("text-primary") }}
+                    >
+                      {highlightText(contact.name)}
+                      {contact.company && (
+                        <span className="ml-2 text-xs" style={{ color: v("text-tertiary") }}>
+                          {contact.company}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {results.deals.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <DollarSign size={12} />
+                    Сделки
+                  </div>
+                  {results.deals.map((deal) => (
+                    <button
+                      key={`deal-${deal.id}`}
+                      type="button"
+                      onClick={() => handleResultClick(`/crm?dealId=${deal.id}`)}
+                      className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                      style={{ color: v("text-primary") }}
+                    >
+                      <span className="font-medium">{highlightText(deal.title)}</span>
+                      {deal.contact_name && (
+                        <span className="ml-2 text-xs" style={{ color: v("text-tertiary") }}>
+                          {deal.contact_name}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {results.financial_charts.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium" style={{ color: v("text-tertiary") }}>
+                    <TrendingUp size={12} />
+                    Финансовые планы
+                  </div>
+                  {results.financial_charts.map((chart) => (
+                    <button
+                      key={`chart-${chart.id}`}
+                      type="button"
+                      onClick={() => handleResultClick(`/financial-plans/${chart.id}`)}
+                      className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                      style={{ color: v("text-primary") }}
+                    >
+                      {highlightText(chart.title)}
                     </button>
                   ))}
                 </div>
               )}
 
               {!hasResults && (
-                <div className="px-3 py-2 text-sm" style={{ color: v("text-tertiary") }}>
+                <div className="flex items-center gap-1.5 px-3 py-4 text-sm" style={{ color: v("text-tertiary") }}>
+                  <Search size={14} />
                   Ничего не найдено
                 </div>
               )}

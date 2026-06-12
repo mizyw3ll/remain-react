@@ -67,13 +67,15 @@ export function useProjectsQuery() {
   });
 }
 
-export function useNotesQuery(projectId?: number | null, tagIds?: string) {
+export function useNotesQuery(projectId?: number | null, tagIds?: string, page?: number) {
   return useQuery({
-    queryKey: queryKeys.notes(projectId, tagIds),
+    queryKey: queryKeys.notes(projectId, tagIds, page),
     queryFn: () =>
       getNotesApi({
         project_id: projectId ?? undefined,
         tag_ids: tagIds,
+        page: page ?? 1,
+        per_page: 10,
       }),
     staleTime: 30 * 1000,
   });

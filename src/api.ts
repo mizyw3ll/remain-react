@@ -41,6 +41,7 @@ export type Currency = {
   name: string;
   kind: string;
   is_active: boolean;
+  is_popular: boolean;
 };
 
 export type Tag = {
@@ -73,6 +74,7 @@ export type PlanBlock = {
   draft_saved_at?: string | null;
   tags?: Tag[];
   due_date?: string | null;
+  comments_count?: number;
 };
 
 export type BusinessPlanAnalytics = {
@@ -127,13 +129,10 @@ export type AITextResponse = {
 
 export const api = axios.create({
   baseURL: "/api/v1",
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   (config as typeof config & { metadata?: { startTime: number } }).metadata = {
     startTime: performance.now(),
   };
@@ -395,31 +394,54 @@ export async function createPlanFromTemplateApi(templateId: number) {
 }
 
 export async function exportFinancialChartApi(chartId: number, format: "xlsx" | "csv") {
-  const token = localStorage.getItem(TOKEN_KEY);
   const response = await api.get(`/financial/charts/${chartId}/export`, {
     params: { format },
     responseType: "blob",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   return response.data as Blob;
 }
 
-export async function exportBusinessPlanApi(planId: number, format: "html" | "xlsx" | "csv" = "html") {
-  const token = localStorage.getItem(TOKEN_KEY);
+export type ShareStatus = {
+  share_token: string | null;
+  share_url: string | null;
+  is_public: boolean;
+};
+
+export async function enableSharingApi(planId: number) {
+  const { data } = await api.post<ShareStatus>(`/business/plans/${planId}/share/enable`);
+  return data;
+}
+
+export async function disableSharingApi(planId: number) {
+  await api.delete(`/business/plans/${planId}/share/disable`);
+}
+
+export async function getShareStatusApi(planId: number) {
+  const { data } = await api.get<ShareStatus>(`/business/plans/${planId}/share`);
+  return data;
+}
+
+export async function getSharedPlanApi(shareToken: string) {
+  const { data } = await api.get<BusinessPlan>(`/business/shared/${shareToken}`);
+  return data;
+}
+
+export async function exportBusinessPlanApi(planId: number, format: "html" | "xlsx" | "csv" | "pdf" = "html") {
   const response = await api.get(`/business/plans/${planId}/export`, {
     params: { format },
     responseType: "blob",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  if (!(response.data instanceof Blob)) {
+    throw new Error(`Unexpected response type: ${typeof response.data}`);
+  }
   return response.data as Blob;
 }
 
 export async function importBusinessPlanApi(file: File) {
-  const token = localStorage.getItem(TOKEN_KEY);
   const formData = new FormData();
   formData.append("file", file);
   const { data } = await api.post<BusinessPlan>("/business/plans/import", formData, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return data;
 }
@@ -571,12 +593,21 @@ export async function deleteProjectApi(projectId: number) {
   await api.delete(`/notes/projects/${projectId}`);
 }
 
-export async function getNotesApi(params?: { project_id?: number; tag_ids?: string }) {
+export type PaginatedNotes = {
+  items: Note[];
+  total: number;
+  page: number;
+  per_page: number;
+};
+
+export async function getNotesApi(params?: { project_id?: number; tag_ids?: string; page?: number; per_page?: number }) {
   const searchParams = new URLSearchParams();
   if (params?.project_id) searchParams.set("project_id", String(params.project_id));
   if (params?.tag_ids) searchParams.set("tag_ids", params.tag_ids);
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.per_page) searchParams.set("per_page", String(params.per_page));
   const query = searchParams.toString();
-  const { data } = await api.get<Note[]>(`/notes${query ? `?${query}` : ""}`);
+  const { data } = await api.get<PaginatedNotes>(`/notes${query ? `?${query}` : ""}`);
   return data;
 }
 
@@ -607,6 +638,8 @@ export type CalendarEvent = {
   title: string;
   description?: string | null;
   event_date: string;
+  notify_before?: number | null;
+  notified_at?: string | null;
   event_type: string;
   related_plan_id?: number | null;
   related_block_id?: number | null;
@@ -623,12 +656,12 @@ export async function getCalendarEventsApi(fromDate?: string, toDate?: string) {
   return data;
 }
 
-export async function createCalendarEventApi(payload: { title: string; description?: string; event_date: string; event_type?: string }) {
+export async function createCalendarEventApi(payload: { title: string; description?: string; event_date: string; event_type?: string; notify_before?: number | null }) {
   const { data } = await api.post<CalendarEvent>(`/calendar/events`, payload);
   return data;
 }
 
-export async function updateCalendarEventApi(eventId: number, payload: { title?: string; description?: string; event_date?: string }) {
+export async function updateCalendarEventApi(eventId: number, payload: { title?: string; description?: string; event_date?: string; notify_before?: number | null }) {
   const { data } = await api.patch<CalendarEvent>(`/calendar/events/${eventId}`, payload);
   return data;
 }
@@ -707,10 +740,59 @@ export type SearchNoteResult = {
   type: "note";
 };
 
+export type SearchBoardResult = {
+  id: number;
+  title: string;
+  type: "board";
+};
+
+export type SearchCardResult = {
+  id: number;
+  title: string;
+  description: string | null;
+  board_id: number;
+  board_title: string;
+  column_id: number;
+  type: "card";
+};
+
+export type SearchContactResult = {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  notes: string | null;
+  type: "contact";
+};
+
+export type SearchDealResult = {
+  id: number;
+  title: string;
+  description: string | null;
+  status: string;
+  value: number | null;
+  contact_id: number | null;
+  contact_name: string | null;
+  type: "deal";
+};
+
+export type SearchFinancialChartResult = {
+  id: number;
+  title: string;
+  description: string | null;
+  type: "financial_chart";
+};
+
 export type SearchResults = {
   plans: SearchPlanResult[];
   blocks: SearchBlockResult[];
   notes: SearchNoteResult[];
+  boards: SearchBoardResult[];
+  cards: SearchCardResult[];
+  contacts: SearchContactResult[];
+  deals: SearchDealResult[];
+  financial_charts: SearchFinancialChartResult[];
   total: number;
 };
 
@@ -731,6 +813,8 @@ export type TaxEvent = {
   is_recurring: boolean;
   recurrence_rule?: string | null;
   is_completed: boolean;
+  notify_before?: number | null;
+  notified_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -748,6 +832,7 @@ export async function createTaxEventApi(payload: {
   amount?: number;
   is_recurring?: boolean;
   recurrence_rule?: string;
+  notify_before?: number | null;
 }) {
   const { data } = await api.post<TaxEvent>("/tax-events", payload);
   return data;
@@ -760,6 +845,70 @@ export async function updateTaxEventApi(id: number, payload: Partial<TaxEvent>) 
 
 export async function deleteTaxEventApi(id: number) {
   await api.delete(`/tax-events/${id}`);
+}
+
+export async function getPendingNotificationsApi() {
+  const { data } = await api.get<TaxEvent[]>("/tax-events/pending-notifications");
+  return data;
+}
+
+export async function markNotifiedApi(id: number) {
+  const { data } = await api.post<TaxEvent>(`/tax-events/${id}/mark-notified`);
+  return data;
+}
+
+// ── Calendar Pending Notifications ──
+
+export async function getCalendarPendingNotificationsApi() {
+  const { data } = await api.get<CalendarEvent[]>("/calendar/events/pending-notifications");
+  return data;
+}
+
+export async function markCalendarNotifiedApi(eventId: number) {
+  const { data } = await api.post<CalendarEvent>(`/calendar/events/${eventId}/mark-notified`);
+  return data;
+}
+
+// ── Notifications ──
+
+export type AppNotification = {
+  id: number;
+  user_id: number;
+  title: string;
+  body?: string | null;
+  source_type: string;
+  source_id?: number | null;
+  is_read: boolean;
+  created_at: string;
+};
+
+export async function getNotificationsApi() {
+  const { data } = await api.get<AppNotification[]>("/notifications");
+  return data;
+}
+
+export async function getUnreadCountApi() {
+  const { data } = await api.get<{ count: number }>("/notifications/unread-count");
+  return data;
+}
+
+export async function createNotificationApi(payload: { title: string; body?: string; source_type: string; source_id?: number }) {
+  const { data } = await api.post<AppNotification>("/notifications", payload);
+  return data;
+}
+
+export async function markNotificationReadApi(notificationId: number) {
+  const { data } = await api.post<AppNotification>(`/notifications/${notificationId}/read`);
+  return data;
+}
+
+export async function markAllNotificationsReadApi() {
+  const { data } = await api.post<{ ok: boolean }>("/notifications/read-all");
+  return data;
+}
+
+export async function deleteNotificationApi(notificationId: number) {
+  await api.delete(`/notifications/${notificationId}`);
 }
 // ── Kanban ──
 
