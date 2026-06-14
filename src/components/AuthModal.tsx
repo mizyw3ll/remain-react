@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, EyeOff, X, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../features/auth/AuthContext";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -51,6 +52,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   });
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotBusy, setForgotBusy] = useState(false);
+  const [consentProcessing, setConsentProcessing] = useState(false);
+  const [consentTerms, setConsentTerms] = useState(false);
 
   function resetForm() {
     setLoginForm({ login: "", password: "" });
@@ -59,6 +62,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setTab("login");
     setShowPass(false);
     setShowConfirm(false);
+    setConsentProcessing(false);
+    setConsentTerms(false);
   }
 
   useEffect(() => {
@@ -103,7 +108,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   }, [regForm]);
 
   const loginValid = Object.keys(loginErrors).length === 0;
-  const regValid = Object.keys(regErrors).length === 0;
+  const regValid = Object.keys(regErrors).length === 0 && consentProcessing && consentTerms;
   const strength = passwordStrength(regForm.password);
 
   if (!isOpen) return null;
@@ -479,6 +484,51 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 </div>
                 {regErrors.confirm && <p className="mt-1 text-xs text-red-400">{regErrors.confirm}</p>}
               </div>
+
+              {/* Согласия на обработку ПД и условия */}
+              <div className="space-y-2.5 pt-1">
+                <label className="flex items-start gap-2.5 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={consentProcessing}
+                    onChange={(e) => setConsentProcessing(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded accent-indigo-500"
+                  />
+                  <span className="text-[11px] leading-snug" style={{ color: "var(--text-secondary)" }}>
+                    Даю согласие на обработку персональных данных в соответствии с{" "}
+                    <Link
+                      to="/privacy"
+                      target="_blank"
+                      className="underline font-medium hover:opacity-80"
+                      style={{ color: "var(--text-primary)" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Политикой обработки персональных данных
+                    </Link>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={consentTerms}
+                    onChange={(e) => setConsentTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded accent-indigo-500"
+                  />
+                  <span className="text-[11px] leading-snug" style={{ color: "var(--text-secondary)" }}>
+                    Ознакомлен и принимаю{" "}
+                    <Link
+                      to="/terms"
+                      target="_blank"
+                      className="underline font-medium hover:opacity-80"
+                      style={{ color: "var(--text-primary)" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Условия пользования
+                    </Link>
+                  </span>
+                </label>
+              </div>
+
               <button
                 disabled={!regValid || busy}
                 className="w-full rounded-xl px-3 py-2.5 text-sm font-medium disabled:opacity-50 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
@@ -486,6 +536,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               >
                 {busy ? "Регистрация..." : "Зарегистрироваться"}
               </button>
+              <p className="text-center text-[10px]" style={{ color: "var(--text-muted)" }}>
+                Регистрируясь, вы соглашаетесь с{" "}
+                <Link to="/privacy" target="_blank" className="underline hover:opacity-80">
+                  Политикой конфиденциальности
+                </Link>{" "}
+                и{" "}
+                <Link to="/terms" target="_blank" className="underline hover:opacity-80">
+                  Условиями пользования
+                </Link>
+              </p>
             </form>
           )}
         </div>

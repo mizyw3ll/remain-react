@@ -16,7 +16,7 @@ type AuthContextType = {
     first_name?: string;
     last_name?: string;
   }) => Promise<void>;
-  signout: () => void;
+  signout: () => Promise<void>;
   requestVerify: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
@@ -64,7 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [signin],
   );
 
-  const signout = useCallback(() => {
+  const signout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Ignore logout errors — clear client state regardless
+    }
     queryClient.removeQueries({ queryKey: queryKeys.user });
     setUser(null);
   }, [queryClient]);
