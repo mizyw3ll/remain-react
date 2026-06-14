@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import toast from "react-hot-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { RichTextEditor } from "./RichTextEditor";
 import { SwotEditor, TimelineEditor, MetricsEditor, MarkdownEditor, ChecklistEditor } from "./SmartBlockEditors";
 import { TagPicker } from "./TagPicker";
@@ -113,11 +113,16 @@ export function BlockModal({
       toast.error(ru.editor.saveBlockFirst);
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(ru.editor.fileTooLarge);
+      return;
+    }
     try {
       const meta = await uploadBlockAttachmentApi(planId, editingBlockId, file);
       onFormChange("media_attachments", [...form.media_attachments, meta]);
-    } catch {
-      toast.error(ru.editor.fileUploadError);
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || ru.editor.fileUploadError;
+      toast.error(msg);
     }
   }
 
@@ -215,7 +220,7 @@ export function BlockModal({
                 uploadContext={uploadContext}
               />
               {editingBlockId && (
-                <div className="space-y-2 rounded-xl border p-3" style={{ borderColor: v("border-secondary") }}>
+                <div className="space-y-2 rounded-xl p-3" style={{ border: `1px solid ${v("border-secondary")}` }}>
                   <p className="text-sm font-medium" style={{ color: v("text-secondary") }}>
                     {ru.editor.attachments}
                   </p>
@@ -232,14 +237,25 @@ export function BlockModal({
                           >
                             {a.name}
                           </a>
-                          <button
-                            type="button"
-                            className="shrink-0 rounded border px-2 py-0.5"
-                            style={buttonStyle("danger", isDark)}
-                            onClick={() => void removeAttachment(a.id)}
-                          >
-                            {ru.editor.removeFile}
-                          </button>
+                          <div className="flex shrink-0 gap-1">
+                            <a
+                              href={a.url}
+                              download={a.name}
+                              className="rounded border px-2 py-0.5"
+                              style={buttonStyle("secondary", isDark)}
+                              title={ru.editor.downloadFile}
+                            >
+                              <Download size={12} />
+                            </a>
+                            <button
+                              type="button"
+                              className="rounded border px-2 py-0.5"
+                              style={buttonStyle("danger", isDark)}
+                              onClick={() => void removeAttachment(a.id)}
+                            >
+                              {ru.editor.removeFile}
+                            </button>
+                          </div>
                         </li>
                       ))}
                     </ul>
