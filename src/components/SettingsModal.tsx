@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Moon, Sun, X, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
+import { Moon, Sun, X, MousePointer2, Shield, FileCheck, Cookie, Mail, Lock, CheckCircle, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useAuth } from "../features/auth/AuthContext";
+import { useVisualPreferences } from "../context/VisualPreferencesContext";
 import { deleteUserApi } from "../api";
-import { changePassword, requestVerification } from "../features/auth/authApi";
+import { requestVerification, changePassword } from "../features/auth/authApi";
 import { ConfirmModal } from "./ConfirmModal";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
-import { maskEmail } from "../lib/maskEmail";
 import type { SettingsTab } from "../context/SettingsContext";
 
 type Props = {
@@ -24,14 +25,6 @@ export function SettingsModal({ open, tab, onClose }: Props) {
   const [panel, setPanel] = useState<SettingsTab>(tab);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-  const [oldPass, setOldPass] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [passError, setPassError] = useState("");
-  const [passBusy, setPassBusy] = useState(false);
-  const [verifyBusy, setVerifyBusy] = useState(false);
-  const [showOldPass, setShowOldPass] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -54,64 +47,12 @@ export function SettingsModal({ open, tab, onClose }: Props) {
       signout();
       navigate("/", { replace: true });
     } catch {
-      toast.error("Не удалось удалить аккаунт. Возможно, операция недоступна для вашей роли.");
-    }
-  }
-
-  async function handleResendVerification() {
-    if (!user) return;
-    setVerifyBusy(true);
-    try {
-      await requestVerification();
-      toast.success("Письмо для верификации отправлено");
-    } catch {
-      toast.error("Не удалось отправить письмо");
-    } finally {
-      setVerifyBusy(false);
-    }
-  }
-
-  async function handleChangePassword(e: React.FormEvent) {
-    e.preventDefault();
-    setPassError("");
-    if (newPass !== confirmPass) {
-      setPassError("Пароли не совпадают");
-      return;
-    }
-    if (newPass.length < 8) {
-      setPassError("Новый пароль должен быть минимум 8 символов");
-      return;
-    }
-    if (oldPass.toLowerCase() === newPass.toLowerCase()) {
-      setPassError("Новый пароль не должен совпадать со старым");
-      return;
-    }
-    if (
-      oldPass.toLowerCase().includes(newPass.toLowerCase()) ||
-      newPass.toLowerCase().includes(oldPass.toLowerCase())
-    ) {
-      setPassError("Новый пароль слишком похож на старый");
-      return;
-    }
-    setPassBusy(true);
-    try {
-      await changePassword(oldPass, newPass);
-      toast.success("Пароль успешно изменен");
-      setOldPass("");
-      setNewPass("");
-      setConfirmPass("");
-    } catch (err: unknown) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Не удалось сменить пароль";
-      setPassError(detail);
-    } finally {
-      setPassBusy(false);
+      toast.error("Не удалось удалить аккаунт");
     }
   }
 
   return (
     <>
-      {/* Mobile: full-screen from bottom, small top gap */}
       <div className="fixed inset-0 z-[100] md:flex md:items-center md:justify-center md:p-[max(1rem,5vw)]">
         <button
           type="button"
@@ -122,324 +63,110 @@ export function SettingsModal({ open, tab, onClose }: Props) {
         />
         <div
           role="dialog"
-          aria-modal="true"
-          aria-labelledby="settings-title"
-          className="relative z-10 flex flex-col overflow-hidden max-md:fixed max-md:inset-x-0 max-md:top-6 max-md:bottom-0 max-md:rounded-t-2xl max-md:border max-lg:top-12 md:h-[656px] md:w-full md:max-w-2xl md:rounded-2xl md:border"
+          className="relative z-10 flex flex-col overflow-hidden max-md:fixed max-md:inset-x-0 max-md:top-6 max-md:bottom-0 max-md:rounded-t-2xl max-md:border max-lg:top-12 md:h-[656px] md:w-full md:max-w-2xl md:rounded-2xl md:border animate-scale-in"
           style={{
             background: "var(--bg-sidebar)",
             borderColor: "var(--border-primary)",
-            boxShadow: "var(--shadow-xl)",
+            boxShadow: "var(--shadow-lg)",
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div
-            className="flex items-center justify-between border-b px-4 py-3 shrink-0"
-            style={{ borderColor: "var(--border-muted)" }}
-          >
-            <h2 id="settings-title" className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-              Настройки
-            </h2>
-            <button
-              type="button"
-              className="rounded-lg p-2 transition-colors"
-              style={{ color: "var(--text-muted)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--bg-hover)";
-                e.currentTarget.style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "var(--text-muted)";
-              }}
-              onClick={onClose}
-              aria-label="Закрыть"
-            >
-              <X size={20} />
+          <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: `1px solid var(--border-muted)` }}>
+            <h2 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>Настройки</h2>
+            <button onClick={onClose} className="rounded-xl p-2 transition-colors hover:bg-[var(--bg-hover)]" style={{ color: "var(--text-muted)" }}>
+              <X size={22} />
             </button>
           </div>
 
-          {/* Body: tabs left (desktop) / tabs top (mobile) */}
           <div className="flex flex-1 overflow-hidden max-md:flex-col">
-            {/* Tabs - desktop left sidebar */}
-            <div
-              className="flex max-md:flex-row max-md:gap-1 max-md:border-b max-md:px-2 max-md:pt-2 md:flex-col md:border-r md:p-2 md:shrink-0"
-              style={{ borderColor: "var(--border-muted)" }}
-            >
-              <button
-                type="button"
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${
-                  panel === "main" ? "active" : ""
-                }`}
-                style={{
-                  background: panel === "main" ? "var(--bg-active)" : "transparent",
-                  color: panel === "main" ? "var(--text-primary)" : "var(--text-muted)",
-                }}
-                onMouseEnter={(e) => {
-                  if (panel !== "main") {
-                    e.currentTarget.style.background = "var(--bg-hover)";
-                    e.currentTarget.style.color = "var(--text-secondary)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (panel !== "main") {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--text-muted)";
-                  }
-                }}
-                onClick={() => setPanel("main")}
-              >
-                Главная
-              </button>
-              <button
-                type="button"
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors text-left max-md:rounded-t-lg max-md:px-4 max-md:py-2 md:px-3 ${
-                  panel === "profile" ? "active" : ""
-                }`}
-                style={{
-                  background: panel === "profile" ? "var(--bg-active)" : "transparent",
-                  color: panel === "profile" ? "var(--text-primary)" : "var(--text-muted)",
-                }}
-                onMouseEnter={(e) => {
-                  if (panel !== "profile") {
-                    e.currentTarget.style.background = "var(--bg-hover)";
-                    e.currentTarget.style.color = "var(--text-secondary)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (panel !== "profile") {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--text-muted)";
-                  }
-                }}
-                onClick={() => setPanel("profile")}
-              >
-                Профиль
-              </button>
+            <div className="flex max-md:flex-row max-md:gap-2 max-md:px-4 max-md:pt-2 md:flex-col md:gap-1 md:p-3 md:w-48 md:shrink-0" style={{ borderColor: "var(--border-muted)", borderBottom: "1px solid var(--border-muted)", borderRight: "1px solid var(--border-muted)" }}>
+              <TabBtn active={panel === "main"} onClick={() => setPanel("main")} label="Общие" />
+              <TabBtn active={panel === "appearance"} onClick={() => setPanel("appearance")} label="Внешний вид" />
+              <TabBtn active={panel === "profile"} onClick={() => setPanel("profile")} label="Профиль" />
+              <TabBtn active={panel === "about"} onClick={() => setPanel("about")} label="О программе" />
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {panel === "main" ? (
-                <div className="space-y-3">
-                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                    Тема оформления
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setTheme("dark")}
-                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${
-                        theme === "dark" ? "active-theme-dark" : ""
-                      }`}
-                      style={{
-                        borderColor: theme === "dark" ? "rgba(34, 211, 238, 0.6)" : "var(--border-primary)",
-                        background: theme === "dark" ? "rgba(34, 211, 238, 0.1)" : "var(--bg-secondary)",
-                        color: theme === "dark" ? "var(--accent-primary)" : "var(--text-secondary)",
-                      }}
-                    >
-                      <Moon size={28} />
-                      <span className="text-sm font-medium">Тёмная</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTheme("light")}
-                      className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-6 transition-colors ${
-                        theme === "light" ? "active-theme-light" : ""
-                      }`}
-                      style={{
-                        borderColor: theme === "light" ? "rgba(251, 191, 36, 0.6)" : "var(--border-primary)",
-                        background: theme === "light" ? "rgba(251, 191, 36, 0.1)" : "var(--bg-secondary)",
-                        color: theme === "light" ? "rgb(251, 191, 36)" : "var(--text-secondary)",
-                      }}
-                    >
-                      <Sun size={28} />
-                      <span className="text-sm font-medium">Светлая</span>
-                    </button>
+            <div className="flex-1 overflow-y-auto p-6">
+              {panel === "main" && (
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-4" style={{ color: "var(--text-secondary)" }}>Тема оформления</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <ThemeBtn active={theme === "dark"} onClick={() => setTheme("dark")} icon={<Moon size={24} />} label="Тёмная" />
+                      <ThemeBtn active={theme === "light"} onClick={() => setTheme("light")} icon={<Sun size={24} />} label="Светлая" />
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Email + Verification */}
-                  <div
-                    className="rounded-xl border p-4"
-                    style={{
-                      borderColor: "var(--border-primary)",
-                      background: "var(--bg-secondary)",
-                    }}
-                  >
-                    <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                      Электронная почта
-                    </p>
-                    <p className="mt-2 font-mono text-sm" style={{ color: "var(--text-secondary)" }}>
-                      {user ? maskEmail(user.email) : "—"}
-                    </p>
-                    {user?.is_verified ? (
-                      <div className="mt-2 flex items-center gap-1.5 text-xs text-green-500">
-                        <CheckCircle size={14} />
-                        <span>Email подтвержден</span>
-                      </div>
-                    ) : (
-                      <div className="mt-2 space-y-2">
-                        <div className="flex items-center gap-1.5 text-xs text-amber-500">
-                          <AlertCircle size={14} />
-                          <span>Email не подтвержден</span>
-                        </div>
-                        <button
-                          type="button"
-                          disabled={verifyBusy}
-                          onClick={handleResendVerification}
-                          className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
-                          style={{
-                            borderColor: "var(--border-secondary)",
-                            color: "var(--text-secondary)",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "var(--bg-hover)";
-                            e.currentTarget.style.color = "var(--text-primary)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "transparent";
-                            e.currentTarget.style.color = "var(--text-secondary)";
-                          }}
-                        >
-                          {verifyBusy ? (
-                            <>
-                              <Loader2 size={12} className="animate-spin" />
-                              Отправка...
-                            </>
-                          ) : (
-                            "Отправить письмо повторно"
-                          )}
-                        </button>
-                      </div>
-                    )}
+              )}
+
+              {panel === "appearance" && <AppearancePanel />}
+
+              {panel === "profile" && (
+                <div className="space-y-6">
+                  <div className="rounded-2xl p-5 space-y-4" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>Аккаунт</p>
+                    <p className="font-mono text-sm font-bold truncate">{user?.email}</p>
+                    <button onClick={() => setLogoutConfirmOpen(true)} className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:bg-white/5" style={{ border: "1px solid var(--border-secondary)" }}>
+                      Выйти из системы
+                    </button>
                   </div>
 
-                  {/* Password Change */}
-                  <div
-                    className="rounded-xl border p-4"
-                    style={{
-                      borderColor: "var(--border-primary)",
-                      background: "var(--bg-secondary)",
-                    }}
-                  >
-                    <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                      Смена пароля
-                    </p>
-                    <form onSubmit={handleChangePassword} className="mt-3 space-y-2">
-                      <div className="relative">
-                        <input
-                          type={showOldPass ? "text" : "password"}
-                          placeholder="Текущий пароль"
-                          className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                          style={{
-                            background: "var(--bg-primary)",
-                            borderColor: "var(--border-secondary)",
-                            color: "var(--text-primary)",
-                          }}
-                          value={oldPass}
-                          onChange={(e) => setOldPass(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowOldPass((p) => !p)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          {showOldPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type={showNewPass ? "text" : "password"}
-                          placeholder="Новый пароль"
-                          className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                          style={{
-                            background: "var(--bg-primary)",
-                            borderColor: "var(--border-secondary)",
-                            color: "var(--text-primary)",
-                          }}
-                          value={newPass}
-                          onChange={(e) => setNewPass(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPass((p) => !p)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          {showNewPass ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                      <input
-                        type="password"
-                        placeholder="Подтвердите новый пароль"
-                        className="w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                        style={{
-                          background: "var(--bg-primary)",
-                          borderColor: "var(--border-secondary)",
-                          color: "var(--text-primary)",
-                        }}
-                        value={confirmPass}
-                        onChange={(e) => setConfirmPass(e.target.value)}
-                      />
-                      {passError && <p className="text-xs text-rose-500">{passError}</p>}
-                      <button
-                        type="submit"
-                        disabled={passBusy || !oldPass || !newPass || !confirmPass}
-                        className="w-full rounded-lg bg-white py-2 text-sm font-medium text-black transition-colors hover:bg-zinc-200 disabled:opacity-50"
-                      >
-                        {passBusy ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <Loader2 size={14} className="animate-spin" />
-                            Сохранение...
-                          </span>
-                        ) : (
-                          "Сменить пароль"
-                        )}
-                      </button>
-                    </form>
-                  </div>
+                  <EmailVerification user={user} />
 
-                  <button
-                    type="button"
-                    className="w-full rounded-xl border py-3 text-sm font-medium transition-colors"
-                    style={{
-                      borderColor: "var(--border-secondary)",
-                      color: "var(--text-secondary)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--bg-hover)";
-                      e.currentTarget.style.color = "var(--text-primary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "var(--text-secondary)";
-                    }}
-                    onClick={() => setLogoutConfirmOpen(true)}
-                  >
-                    Выйти из аккаунта
-                  </button>
+                  <ChangePasswordForm />
 
-                  <button
-                    type="button"
-                    className="w-full rounded-xl border py-3 text-sm font-medium transition-colors"
-                    style={{
-                      borderColor: "rgba(220, 38, 38, 0.6)",
-                      background: "rgba(220, 38, 38, 0.1)",
-                      color: "rgb(252, 165, 165)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(220, 38, 38, 0.1)";
-                    }}
-                    onClick={() => setDeleteOpen(true)}
-                  >
+                  <button onClick={() => setDeleteOpen(true)} className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:bg-rose-500/10" style={{ border: "1px solid rgba(244, 63, 94, 0.3)", color: "#fda4af" }}>
                     Удалить аккаунт
                   </button>
+                </div>
+              )}
+
+              {panel === "about" && (
+                <div className="space-y-6">
+                  <div className="rounded-2xl p-5 space-y-4" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>О программе</p>
+                    <div className="space-y-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                      <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Remain</p>
+                      <p>Версия 1.0.0</p>
+                      <p>Сервис для управления бизнес-процессами, финансами и задачами.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-3" style={{ color: "var(--text-muted)" }}>Документы</p>
+                    <Link
+                      to="/privacy"
+                      onClick={() => localStorage.setItem("openSettings", "true")}
+                      className="flex items-center gap-3 rounded-2xl p-4 text-sm font-semibold transition-all hover:bg-[var(--bg-hover)]"
+                      style={{ border: "1px solid var(--border-primary)", color: "var(--text-primary)" }}
+                    >
+                      <Shield size={18} style={{ color: "var(--text-muted)" }} />
+                      Политика конфиденциальности
+                    </Link>
+                    <Link
+                      to="/terms"
+                      onClick={() => localStorage.setItem("openSettings", "true")}
+                      className="flex items-center gap-3 rounded-2xl p-4 text-sm font-semibold transition-all hover:bg-[var(--bg-hover)]"
+                      style={{ border: "1px solid var(--border-primary)", color: "var(--text-primary)" }}
+                    >
+                      <FileCheck size={18} style={{ color: "var(--text-muted)" }} />
+                      Пользовательское соглашение
+                    </Link>
+                    <Link
+                      to="/cookie-policy"
+                      onClick={() => localStorage.setItem("openSettings", "true")}
+                      className="flex items-center gap-3 rounded-2xl p-4 text-sm font-semibold transition-all hover:bg-[var(--bg-hover)]"
+                      style={{ border: "1px solid var(--border-primary)", color: "var(--text-primary)" }}
+                    >
+                      <Cookie size={18} style={{ color: "var(--text-muted)" }} />
+                      Политика cookie
+                    </Link>
+                  </div>
+
+                  <div className="rounded-2xl p-4 text-xs" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-muted)" }}>
+                    <p>© 2026 Remain · ИП [ФИО] · ИНН [ИНН]</p>
+                    <p className="mt-1">Email: <a href="mailto:support@remain.app" className="underline hover:opacity-80">support@remain.app</a></p>
+                  </div>
                 </div>
               )}
             </div>
@@ -450,7 +177,7 @@ export function SettingsModal({ open, tab, onClose }: Props) {
       <ConfirmModal
         open={deleteOpen}
         title="Удаление аккаунта"
-        description="Это действие необратимо. Все данные профиля будут удалены на сервере (если поддерживается API)."
+        description="Это действие необратимо. Все данные профиля будут удалены."
         confirmText="Удалить навсегда"
         onCancel={() => setDeleteOpen(false)}
         onConfirm={() => void handleDeleteAccount()}
@@ -467,5 +194,199 @@ export function SettingsModal({ open, tab, onClose }: Props) {
         }}
       />
     </>
+  );
+}
+
+function TabBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-xl px-4 py-3 text-sm font-bold transition-all text-left ${
+        active ? "bg-[var(--bg-active)] text-[var(--text-primary)] shadow-lg shadow-indigo-500/10" : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ThemeBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-6 transition-all active:scale-95 ${
+        active ? "border-indigo-500 bg-indigo-500/10 text-indigo-400" : "border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:border-[var(--border-secondary)]"
+      }`}
+    >
+      {icon}
+      <span className="text-sm font-bold uppercase tracking-widest">{label}</span>
+    </button>
+  );
+}
+
+function AppearancePanel() {
+  const { preferences, setPreference } = useVisualPreferences();
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-5" style={{ color: "var(--text-secondary)" }}>Эффекты интерфейса</p>
+        <div className="space-y-4">
+          <PreferenceToggle 
+            icon={<MousePointer2 size={20} />}
+            title="Свечение курсора"
+            desc="Фон мягко следует за движениями вашего курсора"
+            active={preferences.antigravity}
+            onToggle={(v) => setPreference("antigravity", v)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreferenceToggle({ icon, title, desc, active, onToggle }: { icon: React.ReactNode; title: string; desc: string; active: boolean; onToggle: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl p-4 transition-all hover:bg-white/5" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+      <div className="flex items-center gap-4">
+        <div className="rounded-xl p-2.5" style={{ background: active ? "rgba(129, 140, 248, 0.2)" : "var(--bg-tertiary)", color: active ? "#818cf8" : "var(--text-muted)" }}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-[15px] font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>{title}</p>
+          <p className="text-xs font-medium opacity-60" style={{ color: "var(--text-muted)" }}>{desc}</p>
+        </div>
+      </div>
+      <button
+        onClick={() => onToggle(!active)}
+        className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${active ? "bg-indigo-500" : "bg-zinc-700"}`}
+      >
+        <div className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform duration-300 ${active ? "translate-x-5" : ""}`} />
+      </button>
+    </div>
+  );
+}
+
+function EmailVerification({ user }: { user: { email?: string | null; is_verified?: boolean } | null }) {
+  const [sending, setSending] = useState(false);
+  const isVerified = user?.is_verified;
+
+  async function handleSend() {
+    setSending(true);
+    try {
+      await requestVerification();
+      toast.success("Письмо с ссылкой подтверждения отправлено");
+    } catch {
+      toast.error("Не удалось отправить письмо");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl p-5 space-y-3" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+      <div className="flex items-center gap-3">
+        <Mail size={18} style={{ color: isVerified ? "#16a34a" : "var(--text-muted)" }} />
+        <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>Подтверждение почты</p>
+      </div>
+      {isVerified ? (
+        <div className="flex items-center gap-2 text-sm" style={{ color: "#16a34a" }}>
+          <CheckCircle size={16} />
+          <span className="font-semibold">Почта подтверждена</span>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Почта не подтверждена. Подтвердите её для получения важных уведомлений.
+          </p>
+          <button
+            onClick={() => void handleSend()}
+            disabled={sending}
+            className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:bg-white/5 disabled:opacity-50"
+            style={{ border: "1px solid var(--border-secondary)" }}
+          >
+            {sending ? <Loader2 size={16} className="animate-spin inline" /> : "Отправить письмо подтверждения"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ChangePasswordForm() {
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("Пароли не совпадают");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Пароль должен быть не менее 8 символов");
+      return;
+    }
+    setLoading(true);
+    try {
+      await changePassword(oldPassword, newPassword);
+      toast.success("Пароль успешно изменён");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || "Не удалось изменить пароль";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={(e) => void handleSubmit(e)} className="rounded-2xl p-5 space-y-4" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+      <div className="flex items-center gap-3">
+        <Lock size={18} style={{ color: "var(--text-muted)" }} />
+        <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>Смена пароля</p>
+      </div>
+      <input
+        type="password"
+        placeholder="Текущий пароль"
+        value={oldPassword}
+        onChange={(e) => setOldPassword(e.target.value)}
+        required
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ border: "1px solid var(--border-primary)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+      />
+      <input
+        type="password"
+        placeholder="Новый пароль (минимум 8 символов)"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        required
+        minLength={8}
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ border: "1px solid var(--border-primary)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+      />
+      <input
+        type="password"
+        placeholder="Повторите новый пароль"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        required
+        minLength={8}
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ border: "1px solid var(--border-primary)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+      />
+      <button
+        type="submit"
+        disabled={loading || !oldPassword || !newPassword || !confirmPassword}
+        className="w-full rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-50"
+        style={{ border: "1px solid var(--border-secondary)", background: "var(--bg-hover)" }}
+      >
+        {loading ? <Loader2 size={16} className="animate-spin inline" /> : "Изменить пароль"}
+      </button>
+    </form>
   );
 }
