@@ -68,9 +68,11 @@
     insertImage: "Вставить изображение",
     saveBlockFirst: "Сначала сохраните блок, чтобы прикрепить файлы",
     fileUploadError: "Не удалось загрузить файл",
+    fileTooLarge: "Файл слишком большой. Максимум 10 МБ",
     attachments: "Файлы блока",
     uploadFile: "Загрузить файл",
     removeFile: "Удалить",
+    downloadFile: "Скачать",
   },
   markdown: {
     edit: "Редактирование",

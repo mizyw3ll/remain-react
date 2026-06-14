@@ -117,6 +117,13 @@ function parseInline(text: string) {
       continue;
     }
 
+    const hMatch = remaining.match(/^==(.+?)==/);
+    if (hMatch) {
+      result.push({ type: "text", text: hMatch[1], marks: [{ type: "highlight" }] });
+      remaining = remaining.slice(hMatch[0].length);
+      continue;
+    }
+
     const nextSpecial = remaining.search(/[*~`]/);
     if (nextSpecial === 0) {
       result.push({ type: "text", text: remaining[0] });
