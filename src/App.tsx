@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthModal } from "./components/AuthModal";
 import { ProtectedLayout } from "./components/ProtectedLayout";
+import { CookieConsent } from "./components/CookieConsent";
 import { HomePage } from "./pages/HomePage";
 import { BusinessPlansPage } from "./pages/BusinessPlansPage";
 import { FinancialPlansPage } from "./pages/FinancialPlansPage";
@@ -16,6 +17,9 @@ import { CrmPage } from "./pages/CrmPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { TermsOfUsePage } from "./pages/TermsOfUsePage";
+import { CookiePolicyPage } from "./pages/CookiePolicyPage";
 
 const BusinessPlanDetailsPage = lazy(() =>
   import("./pages/BusinessPlanDetailsPage").then((m) => ({ default: m.BusinessPlanDetailsPage })),
@@ -33,6 +37,9 @@ function App() {
         <Route path="/" element={<HomePage onOpenAuth={() => setAuthModalOpen(true)} />} />
         <Route path="/verify" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfUsePage />} />
+        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/business-plans" element={<BusinessPlansPage />} />
           <Route
@@ -65,6 +72,7 @@ function App() {
       </Routes>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <CookieConsent />
       <Toaster
         position="top-right"
         toastOptions={{
