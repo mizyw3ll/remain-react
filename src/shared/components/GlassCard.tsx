@@ -12,36 +12,41 @@ type GlassCardProps = {
   padding?: "normal" | "compact" | "none";
 };
 
-const accentConfig: Record<string, { bar: string; glow: string; shadow: string; borderHover: string }> = {
+const accentConfig: Record<string, { bar: string; glow: string; shadow: string; borderHover: string; glowColor: string }> = {
   indigo: {
-    bar: "linear-gradient(90deg, #6366f1, #a5b4fc, #6366f1)",
-    glow: "radial-gradient(circle at 100% 0%, rgba(99,102,241,0.12), transparent 70%)",
-    shadow: "hover:shadow-indigo-500/10",
-    borderHover: "hover:border-indigo-500/30",
+    bar: "linear-gradient(90deg, #818cf8, #c7d2fe, #818cf8)",
+    glow: "radial-gradient(circle at 100% 0%, rgba(99,102,241,0.15), transparent 70%)",
+    shadow: "hover:shadow-indigo-500/20",
+    borderHover: "hover:border-indigo-400/60",
+    glowColor: "rgba(99, 102, 241, 0.5)",
   },
   emerald: {
-    bar: "linear-gradient(90deg, #10b981, #6ee7b7, #10b981)",
-    glow: "radial-gradient(circle at 100% 0%, rgba(16,185,129,0.12), transparent 70%)",
-    shadow: "hover:shadow-emerald-500/10",
-    borderHover: "hover:border-emerald-500/30",
+    bar: "linear-gradient(90deg, #34d399, #a7f3d0, #34d399)",
+    glow: "radial-gradient(circle at 100% 0%, rgba(16,185,129,0.15), transparent 70%)",
+    shadow: "hover:shadow-emerald-500/20",
+    borderHover: "hover:border-emerald-400/60",
+    glowColor: "rgba(16, 185, 129, 0.5)",
   },
   amber: {
-    bar: "linear-gradient(90deg, #f59e0b, #fde68a, #f59e0b)",
-    glow: "radial-gradient(circle at 100% 0%, rgba(245,158,11,0.12), transparent 70%)",
-    shadow: "hover:shadow-amber-500/10",
-    borderHover: "hover:border-amber-500/30",
+    bar: "linear-gradient(90deg, #fbbf24, #fde68a, #fbbf24)",
+    glow: "radial-gradient(circle at 100% 0%, rgba(245,158,11,0.15), transparent 70%)",
+    shadow: "hover:shadow-amber-500/20",
+    borderHover: "hover:border-amber-400/60",
+    glowColor: "rgba(245, 158, 11, 0.5)",
   },
   rose: {
-    bar: "linear-gradient(90deg, #f43f5e, #fda4af, #f43f5e)",
-    glow: "radial-gradient(circle at 100% 0%, rgba(244,63,94,0.12), transparent 70%)",
-    shadow: "hover:shadow-rose-500/10",
-    borderHover: "hover:border-rose-500/30",
+    bar: "linear-gradient(90deg, #fb7185, #fecdd3, #fb7185)",
+    glow: "radial-gradient(circle at 100% 0%, rgba(244,63,94,0.15), transparent 70%)",
+    shadow: "hover:shadow-rose-500/20",
+    borderHover: "hover:border-rose-400/60",
+    glowColor: "rgba(244, 63, 94, 0.5)",
   },
   sky: {
-    bar: "linear-gradient(90deg, #0ea5e9, #7dd3fc, #0ea5e9)",
-    glow: "radial-gradient(circle at 100% 0%, rgba(14,165,233,0.12), transparent 70%)",
-    shadow: "hover:shadow-sky-500/10",
-    borderHover: "hover:border-sky-500/30",
+    bar: "linear-gradient(90deg, #38bdf8, #bae6fd, #38bdf8)",
+    glow: "radial-gradient(circle at 100% 0%, rgba(14,165,233,0.15), transparent 70%)",
+    shadow: "hover:shadow-sky-500/20",
+    borderHover: "hover:border-sky-400/60",
+    glowColor: "rgba(14, 165, 233, 0.5)",
   },
 };
 
@@ -64,13 +69,11 @@ export function GlassCard({
   const cfg = accentConfig[accent];
 
   const base = clsx(
-    "relative rounded-xl border backdrop-blur-sm overflow-hidden",
+    "group relative rounded-2xl border backdrop-blur-md transition-all duration-500 ease-out flex flex-col",
     paddingMap[padding],
     hover && [
-      "transition-all duration-300 ease-out",
-      "hover:-translate-y-1",
-      "hover:shadow-xl",
-      cfg.shadow,
+      "hover:-translate-y-1.5",
+      "hover:shadow-glow",
       cfg.borderHover,
       "cursor-pointer",
     ],
@@ -80,13 +83,28 @@ export function GlassCard({
   const style: CSSProperties = {
     background: "var(--bg-card)",
     borderColor: "var(--border-primary)",
+    boxShadow: `var(--card-shadow, 0 4px 12px rgba(0,0,0,0.25)), inset 0 1px 0 rgba(255,255,255,0.05)`,
+    overflow: "hidden",
   };
 
   const content = (
     <>
-      <div className="absolute top-0 left-0 right-0 h-[2px] opacity-80" style={{ background: cfg.bar }} />
-      <div className="absolute inset-0 opacity-40" style={{ background: cfg.glow }} />
-      <div className="relative z-10">{children}</div>
+      {/* Accent Bar */}
+      <div className="absolute top-0 left-0 right-0 h-[2.5px] opacity-90 z-20" style={{ background: cfg.bar }} />
+      
+      {/* Background Subtle Accent */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ background: cfg.glow }} />
+
+      <div className="relative z-10 flex flex-col flex-1">{children}</div>
+      
+      {/* External Bloom Glow on Hover — Toned down */}
+      <div 
+        className="absolute inset-0 -z-20 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-[30px] pointer-events-none scale-105"
+        style={{ 
+          background: `radial-gradient(circle at center, ${cfg.glowColor}, transparent 75%)`,
+          margin: '-20px' 
+        }}
+      />
     </>
   );
 
