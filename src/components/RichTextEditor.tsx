@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
-import { useEditor, EditorContent, type Content } from "@tiptap/react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { useEditor, EditorContent, type Content, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Table } from "@tiptap/extension-table";
@@ -31,6 +32,9 @@ import {
   Subscript as SubscriptIcon,
   Paperclip,
   ImageIcon,
+  ZoomIn,
+  ZoomOut,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ru } from "../i18n/ru";
@@ -51,6 +55,16 @@ interface RichTextEditorProps {
   uploadContext?: RichTextEditorUploadContext | null;
 }
 
+const MARK_LABELS: Record<string, string> = {
+  bold: "Bold",
+  italic: "Italic",
+  strike: "Strike",
+  highlight: "Highlight",
+  subscript: "Sub",
+  code: "Code",
+  link: "Link",
+};
+
 export function RichTextEditor({
   content,
   onChange,
@@ -60,6 +74,16 @@ export function RichTextEditor({
   uploadContext,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const hoverRef = useRef<HTMLDivElement>(null);
+  const [hoverMarks, setHoverMarks] = useState<string[]>([]);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverRafRef = useRef<number>(0);
+  const lastSyncedJson = useRef<string>("");
+  const settingContent = useRef(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxZoom, setLightboxZoom] = useState(1);
 
   const editor = useEditor({
     extensions: [
@@ -84,7 +108,8 @@ export function RichTextEditor({
       },
     },
     onUpdate: ({ editor: ed }) => {
-      if (!readOnly) {
+      if (!readOnly && !settingContent.current) {
+        lastSyncedJson.current = JSON.stringify(ed.getJSON());
         onChange(ed.getJSON());
       }
     },
@@ -92,12 +117,103 @@ export function RichTextEditor({
 
   useEffect(() => {
     if (!editor || content == null) return;
-    const current = JSON.stringify(editor.getJSON());
-    const incoming = JSON.stringify(content);
-    if (current !== incoming) {
+    const incomingStr = JSON.stringify(content);
+    if (incomingStr === lastSyncedJson.current) return;
+    const currentStr = JSON.stringify(editor.getJSON());
+    if (currentStr !== incomingStr) {
+      settingContent.current = true;
       editor.commands.setContent(content as Content, { emitUpdate: false });
+      settingContent.current = false;
     }
+    lastSyncedJson.current = incomingStr;
   }, [editor, content]);
+
+  // --- Hover marks logic ---
+  const getMarksAtPos = useCallback(
+    (editorInstance: Editor | null, pos: number): string[] => {
+      if (!editorInstance) return [];
+      const { state } = editorInstance.view;
+      const resolved = state.doc.resolve(pos);
+      const marks = resolved.marks();
+      if (!marks.length) return [];
+      return [...new Set(marks.map((m: any) => m.type.name as string).filter((n: string) => MARK_LABELS[n]))];
+    },
+    [],
+  );
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!editor || readOnly) return;
+
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+
+      if (hoverRafRef.current) {
+        cancelAnimationFrame(hoverRafRef.current);
+      }
+
+      hoverRafRef.current = requestAnimationFrame(() => {
+        const editorEl = editorRef.current;
+        if (!editorEl) return;
+
+        const rect = editorEl.getBoundingClientRect();
+        const x = e.clientX;
+        const y = e.clientY;
+
+        if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+          setHoverMarks([]);
+          setHoverPos(null);
+          return;
+        }
+
+        const coords = editor.view.posAtCoords({ left: x, top: y });
+        if (!coords) {
+          setHoverMarks([]);
+          setHoverPos(null);
+          return;
+        }
+
+        const marks = getMarksAtPos(editor, coords.pos);
+        if (marks.length > 0) {
+          setHoverMarks(marks);
+          setHoverPos({ x, y });
+        } else {
+          hoverTimerRef.current = setTimeout(() => {
+            setHoverMarks([]);
+            setHoverPos(null);
+          }, 120);
+        }
+      });
+    },
+    [editor, readOnly, getMarksAtPos],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    setHoverMarks([]);
+    setHoverPos(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!lightboxSrc) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setLightboxSrc(null); setLightboxZoom(1); }
+      if (e.key === "+" || e.key === "=") setLightboxZoom((z) => Math.min(5, z + 0.25));
+      if (e.key === "-") setLightboxZoom((z) => Math.max(0.25, z - 0.25));
+      if (e.key === "0") setLightboxZoom(1);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxSrc]);
 
   async function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -105,6 +221,10 @@ export function RichTextEditor({
     if (!file || !editor) return;
     if (!uploadContext) {
       toast.error(ru.editor.saveBlockFirst);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(ru.editor.fileTooLarge);
       return;
     }
     try {
@@ -115,8 +235,9 @@ export function RichTextEditor({
       } else {
         editor.chain().focus().insertContent(`<a href="${url}">${meta.name}</a> `).run();
       }
-    } catch {
-      toast.error(ru.editor.fileUploadError);
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || ru.editor.fileUploadError;
+      toast.error(msg);
     }
   }
 
@@ -145,7 +266,7 @@ export function RichTextEditor({
       style={{ borderColor: v("border-primary"), background: v("bg-primary") }}
     >
       {!readOnly && (
-        <div className="flex flex-wrap gap-1 border-b px-2 py-1.5" style={{ borderColor: v("border-primary") }}>
+        <div className="flex flex-wrap gap-1 px-2 py-1.5" style={{ borderBottom: `1px solid ${v("border-primary")}` }}>
           {btn(
             editor.isActive("bold"),
             () => editor.chain().focus().toggleBold().run(),
@@ -246,11 +367,89 @@ export function RichTextEditor({
         </div>
       )}
       <div
+        ref={editorRef}
         className={`p-3 text-sm tiptap ${readOnly ? "" : tw.inputBase}`}
-        style={readOnly ? { minHeight: 120 } : inputStyle(isDark)}
+        style={readOnly ? { minHeight: 120 } : { ...inputStyle(isDark), minHeight: 200 }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.tagName === "IMG") {
+            e.preventDefault();
+            setLightboxSrc((target as HTMLImageElement).src);
+          }
+        }}
       >
         <EditorContent editor={editor} />
       </div>
+      {lightboxSrc &&
+        createPortal(
+          <div
+            className="image-lightbox"
+            onClick={() => { setLightboxSrc(null); setLightboxZoom(1); }}
+            onWheel={(e) => {
+              e.preventDefault();
+              setLightboxZoom((z) => Math.min(5, Math.max(0.25, z + (e.deltaY < 0 ? 0.15 : -0.15))));
+            }}
+          >
+            <div className="fixed top-4 right-4 z-[10001] flex items-center gap-2">
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-black/50 text-white transition-colors hover:bg-black/70"
+                onClick={(e) => { e.stopPropagation(); setLightboxZoom((z) => Math.min(5, z + 0.25)); }}
+              >
+                <ZoomIn size={18} />
+              </button>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-black/50 text-white transition-colors hover:bg-black/70"
+                onClick={(e) => { e.stopPropagation(); setLightboxZoom((z) => Math.max(0.25, z - 0.25)); }}
+              >
+                <ZoomOut size={18} />
+              </button>
+              <span className="text-xs text-white/60 min-w-[3rem] text-center">{Math.round(lightboxZoom * 100)}%</span>
+              <a
+                href={lightboxSrc}
+                download
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-black/50 text-white transition-colors hover:bg-black/70"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Download size={18} />
+              </a>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-black/50 text-white transition-colors hover:bg-black/70"
+                onClick={() => { setLightboxSrc(null); setLightboxZoom(1); }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <img
+              src={lightboxSrc}
+              alt=""
+              onClick={(e) => e.stopPropagation()}
+              style={{ transform: `scale(${lightboxZoom})`, transition: "transform 0.15s ease" }}
+            />
+          </div>,
+          document.body,
+        )}
+      {hoverMarks.length > 0 && hoverPos && (
+        <div
+          ref={hoverRef}
+          className="tiptap-hover-marks"
+          data-theme={isDark ? "dark" : "light"}
+          style={{
+            left: hoverPos.x,
+            top: hoverPos.y,
+          }}
+        >
+          {hoverMarks.map((m) => (
+            <span key={m} className="mark-tag">
+              {MARK_LABELS[m]}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

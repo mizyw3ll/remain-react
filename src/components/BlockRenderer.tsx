@@ -7,7 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import { ChartWrapper } from "../shared/components/ChartWrapper";
 import { Loader2 } from "lucide-react";
 import { v } from "../shared/theme";
-import type { PlanBlock, FinancialPlan } from "../api";
+import type { PlanBlock, FinancialPlan, ChartPoint } from "../api";
 
 interface BlockRendererProps {
   block: PlanBlock;
