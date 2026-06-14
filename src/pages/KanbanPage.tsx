@@ -506,8 +506,7 @@ export function KanbanPage() {
         <button
           type="button"
           onClick={() => setShowCreateBoard(true)}
-          className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200"
-          style={buttonStyle("primary", isDark)}
+          className={`${tw.buttonPrimary} flex items-center gap-2`}
         >
           <Plus size={16} />
           Новая доска

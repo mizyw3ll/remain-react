@@ -7,18 +7,22 @@ import { createFinancialPlanApi } from "../api";
 import { useCurrenciesQuery, useFinancialPlansQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
 import { inputStyle, buttonStyle, tw, v } from "../shared/theme";
-import { ExpandableText } from "../components/ExpandableText";
+import { getCurrencySymbol, getCurrencyRussianName } from "../shared/currency";
+import { MarkdownPreview } from "../components/MarkdownPreview";
 import { GlassCard } from "../shared/components/GlassCard";
+import { RichTextEditor } from "../components/RichTextEditor";
 import { useTheme } from "../features/theme/ThemeContext";
+import { tiptapToText } from "../lib/tiptapToText";
 
 type FormState = {
   title: string;
   description: string;
+  descriptionDoc: object | null;
   currency_id: number;
   is_active: boolean;
 };
 
-const emptyForm: FormState = { title: "", description: "", currency_id: 0, is_active: true };
+const emptyForm: FormState = { title: "", description: "", descriptionDoc: null, currency_id: 0, is_active: true };
 
 export function FinancialPlansPage() {
   const { theme } = useTheme();
@@ -52,7 +56,13 @@ export function FinancialPlansPage() {
   async function submit() {
     if (!valid) return;
     try {
-      await createFinancialPlanApi(form);
+      const description = form.descriptionDoc ? tiptapToText(form.descriptionDoc).trim() : undefined;
+      await createFinancialPlanApi({
+        title: form.title,
+        description: description || undefined,
+        currency_id: form.currency_id,
+        is_active: form.is_active,
+      });
       toast.success("План создан");
       setOpenForm(false);
       await queryClient.invalidateQueries({ queryKey: queryKeys.financialPlans });
@@ -153,59 +163,57 @@ export function FinancialPlansPage() {
         </div>
       ) : (
         <div className={tw.grid}>
-          {filteredPlans.map((plan, i) => (
-            <Link
-              key={plan.id}
-              to={`/financial-plans/${plan.id}`}
-              className={`animate-fade-in stagger-${(i % 6) + 1} block min-w-0`}
-            >
-              <GlassCard accent="emerald">
-                <div className="mb-4 flex items-start gap-4">
-                  <div
-                    className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: "rgba(16,185,129,0.12)" }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#34d399"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+          {filteredPlans.map((plan) => {
+            const cur = currencies.find((c) => c.id === plan.currency_id);
+            const symbol = cur ? getCurrencySymbol(cur.code) : "$";
+            return (
+              <Link
+                key={plan.id}
+                to={`/financial-plans/${plan.id}`}
+                className="animate-fade-in block min-w-0 h-full"
+              >
+                <GlassCard accent="emerald" className="h-full flex flex-col">
+                  {/* Row 1: icon + title + status badge */}
+                  <div className="flex items-center gap-3 pb-3 mb-3 border-b" style={{ borderColor: "var(--border-muted)" }}>
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+                      style={{ background: "rgba(16,185,129,0.12)", color: "#34d399" }}
                     >
-                      <line x1="12" y1="1" x2="12" y2="23" />
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3 min-w-0">
-                      <h2 className="text-lg font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
-                        {plan.title}
-                      </h2>
-                      <span
-                        className="shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-medium whitespace-nowrap"
-                        style={
-                          plan.is_active
-                            ? { background: "rgba(34, 197, 94, 0.15)", color: "#16a34a" }
-                            : { background: v("bg-active"), color: v("text-muted") }
-                        }
-                      >
-                        {plan.is_active ? "Активен" : "Неактивен"}
-                      </span>
+                      {symbol}
                     </div>
-                    <ExpandableText text={plan.description || "Без описания"} expandable={false} className="mt-1.5" />
+                    <h2 className="flex-1 min-w-0 text-base font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
+                      {plan.title}
+                    </h2>
+                    <span
+                      className="shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-medium whitespace-nowrap"
+                      style={
+                        plan.is_active
+                          ? { background: "rgba(34, 197, 94, 0.15)", color: "#16a34a" }
+                          : { background: v("bg-active"), color: v("text-muted") }
+                      }
+                    >
+                      {plan.is_active ? "Активен" : "Неактивен"}
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center gap-4 pt-3 border-t" style={{ borderColor: "var(--border-muted)" }}>
-                  <span className="text-xs" style={{ color: v("text-muted") }}>
-                    {currencies.find((c) => c.id === plan.currency_id)?.code ?? `ID ${plan.currency_id}`}
-                  </span>
-                </div>
-              </GlassCard>
-            </Link>
-          ))}
+
+                  {/* Row 2: description */}
+                  <div className="flex-1 min-w-0">
+                    <MarkdownPreview
+                      content={plan.description || "Без описания"}
+                      className="markdown-body-compact line-clamp-3 text-sm"
+                    />
+                  </div>
+
+                  {/* Row 3: creation date */}
+                  <div className="pt-3 mt-3 border-t" style={{ borderColor: "var(--border-muted)" }}>
+                    <span className="text-xs" style={{ color: v("text-muted") }}>
+                      {new Date(plan.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                </GlassCard>
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -234,12 +242,11 @@ export function FinancialPlansPage() {
                   Название обязательно
                 </p>
               )}
-              <input
-                className={tw.inputBase}
-                style={inputStyle(isDark)}
+              <RichTextEditor
+                content={form.descriptionDoc ?? { type: "doc", content: [] }}
+                onChange={(doc) => setForm((p) => ({ ...p, descriptionDoc: doc }))}
+                isDark={isDark}
                 placeholder="Описание"
-                value={form.description}
-                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
               />
               <select
                 className={tw.inputBase}
@@ -250,7 +257,7 @@ export function FinancialPlansPage() {
                 <option value={0}>Выберите валюту</option>
                 {currencies.map((currency) => (
                   <option key={currency.id} value={currency.id}>
-                    {currency.code} - {currency.name}
+                    {getCurrencySymbol(currency.code)} — {getCurrencyRussianName(currency.code)}
                   </option>
                 ))}
               </select>

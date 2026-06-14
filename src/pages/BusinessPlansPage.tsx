@@ -12,18 +12,21 @@ import {
   type Template,
 } from "../api";
 import { inputStyle, buttonStyle, tw, v } from "../shared/theme";
-import { ExpandableText } from "../components/ExpandableText";
+import { MarkdownPreview } from "../components/MarkdownPreview";
 import { GlassCard } from "../shared/components/GlassCard";
+import { RichTextEditor } from "../components/RichTextEditor";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useBusinessPlansQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
+import { tiptapToText } from "../lib/tiptapToText";
 
 type FormState = {
   title: string;
   description: string;
+  descriptionDoc: object | null;
 };
 
-const emptyForm: FormState = { title: "", description: "" };
+const emptyForm: FormState = { title: "", description: "", descriptionDoc: null };
 
 export function BusinessPlansPage() {
   const { theme } = useTheme();
@@ -69,7 +72,8 @@ export function BusinessPlansPage() {
   async function submit() {
     if (!valid) return;
     try {
-      await createBusinessPlanApi(form);
+      const description = form.descriptionDoc ? tiptapToText(form.descriptionDoc).trim() : undefined;
+      await createBusinessPlanApi({ title: form.title, description: description || undefined });
       toast.success(ru.toasts.planCreated);
       setOpenForm(false);
       await queryClient.invalidateQueries({ queryKey: queryKeys.businessPlans });
@@ -169,14 +173,17 @@ export function BusinessPlansPage() {
             onClick={startCreate}
             className={`${tw.buttonPrimary} flex items-center gap-1.5`}
             style={{
-              background: v("text-primary"),
-              color: v("bg-body"),
+              background: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+              color: "#ffffff",
+              boxShadow: "0 2px 10px rgba(99, 102, 241, 0.3)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = "0.9";
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.boxShadow = "0 4px 16px rgba(99, 102, 241, 0.4)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = "1";
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 2px 10px rgba(99, 102, 241, 0.3)";
             }}
           >
             <Plus size={16} />
@@ -253,21 +260,22 @@ export function BusinessPlansPage() {
         </div>
       ) : (
         <div className={tw.grid}>
-          {filteredPlans.map((plan, i) => (
+          {filteredPlans.map((plan) => (
             <Link
               key={plan.id}
               to={`/business-plans/${plan.id}`}
-              className={`animate-fade-in stagger-${(i % 6) + 1} block min-w-0`}
+              className="animate-fade-in block min-w-0 h-full"
             >
-              <GlassCard accent="indigo">
-                <div className="mb-4 flex items-start gap-4">
+              <GlassCard accent="indigo" className="h-full flex flex-col">
+                {/* Row 1: icon + title */}
+                <div className="flex items-center gap-3 pb-3 mb-3 border-b" style={{ borderColor: "var(--border-muted)" }}>
                   <div
-                    className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                     style={{ background: "rgba(99,102,241,0.12)" }}
                   >
                     <svg
-                      width="20"
-                      height="20"
+                      width="18"
+                      height="18"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="#818cf8"
@@ -282,16 +290,23 @@ export function BusinessPlansPage() {
                       <polyline points="10 9 9 9 8 9" />
                     </svg>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
-                      {plan.title}
-                    </h2>
-                    <ExpandableText text={plan.description || "Без описания"} expandable={false} className="mt-1.5" />
-                  </div>
+                  <h2 className="flex-1 min-w-0 text-base font-semibold leading-tight truncate" style={{ color: v("text-primary") }}>
+                    {plan.title}
+                  </h2>
                 </div>
-                <div className="flex items-center gap-4 pt-3 border-t" style={{ borderColor: "var(--border-muted)" }}>
+
+                {/* Row 2: description */}
+                <div className="flex-1 min-w-0">
+                  <MarkdownPreview
+                    content={plan.description || "Без описания"}
+                    className="markdown-body-compact line-clamp-3 text-sm"
+                  />
+                </div>
+
+                {/* Row 3: creation date */}
+                <div className="pt-3 mt-3 border-t" style={{ borderColor: "var(--border-muted)" }}>
                   <span className="text-xs" style={{ color: v("text-muted") }}>
-                    {new Date(plan.created_at).toLocaleDateString("ru-RU")}
+                    {new Date(plan.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" })}
                   </span>
                 </div>
               </GlassCard>
@@ -326,12 +341,11 @@ export function BusinessPlansPage() {
                   Название обязательно
                 </p>
               )}
-              <textarea
-                className={tw.inputBase}
-                style={inputStyle(isDark)}
+              <RichTextEditor
+                content={form.descriptionDoc ?? { type: "doc", content: [] }}
+                onChange={(doc) => setForm((p) => ({ ...p, descriptionDoc: doc }))}
+                isDark={isDark}
                 placeholder="Описание"
-                value={form.description}
-                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
               />
               <div className="flex justify-end gap-2">
                 <button

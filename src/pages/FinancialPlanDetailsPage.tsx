@@ -5,6 +5,7 @@ import { Pencil, Trash2, Download } from "lucide-react";
 import { queryKeys } from "../lib/queryClient";
 import { ExpandableText } from "../components/ExpandableText";
 import { MarkdownPreview } from "../components/MarkdownPreview";
+import { RichTextEditor } from "../components/RichTextEditor";
 import { CartesianGrid, Line, Area, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartWrapper } from "../shared/components/ChartWrapper";
 import toast from "react-hot-toast";
@@ -27,7 +28,10 @@ import {
 import { ConfirmModal } from "../components/ConfirmModal";
 import { PointModal } from "../components/PointModal";
 import { inputStyle, buttonStyle, tw, v } from "../shared/theme";
+import { getCurrencySymbol, getCurrencyRussianName } from "../shared/currency";
 import { useTheme } from "../features/theme/ThemeContext";
+import { textToTiptapDoc } from "../lib/textToTiptap";
+import { tiptapToText } from "../lib/tiptapToText";
 
 type Timeframe = "1W" | "1M" | "3M" | "1Y";
 
@@ -151,9 +155,16 @@ export function FinancialPlanDetailsPage() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const [isEditingChart, setIsEditingChart] = useState(false);
-  const [chartForm, setChartForm] = useState({
+  const [chartForm, setChartForm] = useState<{
+    title: string;
+    description: string;
+    descriptionDoc: object | null;
+    currency_id: number;
+    is_active: boolean;
+  }>({
     title: "",
     description: "",
+    descriptionDoc: null,
     currency_id: 0,
     is_active: true,
   });
@@ -185,6 +196,7 @@ export function FinancialPlanDetailsPage() {
       setChartForm({
         title: chartData.title,
         description: chartData.description ?? "",
+        descriptionDoc: textToTiptapDoc(chartData.description ?? ""),
         currency_id: chartData.currency_id,
         is_active: chartData.is_active,
       });
@@ -288,9 +300,10 @@ export function FinancialPlanDetailsPage() {
   async function saveChart() {
     if (!chartId || !chart || !chartForm.title.trim()) return;
     try {
+      const description = chartForm.descriptionDoc ? tiptapToText(chartForm.descriptionDoc).trim() : undefined;
       const updated = await updateFinancialPlanApi(chartId, {
         title: chartForm.title.trim(),
-        description: chartForm.description.trim() || undefined,
+        description: description || undefined,
         currency_id: chartForm.currency_id,
         is_active: chartForm.is_active,
       });
@@ -298,6 +311,7 @@ export function FinancialPlanDetailsPage() {
       setChartForm({
         title: updated.title,
         description: updated.description ?? "",
+        descriptionDoc: textToTiptapDoc(updated.description ?? ""),
         currency_id: updated.currency_id,
         is_active: updated.is_active,
       });
@@ -345,7 +359,7 @@ export function FinancialPlanDetailsPage() {
   if (!chart) return <div style={{ color: v("text-secondary") }}>График не найден</div>;
 
   return (
-    <section className="space-y-6 pb-8 pt-2">
+    <section className="space-y-6 pb-8 pt-2 animate-fade-in">
       <article
         className="rounded-2xl border p-5"
         style={{
@@ -406,6 +420,7 @@ export function FinancialPlanDetailsPage() {
                       setChartForm({
                         title: chart.title,
                         description: chart.description ?? "",
+                        descriptionDoc: null,
                         currency_id: chart.currency_id,
                         is_active: chart.is_active,
                       });
@@ -453,11 +468,11 @@ export function FinancialPlanDetailsPage() {
           {/* Description and details - full width */}
           {isEditingChart ? (
             <div className="space-y-2">
-              <textarea
-                className={tw.inputBase}
-                style={inputStyle(isDark)}
-                value={chartForm.description}
-                onChange={(e) => setChartForm((prev) => ({ ...prev, description: e.target.value }))}
+              <RichTextEditor
+                content={chartForm.descriptionDoc ?? { type: "doc", content: [] }}
+                onChange={(doc) => setChartForm((prev) => ({ ...prev, descriptionDoc: doc }))}
+                isDark={isDark}
+                placeholder="Описание графика"
               />
               <div className="grid gap-2 sm:grid-cols-2">
                 <select
@@ -469,7 +484,7 @@ export function FinancialPlanDetailsPage() {
                   <option value={0}>Выберите валюту</option>
                   {currencies.map((currency) => (
                     <option key={currency.id} value={currency.id}>
-                      {currency.code} - {currency.name}
+                      {getCurrencySymbol(currency.code)} — {getCurrencyRussianName(currency.code)}
                     </option>
                   ))}
                 </select>
@@ -491,8 +506,12 @@ export function FinancialPlanDetailsPage() {
               <MarkdownPreview content={chart.description || "Без описания"} />
               <p className="text-sm" style={{ color: v("text-muted") }}>
                 Валюта:{" "}
-                {currencies.find((currency) => currency.id === chart.currency_id)?.code ?? `ID ${chart.currency_id}`} |
-                Статус:
+                {(() => {
+                  const cur = currencies.find((currency) => currency.id === chart.currency_id);
+                  if (!cur) return `ID ${chart.currency_id}`;
+                  return `${getCurrencySymbol(cur.code)} — ${getCurrencyRussianName(cur.code)}`;
+                })()}
+                {" | "}Статус:
                 <span style={{ color: chart.is_active ? "#16a34a" : v("text-muted") }}>
                   {chart.is_active ? " активен" : " неактивен"}
                 </span>
@@ -536,7 +555,11 @@ export function FinancialPlanDetailsPage() {
                       e.currentTarget.style.background = "transparent";
                     }}
                     onClick={() => {
-                      setChartForm((prev) => ({ ...prev, description: aiSummary }));
+                      setChartForm((prev) => ({
+                        ...prev,
+                        description: aiSummary,
+                        descriptionDoc: textToTiptapDoc(aiSummary),
+                      }));
                       setIsEditingChart(true);
                     }}
                   >
@@ -552,44 +575,48 @@ export function FinancialPlanDetailsPage() {
         </div>
       </article>
 
-      {analytics && (
-        <article
-          className="space-y-3 rounded-2xl border p-5"
-          style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
-              Обзор
-            </h2>
-            <p className="text-xs" style={{ color: v("text-muted") }}>
-              Быстрая аналитика графика
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Доход", value: analytics.income_total, fixed: 2 },
-              { label: "Расход", value: analytics.expense_total, fixed: 2 },
-              { label: "Net", value: analytics.net_total, fixed: 2 },
-              { label: "Точек", value: analytics.points_count, fixed: 0 },
-            ].map((metric) => (
-              <div
-                key={metric.label}
-                className="rounded-xl border p-3"
-                style={{ borderColor: v("border-primary"), background: v("bg-card") }}
-              >
-                <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>
-                  {metric.label}
-                </p>
-                <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>
-                  {metric.fixed === 0
-                    ? Math.round(metric.value).toString()
-                    : Number(metric.value).toFixed(metric.fixed)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </article>
-      )}
+      {analytics && (() => {
+        const curCode = currencies.find((c) => c.id === chart.currency_id)?.code ?? "RUB";
+        const curSymbol = getCurrencySymbol(curCode);
+        return (
+          <article
+            className="space-y-3 rounded-2xl border p-5"
+            style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
+                Обзор
+              </h2>
+              <p className="text-xs" style={{ color: v("text-muted") }}>
+                Быстрая аналитика графика
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: "Доход", value: analytics.income_total, fixed: 2 },
+                { label: "Расход", value: analytics.expense_total, fixed: 2 },
+                { label: "Net", value: analytics.net_total, fixed: 2 },
+                { label: "Точек", value: analytics.points_count, fixed: 0 },
+              ].map((metric) => (
+                <div
+                  key={metric.label}
+                  className="rounded-xl border p-3"
+                  style={{ borderColor: v("border-primary"), background: v("bg-card") }}
+                >
+                  <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>
+                    {metric.label}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>
+                    {metric.fixed === 0
+                      ? Math.round(metric.value).toString()
+                      : `${Number(metric.value).toFixed(metric.fixed)} ${curSymbol}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </article>
+        );
+      })()}
 
       <article
         className="rounded-2xl border p-5"
@@ -682,6 +709,8 @@ export function FinancialPlanDetailsPage() {
                         expense?: number;
                         total?: number | null;
                       };
+                      const curCode = currencies.find((c) => c.id === chart.currency_id)?.code ?? "RUB";
+                      const curSym = getCurrencySymbol(curCode);
                       return (
                         <div
                           className="rounded-xl border p-3 text-xs"
@@ -694,11 +723,11 @@ export function FinancialPlanDetailsPage() {
                           <p className="mb-2 font-medium" style={{ color: v("text-primary") }}>
                             {label}
                           </p>
-                          {typeof item.income === "number" && <p>Доходы: {item.income.toFixed(2)}</p>}
-                          {typeof item.expense === "number" && <p>Расходы: {item.expense.toFixed(2)}</p>}
+                          {typeof item.income === "number" && <p>Доходы: {item.income.toFixed(2)} {curSym}</p>}
+                          {typeof item.expense === "number" && <p>Расходы: {item.expense.toFixed(2)} {curSym}</p>}
                           {typeof item.total === "number" && (
                             <p className="mt-1 font-semibold" style={{ color: v("text-primary") }}>
-                              Итог: {item.total.toFixed(2)}
+                              Итог: {item.total.toFixed(2)} {curSym}
                             </p>
                           )}
                         </div>

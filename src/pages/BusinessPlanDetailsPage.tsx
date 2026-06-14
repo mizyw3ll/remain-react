@@ -53,11 +53,13 @@ import { useChartEmbedPoints } from "../hooks/useChartEmbedPoints";
 import { useFinancialPlansQuery } from "../hooks/useCachedData";
 import { ExpandableText } from "../components/ExpandableText";
 import { MarkdownPreview } from "../components/MarkdownPreview";
+import { RichTextEditor } from "../components/RichTextEditor";
 import { TagPicker } from "../components/TagPicker";
 import { buttonStyle, inputStyle, tw, v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
 import { getDefaultRichContent, normalizeRichContentForBlockType } from "../lib/blockDefaults";
 import { textToTiptapDoc } from "../lib/textToTiptap";
+import { tiptapToText } from "../lib/tiptapToText";
 import { ru } from "../i18n/ru";
 
 export function BusinessPlanDetailsPage() {
@@ -82,7 +84,11 @@ export function BusinessPlanDetailsPage() {
     title: string;
   } | null>(null);
   const [isEditingPlan, setIsEditingPlan] = useState(false);
-  const [planForm, setPlanForm] = useState({ title: "", description: "" });
+  const [planForm, setPlanForm] = useState<{ title: string; description: string; descriptionDoc: object | null }>({
+    title: "",
+    description: "",
+    descriptionDoc: null,
+  });
   const location = useLocation();
 
   // Scroll to block from search result hash
@@ -181,6 +187,7 @@ export function BusinessPlanDetailsPage() {
       setPlanForm({
         title: planData.title,
         description: planData.description ?? "",
+        descriptionDoc: textToTiptapDoc(planData.description ?? ""),
       });
       setBlocks(planData.blocks ?? []);
       setAnalytics(analyticsData);
@@ -400,14 +407,16 @@ export function BusinessPlanDetailsPage() {
   async function savePlan() {
     if (!planId || !planForm.title.trim()) return;
     try {
+      const description = planForm.descriptionDoc ? tiptapToText(planForm.descriptionDoc).trim() : undefined;
       const updated = await updateBusinessPlanApi(planId, {
         title: planForm.title.trim(),
-        description: planForm.description.trim() || undefined,
+        description: description || undefined,
       });
       setPlan(updated);
       setPlanForm({
         title: updated.title,
         description: updated.description ?? "",
+        descriptionDoc: textToTiptapDoc(updated.description ?? ""),
       });
       setIsEditingPlan(false);
       toast.success(ru.toasts.planUpdated);
@@ -550,7 +559,7 @@ export function BusinessPlanDetailsPage() {
   if (!plan) return <div style={{ color: v("text-secondary") }}>План не найден</div>;
 
   return (
-    <section className="space-y-6 pb-8 pt-2">
+    <section className="space-y-6 pb-8 pt-2 animate-fade-in">
       <article
         className="rounded-2xl border p-5"
         style={{
@@ -589,7 +598,7 @@ export function BusinessPlanDetailsPage() {
                       e.currentTarget.style.background = "transparent";
                     }}
                     onClick={() => {
-                      setPlanForm({ title: plan.title, description: plan.description ?? "" });
+                      setPlanForm({ title: plan.title, description: plan.description ?? "", descriptionDoc: null });
                       setIsEditingPlan(false);
                     }}
                   >
@@ -729,11 +738,11 @@ export function BusinessPlanDetailsPage() {
 
           {/* Description - full width */}
           {isEditingPlan ? (
-            <textarea
-              className={tw.inputBase}
-              style={inputStyle(isDark)}
-              value={planForm.description}
-              onChange={(e) => setPlanForm((prev) => ({ ...prev, description: e.target.value }))}
+            <RichTextEditor
+              content={planForm.descriptionDoc ?? { type: "doc", content: [] }}
+              onChange={(doc) => setPlanForm((prev) => ({ ...prev, descriptionDoc: doc }))}
+              isDark={isDark}
+              placeholder="Описание плана"
             />
           ) : (
             <MarkdownPreview content={plan.description || "Без описания"} />

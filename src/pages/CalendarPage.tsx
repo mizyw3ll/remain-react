@@ -318,16 +318,14 @@ export function CalendarPage() {
           <a
             href={getCalendarExportUrl()}
             download
-            className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
-            style={{ borderColor: v("border-secondary"), color: v("text-secondary"), background: v("bg-card") }}
+            className={`${tw.buttonSecondary} flex items-center gap-1.5`}
           >
             <Download size={16} />
             .ics
           </a>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md"
-            style={buttonStyle("primary", isDark)}
+            className={`${tw.buttonPrimary} flex items-center gap-1.5`}
           >
             <Plus size={16} />
             Событие

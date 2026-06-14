@@ -12,7 +12,7 @@ export function SearchPage() {
   const { data: results, isLoading } = useSearchQuery(query);
 
   return (
-    <div className={tw.pageContainer}>
+    <div className={`${tw.pageContainer} animate-fade-in`}>
       <h1 className="text-2xl font-semibold" style={{ color: v("text-primary") }}>
         Результаты поиска
       </h1>

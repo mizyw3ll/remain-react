@@ -7,7 +7,6 @@ import {
   Mail,
   Building2,
   User,
-  DollarSign,
   Calendar,
   Target,
   TrendingUp,
@@ -29,6 +28,7 @@ import {
   type Deal,
 } from "../api";
 import { cardStyle, inputStyle, buttonStyle, tw, v } from "../shared/theme";
+import { getCurrencySymbol } from "../shared/currency";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useContactsQuery, useDealsQuery, usePipelineStatsQuery } from "../hooks/useCachedData";
 import { queryKeys } from "../lib/queryClient";
@@ -87,6 +87,8 @@ export function CrmPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: "contact" | "deal"; id: number; title: string } | null>(
     null,
   );
+  const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
+  const [dealErrors, setDealErrors] = useState<Record<string, string>>({});
 
   const filteredContacts = useMemo(() => {
     const list = contacts.filter(
@@ -265,6 +267,7 @@ export function CrmPage() {
     setCPosition("");
     setCNotes("");
     setCIsLead(false);
+    setContactErrors({});
   }
 
   function resetDealForm() {
@@ -276,6 +279,63 @@ export function CrmPage() {
     setDCurrency("RUB");
     setDPriority("medium");
     setDDueDate("");
+    setDealErrors({});
+  }
+
+  function validateContactForm(): boolean {
+    const errors: Record<string, string> = {};
+    const name = cName.trim();
+    if (!name) {
+      errors.name = "Обязательное поле";
+    } else if (name.length < 2) {
+      errors.name = "Минимум 2 символа";
+    } else if (name.length > 100) {
+      errors.name = "Максимум 100 символов";
+    }
+
+    const email = cEmail.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Некорректный email";
+    }
+
+    const phone = cPhone.trim();
+    if (phone && !/^[\d\s\-+()]{7,20}$/.test(phone)) {
+      errors.phone = "Некорректный телефон";
+    }
+
+    setContactErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  function validateDealForm(): boolean {
+    const errors: Record<string, string> = {};
+    const title = dTitle.trim();
+    if (!title) {
+      errors.title = "Обязательное поле";
+    } else if (title.length < 2) {
+      errors.title = "Минимум 2 символа";
+    } else if (title.length > 200) {
+      errors.title = "Максимум 200 символов";
+    }
+
+    if (dValue) {
+      const num = Number(dValue);
+      if (isNaN(num) || num < 0) {
+        errors.value = "Только положительные числа";
+      } else if (num > 999999999) {
+        errors.value = "Слишком большая сумма";
+      }
+    }
+
+    if (dDueDate) {
+      const date = new Date(dDueDate);
+      if (isNaN(date.getTime())) {
+        errors.dueDate = "Некорректная дата";
+      }
+    }
+
+    setDealErrors(errors);
+    return Object.keys(errors).length === 0;
   }
 
   function openEditContact(c: Contact) {
@@ -357,8 +417,7 @@ export function CrmPage() {
                 setEditingContact(null);
                 setShowContactForm(true);
               }}
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              style={buttonStyle("primary", isDark)}
+              className={`${tw.buttonPrimary} flex items-center gap-2`}
             >
               <Plus size={16} />
               Контакт
@@ -370,8 +429,7 @@ export function CrmPage() {
                 setEditingDeal(null);
                 setShowDealForm(true);
               }}
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              style={buttonStyle("primary", isDark)}
+              className={`${tw.buttonPrimary} flex items-center gap-2`}
             >
               <Plus size={16} />
               Сделка
@@ -379,31 +437,32 @@ export function CrmPage() {
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-3 mb-8">
           {(["contacts", "deals", "pipeline"] as Tab[]).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              style={{
-                ...(tab === t ? buttonStyle("primary", isDark) : buttonStyle("secondary", isDark)),
-                ...(tab === t ? { background: v("bg-active") } : {}),
-              }}
+              className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-sm font-bold transition-all duration-300 active:scale-[0.96] ${
+                tab === t 
+                  ? "bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-500/25 border-transparent" 
+                  : "border-2 hover:bg-indigo-500/10"
+              }`}
+              style={tab !== t ? { borderColor: v("border-primary"), color: v("text-primary") } : {}}
             >
               {t === "contacts" && (
                 <>
-                  <Users size={16} /> Контакты ({contacts.length})
+                  <Users size={18} /> Контакты ({contacts.length})
                 </>
               )}
               {t === "deals" && (
                 <>
-                  <Target size={16} /> Сделки ({deals.length})
+                  <Target size={18} /> Сделки ({deals.length})
                 </>
               )}
               {t === "pipeline" && (
                 <>
-                  <TrendingUp size={16} /> Воронка
+                  <TrendingUp size={18} /> Воронка
                 </>
               )}
             </button>
@@ -601,7 +660,10 @@ export function CrmPage() {
                         className="mt-2 text-sm font-medium flex items-center gap-1"
                         style={{ color: v("text-primary") }}
                       >
-                        <DollarSign size={14} /> {deal.value.toLocaleString()} {deal.currency}
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-bold" style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}>
+                          {getCurrencySymbol(deal.currency)}
+                        </span>
+                        {deal.value.toLocaleString()} {deal.currency}
                       </p>
                     )}
                     {deal.contact && (
@@ -658,7 +720,10 @@ export function CrmPage() {
                 style={cardStyle("business", isDark)}
               >
                 <p className="text-2xl font-bold" style={{ color: v("text-primary") }}>
-                  {(stats?.total_value || 0).toLocaleString()} ₽
+                  <span className="inline-flex items-center gap-1">
+                    {(stats?.total_value || 0).toLocaleString()}
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg text-xs font-bold" style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}>₽</span>
+                  </span>
                 </p>
                 <p className="text-sm" style={{ color: v("text-muted") }}>
                   Общая сумма
@@ -712,7 +777,6 @@ export function CrmPage() {
                           style={{
                             width: `${pct}%`,
                             background: `linear-gradient(90deg, ${s.color}88, ${s.color})`,
-                            clipPath: `inset(0 ${100 - Math.min(pct + 8, 100)}% 0 0 round 8px)`,
                           }}
                         />
                       </div>
@@ -746,30 +810,48 @@ export function CrmPage() {
                 </button>
               </div>
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={cName}
-                  onChange={(e) => setCName(e.target.value)}
-                  placeholder="Имя *"
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
-                  style={inputStyle(isDark)}
-                />
-                <input
-                  type="email"
-                  value={cEmail}
-                  onChange={(e) => setCEmail(e.target.value)}
-                  placeholder="Email"
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
-                  style={inputStyle(isDark)}
-                />
-                <input
-                  type="text"
-                  value={cPhone}
-                  onChange={(e) => setCPhone(e.target.value)}
-                  placeholder="Телефон"
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
-                  style={inputStyle(isDark)}
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={cName}
+                    onChange={(e) => { setCName(e.target.value); if (contactErrors.name) setContactErrors(p => { const n = {...p}; delete n.name; return n; }); }}
+                    placeholder="Имя *"
+                    className="w-full rounded-xl border px-3 py-2 text-sm"
+                    style={{
+                      ...inputStyle(isDark),
+                      borderColor: contactErrors.name ? "#ef4444" : undefined,
+                    }}
+                  />
+                  {contactErrors.name && <p className="text-xs mt-1" style={{ color: "#ef4444" }}>{contactErrors.name}</p>}
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    value={cEmail}
+                    onChange={(e) => { setCEmail(e.target.value); if (contactErrors.email) setContactErrors(p => { const n = {...p}; delete n.email; return n; }); }}
+                    placeholder="Email"
+                    className="w-full rounded-xl border px-3 py-2 text-sm"
+                    style={{
+                      ...inputStyle(isDark),
+                      borderColor: contactErrors.email ? "#ef4444" : undefined,
+                    }}
+                  />
+                  {contactErrors.email && <p className="text-xs mt-1" style={{ color: "#ef4444" }}>{contactErrors.email}</p>}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    value={cPhone}
+                    onChange={(e) => { setCPhone(e.target.value); if (contactErrors.phone) setContactErrors(p => { const n = {...p}; delete n.phone; return n; }); }}
+                    placeholder="Телефон"
+                    className="w-full rounded-xl border px-3 py-2 text-sm"
+                    style={{
+                      ...inputStyle(isDark),
+                      borderColor: contactErrors.phone ? "#ef4444" : undefined,
+                    }}
+                  />
+                  {contactErrors.phone && <p className="text-xs mt-1" style={{ color: "#ef4444" }}>{contactErrors.phone}</p>}
+                </div>
                 <input
                   type="text"
                   value={cCompany}
@@ -815,8 +897,12 @@ export function CrmPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => (editingContact ? updateContactMut.mutate() : createContactMut.mutate())}
-                  disabled={!cName || createContactMut.isPending || updateContactMut.isPending}
+                  onClick={() => {
+                    if (validateContactForm()) {
+                      editingContact ? updateContactMut.mutate() : createContactMut.mutate();
+                    }
+                  }}
+                  disabled={!cName.trim() || createContactMut.isPending || updateContactMut.isPending}
                   className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                   style={buttonStyle("primary", isDark)}
                 >
@@ -849,14 +935,20 @@ export function CrmPage() {
                 </button>
               </div>
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={dTitle}
-                  onChange={(e) => setDTitle(e.target.value)}
-                  placeholder="Название сделки *"
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
-                  style={inputStyle(isDark)}
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={dTitle}
+                    onChange={(e) => { setDTitle(e.target.value); if (dealErrors.title) setDealErrors(p => { const n = {...p}; delete n.title; return n; }); }}
+                    placeholder="Название сделки *"
+                    className="w-full rounded-xl border px-3 py-2 text-sm"
+                    style={{
+                      ...inputStyle(isDark),
+                      borderColor: dealErrors.title ? "#ef4444" : undefined,
+                    }}
+                  />
+                  {dealErrors.title && <p className="text-xs mt-1" style={{ color: "#ef4444" }}>{dealErrors.title}</p>}
+                </div>
                 <textarea
                   value={dDescription}
                   onChange={(e) => setDDescription(e.target.value)}
@@ -891,23 +983,30 @@ export function CrmPage() {
                   ))}
                 </select>
                 <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={dValue}
-                    onChange={(e) => setDValue(e.target.value)}
-                    placeholder="Сумма"
-                    className="flex-1 rounded-xl border px-3 py-2 text-sm"
-                    style={inputStyle(isDark)}
-                  />
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      value={dValue}
+                      onChange={(e) => { setDValue(e.target.value); if (dealErrors.value) setDealErrors(p => { const n = {...p}; delete n.value; return n; }); }}
+                      placeholder="Сумма"
+                      min="0"
+                      className="w-full rounded-xl border px-3 py-2 text-sm"
+                      style={{
+                        ...inputStyle(isDark),
+                        borderColor: dealErrors.value ? "#ef4444" : undefined,
+                      }}
+                    />
+                    {dealErrors.value && <p className="text-xs mt-1" style={{ color: "#ef4444" }}>{dealErrors.value}</p>}
+                  </div>
                   <select
                     value={dCurrency}
                     onChange={(e) => setDCurrency(e.target.value)}
                     className="rounded-xl border px-3 py-2 text-sm"
                     style={inputStyle(isDark)}
                   >
-                    <option value="RUB">RUB</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
+                    <option value="RUB">₽ — Рубль</option>
+                    <option value="USD">$ — Доллар США</option>
+                    <option value="EUR">€ — Евро</option>
                   </select>
                 </div>
                 <select
@@ -922,13 +1021,19 @@ export function CrmPage() {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="date"
-                  value={dDueDate}
-                  onChange={(e) => setDDueDate(e.target.value)}
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
-                  style={inputStyle(isDark)}
-                />
+                <div>
+                  <input
+                    type="date"
+                    value={dDueDate}
+                    onChange={(e) => { setDDueDate(e.target.value); if (dealErrors.dueDate) setDealErrors(p => { const n = {...p}; delete n.dueDate; return n; }); }}
+                    className="w-full rounded-xl border px-3 py-2 text-sm"
+                    style={{
+                      ...inputStyle(isDark),
+                      borderColor: dealErrors.dueDate ? "#ef4444" : undefined,
+                    }}
+                  />
+                  {dealErrors.dueDate && <p className="text-xs mt-1" style={{ color: "#ef4444" }}>{dealErrors.dueDate}</p>}
+                </div>
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <button
@@ -944,8 +1049,12 @@ export function CrmPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => (editingDeal ? updateDealMut.mutate() : createDealMut.mutate())}
-                  disabled={!dTitle || createDealMut.isPending || updateDealMut.isPending}
+                  onClick={() => {
+                    if (validateDealForm()) {
+                      editingDeal ? updateDealMut.mutate() : createDealMut.mutate();
+                    }
+                  }}
+                  disabled={!dTitle.trim() || createDealMut.isPending || updateDealMut.isPending}
                   className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                   style={buttonStyle("primary", isDark)}
                 >

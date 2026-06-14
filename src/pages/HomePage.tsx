@@ -21,22 +21,17 @@ export function HomePage({ onOpenAuth }: { onOpenAuth: () => void }) {
   return (
     <main
       className="relative min-h-screen overflow-hidden"
-      style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}
+      style={{ background: "var(--bg-body)", color: "var(--text-primary)" }}
     >
-      {/* Blob decorations */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="absolute -left-32 -top-32 h-96 w-96 animate-blob-rotate rounded-full opacity-20 blur-3xl"
-          style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)" }}
-        />
-        <div
-          className="absolute -right-32 top-1/3 h-80 w-80 animate-blob-rotate rounded-full opacity-15 blur-3xl"
-          style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)", animationDelay: "-7s" }}
-        />
-        <div
-          className="absolute bottom-0 left-1/3 h-72 w-72 animate-blob-rotate rounded-full opacity-10 blur-3xl"
-          style={{ background: "radial-gradient(circle, #818cf8 0%, transparent 70%)", animationDelay: "-14s" }}
-        />
+      {/* Aurora mesh gradient background */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        <div className="aurora-orb aurora-orb-1" />
+        <div className="aurora-orb aurora-orb-2" />
+        <div className="aurora-orb aurora-orb-3" />
+        <div className="aurora-orb aurora-orb-4" />
+        <div className="aurora-orb aurora-orb-5" />
+        <div className="aurora-noise" />
+        <div className="aurora-grid" />
       </div>
 
       {/* Nav */}
@@ -106,8 +101,14 @@ export function HomePage({ onOpenAuth }: { onOpenAuth: () => void }) {
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`group animate-slide-up rounded-2xl border p-5 backdrop-blur-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-indigo-500/30 stagger-${i + 1}`}
-              style={{ background: "var(--bg-card)", borderColor: "var(--border-primary)" }}
+              className={`group animate-slide-up relative rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-400/50 stagger-${i + 1}`}
+              style={{
+                background: "var(--bg-card)",
+                borderColor: "var(--border-secondary)",
+                backdropFilter: "blur(20px) saturate(1.4)",
+                WebkitBackdropFilter: "blur(20px) saturate(1.4)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)",
+              }}
             >
               <div
                 className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110"

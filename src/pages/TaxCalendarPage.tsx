@@ -348,8 +348,7 @@ export function TaxCalendarPage() {
         <button
           type="button"
           onClick={openNewForm}
-          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105"
-          style={buttonStyle("primary", isDark)}
+          className={`${tw.buttonPrimary} flex items-center gap-2`}
         >
           <Plus size={16} />
           Добавить событие
