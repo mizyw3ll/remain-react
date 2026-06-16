@@ -100,7 +100,7 @@ export function RichTextEditor({
       TableCell,
       Placeholder.configure({ placeholder: placeholder ?? ru.editor.placeholder }),
     ],
-    content: (content as Content) ?? undefined,
+    content: (content && typeof content === "object" && "type" in content ? (content as Content) : undefined),
     editable: !readOnly,
     editorProps: {
       attributes: {

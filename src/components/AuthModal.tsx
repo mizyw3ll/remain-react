@@ -195,7 +195,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm" />
-                <span className="text-sm font-semibold text-white/90">Remain</span>
+                <span className="text-sm font-semibold text-white/90">Конструктор бизнес-планов</span>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-white/70">
                 Современная платформа для управления проектами, финансами и задачами.
@@ -203,7 +203,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
             <div className="space-y-2">
               <div className="h-1 w-12 rounded-full bg-white/30" />
-              <p className="text-[10px] text-white/50">© 2026 Remain</p>
+              <p className="text-[10px] text-white/50">© 2026 Конструктор бизнес-планов</p>
             </div>
           </div>
         </div>
