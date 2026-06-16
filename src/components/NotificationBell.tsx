@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
-  getUnreadCountApi,
   getNotificationsApi,
+  getUnreadCountApi,
   markNotificationReadApi,
   markAllNotificationsReadApi,
+  connectNotificationStream,
   type AppNotification,
+  type NotificationSSEEvent,
 } from "../api";
 import { v } from "../shared/theme";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -19,25 +21,44 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [notifs, setNotifs] = useState<AppNotification[]>([]);
   const ref = useRef<HTMLDivElement>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  function pollUnread() {
+  // SSE connection + polling fallback
+  useEffect(() => {
+    // Fetch unread count immediately
     getUnreadCountApi()
       .then(({ count }) => setUnread(count))
       .catch(() => {});
-  }
 
-  function fetchNotifs() {
-    getNotificationsApi()
-      .then((data) => setNotifs(data))
-      .catch(() => {});
-  }
+    // Poll unread count every 10 seconds (always works, SSE or not)
+    const pollId = setInterval(() => {
+      getUnreadCountApi()
+        .then(({ count }) => setUnread(count))
+        .catch(() => {});
+    }, 10000);
 
-  useEffect(() => {
-    pollUnread();
-    pollingRef.current = setInterval(pollUnread, 15000);
+    // Connect to SSE stream for instant notification delivery
+    const disconnect = connectNotificationStream(
+      (event: NotificationSSEEvent) => {
+        if (event.type === "notification" && event.id) {
+          const newNotif: AppNotification = {
+            id: event.id,
+            title: event.title || "",
+            body: event.body || null,
+            source_type: event.source_type || "",
+            source_id: event.source_id ?? null,
+            is_read: event.is_read ?? false,
+            created_at: event.created_at || new Date().toISOString(),
+          };
+          setNotifs((prev) => [newNotif, ...prev].slice(0, 100));
+          setUnread((u) => u + 1);
+        }
+      },
+      () => {},
+    );
+
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      disconnect();
+      clearInterval(pollId);
     };
   }, []);
 
@@ -53,7 +74,9 @@ export function NotificationBell() {
 
   async function handleToggle() {
     if (!open) {
-      await fetchNotifs();
+      const data = await getNotificationsApi().catch(() => []);
+      setNotifs(data);
+      setUnread(data.filter((n) => !n.is_read).length);
     }
     setOpen(!open);
   }

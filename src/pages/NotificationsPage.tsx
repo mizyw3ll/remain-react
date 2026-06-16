@@ -6,6 +6,7 @@ import {
   markNotificationReadApi,
   markAllNotificationsReadApi,
   deleteNotificationApi,
+  deleteAllNotificationsApi,
   type AppNotification,
 } from "../api";
 import { v } from "../shared/theme";
@@ -19,6 +20,7 @@ export function NotificationsPage() {
   const [notifs, setNotifs] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<AppNotification | null>(null);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
 
   const fetchNotifs = useCallback(async () => {
     try {
@@ -66,6 +68,17 @@ export function NotificationsPage() {
     }
   }
 
+  async function confirmDeleteAll() {
+    try {
+      await deleteAllNotificationsApi();
+      setNotifs([]);
+      setDeleteAllConfirm(false);
+      toast.success("Все уведомления удалены");
+    } catch {
+      toast.error("Ошибка удаления");
+    }
+  }
+
   const unreadCount = notifs.filter((n) => !n.is_read).length;
 
   return (
@@ -76,6 +89,14 @@ export function NotificationsPage() {
         description={deleteTarget ? `Вы действительно хотите удалить уведомление "${deleteTarget.title}"?` : ""}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void confirmDelete()}
+      />
+      <ConfirmModal
+        open={deleteAllConfirm}
+        title="Удалить все уведомления"
+        description="Вы действительно хотите удалить все уведомления? Это действие необратимо."
+        confirmText="Удалить все"
+        onCancel={() => setDeleteAllConfirm(false)}
+        onConfirm={() => void confirmDeleteAll()}
       />
       <div className="space-y-6">
         {/* Header */}
@@ -107,6 +128,20 @@ export function NotificationsPage() {
             >
               <CheckCheck size={16} />
               Прочитать все
+            </button>
+          )}
+          {notifs.length > 0 && (
+            <button
+              onClick={() => setDeleteAllConfirm(true)}
+              className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 hover:scale-105"
+              style={{
+                borderColor: "rgba(220,38,38,0.3)",
+                color: "rgb(252,165,165)",
+                background: "rgba(220,38,38,0.08)",
+              }}
+            >
+              <Trash2 size={16} />
+              Удалить все
             </button>
           )}
         </div>

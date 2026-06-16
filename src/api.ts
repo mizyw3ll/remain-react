@@ -125,6 +125,8 @@ export type AITextResponse = {
   content: string;
   provider: string;
   model: string;
+  char_count: number;
+  max_chars: number;
 };
 
 export const api = axios.create({
@@ -483,18 +485,18 @@ export async function deleteCommentApi(planId: number, blockId: number, commentI
   await api.delete(`/business/plans/${planId}/blocks/${blockId}/comments/${commentId}`);
 }
 
-export async function generateBusinessPlanOutlineApi(planId: number) {
-  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/generate`);
+export async function generateBusinessPlanOutlineApi(planId: number, signal?: AbortSignal) {
+  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/generate`, undefined, { signal });
   return data;
 }
 
-export async function improveBusinessPlanBlockApi(planId: number, blockId: number) {
-  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/blocks/${blockId}/improve`);
+export async function improveBusinessPlanBlockApi(planId: number, blockId: number, signal?: AbortSignal) {
+  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/blocks/${blockId}/improve`, undefined, { signal });
   return data;
 }
 
-export async function summarizeFinancialChartApi(chartId: number) {
-  const { data } = await api.post<AITextResponse>(`/ai/financial-charts/${chartId}/summary`);
+export async function summarizeFinancialChartApi(chartId: number, signal?: AbortSignal) {
+  const { data } = await api.post<AITextResponse>(`/ai/financial-charts/${chartId}/summary`, undefined, { signal });
   return data;
 }
 
@@ -900,7 +902,7 @@ export async function markCalendarNotifiedApi(eventId: number) {
 
 export type AppNotification = {
   id: number;
-  user_id: number;
+  user_id?: number;
   title: string;
   body?: string | null;
   source_type: string;
@@ -941,6 +943,83 @@ export async function markAllNotificationsReadApi() {
 
 export async function deleteNotificationApi(notificationId: number) {
   await api.delete(`/notifications/${notificationId}`);
+}
+
+export async function deleteAllNotificationsApi() {
+  await api.delete("/notifications");
+}
+
+export type NotificationSSEEvent = {
+  type: "notification" | "connected";
+  id?: number;
+  title?: string;
+  body?: string | null;
+  source_type?: string;
+  source_id?: number | null;
+  is_read?: boolean;
+  created_at?: string;
+};
+
+export function connectNotificationStream(
+  onEvent: (event: NotificationSSEEvent) => void,
+  onError?: (error: Event) => void,
+): () => void {
+  let cancelled = false;
+  let controller: AbortController | null = null;
+
+  async function connect() {
+    if (cancelled) return;
+
+    controller = new AbortController();
+
+    try {
+      const response = await fetch("/api/v1/notifications/stream", {
+        signal: controller.signal,
+        credentials: "include",
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`SSE connection failed: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              onEvent(data);
+            } catch {
+              // ignore parse errors (keepalive lines etc)
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err?.name !== "AbortError" && !cancelled) {
+        onError?.(err);
+        // Reconnect after 3 seconds
+        setTimeout(connect, 3000);
+      }
+    }
+  }
+
+  connect();
+
+  return () => {
+    cancelled = true;
+    controller?.abort();
+  };
 }
 // ── Kanban ──
 
