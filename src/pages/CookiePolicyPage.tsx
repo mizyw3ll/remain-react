@@ -50,7 +50,7 @@ export function CookiePolicyPage() {
               2. Типы используемых cookie
             </h2>
             <div className="space-y-3 text-sm leading-relaxed" style={{ color: v("text-secondary") }}>
-              <p>2.1. Веб-приложение Remain использует следующие категории cookie:</p>
+              <p>2.1. Веб-приложение Конструктор бизнес-планов использует следующие категории cookie:</p>
 
               <div
                 className="rounded-xl border p-4 space-y-3"
@@ -170,7 +170,7 @@ export function CookiePolicyPage() {
                 По всем вопросам, связанным с использованием файлов cookie и обработкой данных,
                 пользователь может обратиться:
               </p>
-              <p>Email: privacy@remain.app</p>
+              <p>Email: business_planner@inbox.ru</p>
             </div>
           </section>
 

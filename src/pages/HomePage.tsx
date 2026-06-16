@@ -130,7 +130,7 @@ export function HomePage({ onOpenAuth }: { onOpenAuth: () => void }) {
       {/* Footer */}
       <footer className="relative border-t px-6 py-8 text-center" style={{ borderColor: "var(--border-primary)" }}>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          © 2026 Remain. Все права защищены.
+          © 2026 Конструктор бизнес-планов. Все права защищены.
         </p>
       </footer>
     </main>
