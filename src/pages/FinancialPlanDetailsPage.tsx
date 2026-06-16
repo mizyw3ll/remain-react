@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2, Download } from "lucide-react";
@@ -27,6 +27,7 @@ import {
 } from "../api";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { PointModal } from "../components/PointModal";
+import { AIPreviewModal } from "../components/AIPreviewModal";
 import { inputStyle, buttonStyle, tw, v } from "../shared/theme";
 import { getCurrencySymbol, getCurrencyRussianName } from "../shared/currency";
 import { useTheme } from "../features/theme/ThemeContext";
@@ -154,6 +155,17 @@ export function FinancialPlanDetailsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: "chart" | "point"; id: number; title: string } | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+
+  // AI Preview modal state
+  const [aiPreviewOpen, setAiPreviewOpen] = useState(false);
+  const [aiPreviewTitle, setAiPreviewTitle] = useState("");
+  const [aiPreviewContent, setAiPreviewContent] = useState("");
+  const [aiPreviewCharCount, setAiPreviewCharCount] = useState(0);
+  const [aiPreviewMaxChars, setAiPreviewMaxChars] = useState(5000);
+  const [aiPreviewProvider, setAiPreviewProvider] = useState("");
+  const [aiPreviewModel, setAiPreviewModel] = useState("");
+  const [aiPreviewSaving, setAiPreviewSaving] = useState(false);
+  const aiAbortRef = useRef<AbortController | null>(null);
   const [isEditingChart, setIsEditingChart] = useState(false);
   const [chartForm, setChartForm] = useState<{
     title: string;
@@ -325,16 +337,48 @@ export function FinancialPlanDetailsPage() {
 
   async function handleAiSummary() {
     if (!chartId) return;
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
     try {
       setAiSummaryLoading(true);
-      const result = await summarizeFinancialChartApi(chartId);
-      setAiSummary(result.content);
-      toast.success("AI-сводка готова");
-    } catch {
-      toast.error("Не удалось получить AI-сводку");
+      const result = await summarizeFinancialChartApi(chartId, controller.signal);
+      setAiPreviewTitle("AI-сводка по графику");
+      setAiPreviewContent(result.content);
+      setAiPreviewCharCount(result.char_count);
+      setAiPreviewMaxChars(result.max_chars);
+      setAiPreviewProvider(result.provider);
+      setAiPreviewModel(result.model);
+      setAiPreviewOpen(true);
+    } catch (err: any) {
+      if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+        toast.error("Не удалось получить AI-сводку");
+      }
     } finally {
       setAiSummaryLoading(false);
+      aiAbortRef.current = null;
     }
+  }
+
+  async function handleAIPreviewSave(content: string) {
+    try {
+      setAiPreviewSaving(true);
+      // Save the AI summary as the chart description
+      await updateFinancialPlanApi(chartId!, {
+        description: content,
+      });
+      setAiSummary(content);
+      setAiPreviewOpen(false);
+      toast.success("AI-сводка сохранена");
+      await fetchData();
+    } catch {
+      toast.error("Не удалось сохранить AI-сводку");
+    } finally {
+      setAiPreviewSaving(false);
+    }
+  }
+
+  function handleAIPreviewCancel() {
+    setAiPreviewOpen(false);
   }
 
   async function handleExport(format: "xlsx" | "csv") {
@@ -390,17 +434,26 @@ export function FinancialPlanDetailsPage() {
             <div className="shrink-0 flex flex-wrap gap-2 max-sm:w-full max-sm:justify-end">
               <button
                 className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors"
-                style={{ borderColor: v("border-secondary"), color: v("text-secondary") }}
+                style={{
+                  borderColor: aiSummaryLoading ? "rgba(220, 38, 38, 0.5)" : v("border-secondary"),
+                  color: aiSummaryLoading ? "rgb(252, 165, 165)" : v("text-secondary"),
+                  background: aiSummaryLoading ? "rgba(220, 38, 38, 0.1)" : "transparent",
+                }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = v("bg-hover");
+                  e.currentTarget.style.background = aiSummaryLoading ? "rgba(220, 38, 38, 0.2)" : v("bg-hover");
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.background = aiSummaryLoading ? "rgba(220, 38, 38, 0.1)" : "transparent";
                 }}
-                onClick={() => void handleAiSummary()}
-                disabled={aiSummaryLoading}
+                onClick={() => {
+                  if (aiSummaryLoading) {
+                    aiAbortRef.current?.abort();
+                  } else {
+                    void handleAiSummary();
+                  }
+                }}
               >
-                {aiSummaryLoading ? "AI..." : "AI: сводка"}
+                {aiSummaryLoading ? "■ Стоп" : "AI: сводка"}
               </button>
               {isEditingChart ? (
                 <>
@@ -872,6 +925,19 @@ export function FinancialPlanDetailsPage() {
         }
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void confirmDelete()}
+      />
+
+      <AIPreviewModal
+        open={aiPreviewOpen}
+        title={aiPreviewTitle}
+        content={aiPreviewContent}
+        charCount={aiPreviewCharCount}
+        maxChars={aiPreviewMaxChars}
+        provider={aiPreviewProvider}
+        model={aiPreviewModel}
+        saving={aiPreviewSaving}
+        onSave={(content) => void handleAIPreviewSave(content)}
+        onCancel={handleAIPreviewCancel}
       />
     </section>
   );
