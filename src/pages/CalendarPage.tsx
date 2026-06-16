@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,9 +17,6 @@ import {
   createCalendarEventApi,
   updateCalendarEventApi,
   deleteCalendarEventApi,
-  getCalendarPendingNotificationsApi,
-  markCalendarNotifiedApi,
-  createNotificationApi,
   getCalendarExportUrl,
   type CalendarEvent,
 } from "../api";
@@ -104,11 +101,8 @@ function isoToDatetimeLocal(iso: string) {
 }
 
 function isPastDate(d: Date) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const cmp = new Date(d);
-  cmp.setHours(0, 0, 0, 0);
-  return cmp < today;
+  const now = new Date();
+  return d.getTime() < now.getTime();
 }
 
 function isWeekend(d: Date) {
@@ -164,8 +158,6 @@ export function CalendarPage() {
     return list;
   }, [events, searchQuery, sortBy]);
 
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   async function fetchEvents() {
     try {
       const firstDay = formatDate(new Date(year, month, 1));
@@ -177,26 +169,6 @@ export function CalendarPage() {
     }
   }
 
-  const checkNotifications = useCallback(async () => {
-    try {
-      const pending = await getCalendarPendingNotificationsApi();
-      for (const ev of pending) {
-        await createNotificationApi({
-          title: ev.title,
-          body: ev.description ?? undefined,
-          source_type: "calendar_event",
-          source_id: ev.id,
-        });
-        await markCalendarNotifiedApi(ev.id);
-      }
-      if (pending.length > 0) {
-        toast.success(`🔔 ${pending.length} напоминание(й) о событиях`);
-      }
-    } catch {
-      /* silent */
-    }
-  }, []);
-
   useEffect(() => {
     const firstDay = formatDate(new Date(year, month, 1));
     const lastDay = formatDate(new Date(year, month + 1, 0));
@@ -206,12 +178,12 @@ export function CalendarPage() {
   }, [year, month]);
 
   useEffect(() => {
-    void checkNotifications();
-    pollingRef.current = setInterval(() => void checkNotifications(), 30000);
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, [checkNotifications]);
+    const firstDay = formatDate(new Date(year, month, 1));
+    const lastDay = formatDate(new Date(year, month + 1, 0));
+    getCalendarEventsApi(firstDay, lastDay)
+      .then(setEvents)
+      .catch(() => toast.error("Ошибка загрузки событий"));
+  }, [year, month]);
 
   const days = getMonthDays(year, month);
 
@@ -243,13 +215,10 @@ export function CalendarPage() {
     if (!newTitle.trim()) return;
     try {
       const eventDate = new Date(newDate);
-      const y = eventDate.getFullYear();
-      const m = String(eventDate.getMonth() + 1).padStart(2, "0");
-      const d = String(eventDate.getDate()).padStart(2, "0");
       await createCalendarEventApi({
         title: newTitle.trim(),
         description: newDesc || undefined,
-        event_date: `${y}-${m}-${d}`,
+        event_date: eventDate.toISOString(),
         notify_before: newNotify || null,
       });
       toast.success("Событие создано");
@@ -276,13 +245,10 @@ export function CalendarPage() {
     if (!editEvent || !editTitle.trim()) return;
     try {
       const eventDate = new Date(editDate);
-      const y = eventDate.getFullYear();
-      const m = String(eventDate.getMonth() + 1).padStart(2, "0");
-      const d = String(eventDate.getDate()).padStart(2, "0");
       await updateCalendarEventApi(editEvent.id, {
         title: editTitle.trim(),
         description: editDesc || undefined,
-        event_date: `${y}-${m}-${d}`,
+        event_date: eventDate.toISOString(),
         notify_before: editNotify || null,
       });
       toast.success("Событие обновлено");
@@ -538,7 +504,7 @@ export function CalendarPage() {
         ) : (
           <div className="space-y-2">
             {filteredEvents.map((ev, idx) => {
-              const isPast = new Date(ev.event_date) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              const isPast = new Date(ev.event_date) < new Date();
               return (
                 <div
                   key={ev.id}
