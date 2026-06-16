@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Moon, Sun, X, MousePointer2, Shield, FileCheck, Cookie, Mail, Lock, CheckCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useModalRegistration } from "../hooks/useModalOpen";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useAuth } from "../features/auth/AuthContext";
 import { useVisualPreferences } from "../context/VisualPreferencesContext";
@@ -34,6 +35,8 @@ export function SettingsModal({ open, tab, onClose }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  useModalRegistration(open);
 
   if (!open) return null;
 
@@ -126,7 +129,7 @@ export function SettingsModal({ open, tab, onClose }: Props) {
                   <div className="rounded-2xl p-5 space-y-4" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
                     <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>О программе</p>
                     <div className="space-y-2 text-sm" style={{ color: "var(--text-secondary)" }}>
-                      <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Remain</p>
+                      <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Конструктор бизнес-планов</p>
                       <p>Версия 1.0.0</p>
                       <p>Сервис для управления бизнес-процессами, финансами и задачами.</p>
                     </div>
@@ -164,8 +167,8 @@ export function SettingsModal({ open, tab, onClose }: Props) {
                   </div>
 
                   <div className="rounded-2xl p-4 text-xs" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-muted)" }}>
-                    <p>© 2026 Remain · ИП [ФИО] · ИНН [ИНН]</p>
-                    <p className="mt-1">Email: <a href="mailto:support@remain.app" className="underline hover:opacity-80">support@remain.app</a></p>
+                    <p>© 2026 Конструктор бизнес-планов · ИП [ФИО] · ИНН [ИНН]</p>
+                    <p className="mt-1">Email: <a href="mailto:business_planner@inbox.ru" className="underline hover:opacity-80">business_planner@inbox.ru</a></p>
                   </div>
                 </div>
               )}

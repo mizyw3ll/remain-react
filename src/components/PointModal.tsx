@@ -1,4 +1,5 @@
 import { v, tw, inputStyle, buttonStyle } from "../shared/theme";
+import { useModalRegistration } from "../hooks/useModalOpen";
 
 interface PointModalProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface PointModalProps {
 }
 
 export function PointModal({ open, title, form, isDark, onFormChange, onSave, onCancel }: PointModalProps) {
+  useModalRegistration(open);
   if (!open) return null;
 
   const canSave = form.date && form.amount && !isNaN(Number(form.amount));

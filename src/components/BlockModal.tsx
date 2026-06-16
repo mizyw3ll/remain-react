@@ -7,6 +7,7 @@ import { TagPicker } from "./TagPicker";
 import { isRichTextBlockType } from "../lib/blockDefaults";
 import { ru } from "../i18n/ru";
 import { v, tw, inputStyle, buttonStyle } from "../shared/theme";
+import { useModalRegistration } from "../hooks/useModalOpen";
 import type { FinancialPlan, MediaAttachment, Tag } from "../api";
 import { uploadBlockAttachmentApi, deleteBlockAttachmentApi } from "../api";
 
@@ -31,6 +32,7 @@ interface BlockModalProps {
   onSave: () => void;
   onCancel: () => void;
   onImproveWithAI?: () => Promise<void>;
+  onStopAI?: () => void;
   aiImproving?: boolean;
 }
 
@@ -99,9 +101,11 @@ export function BlockModal({
   onSave,
   onCancel,
   onImproveWithAI,
+  onStopAI,
   aiImproving,
 }: BlockModalProps) {
   const attachInputRef = useRef<HTMLInputElement>(null);
+  useModalRegistration(open);
 
   if (!open) return null;
 
@@ -156,18 +160,27 @@ export function BlockModal({
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-colors"
-              style={buttonStyle("secondary", isDark)}
-              disabled={Boolean(aiImproving)}
+              style={{
+                borderColor: aiImproving ? "rgba(220, 38, 38, 0.5)" : v("border-secondary"),
+                color: aiImproving ? "rgb(252, 165, 165)" : v("text-secondary"),
+                background: aiImproving ? "rgba(220, 38, 38, 0.1)" : "transparent",
+              }}
               onMouseEnter={(e) => {
-                if (!aiImproving) e.currentTarget.style.background = v("bg-hover");
+                e.currentTarget.style.background = aiImproving ? "rgba(220, 38, 38, 0.2)" : v("bg-hover");
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.background = aiImproving ? "rgba(220, 38, 38, 0.1)" : "transparent";
               }}
-              onClick={() => void onImproveWithAI()}
+              onClick={() => {
+                if (aiImproving) {
+                  onStopAI?.();
+                } else {
+                  void onImproveWithAI();
+                }
+              }}
             >
               {aiImproving ? <Loader2 size={14} className="animate-spin" /> : null}
-              AI: улучшить
+              {aiImproving ? "■ Стоп" : "AI: улучшить"}
             </button>
           ) : null}
         </div>

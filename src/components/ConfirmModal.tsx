@@ -1,4 +1,5 @@
 import { v } from "../shared/theme";
+import { useModalRegistration } from "../hooks/useModalOpen";
 
 type ConfirmModalProps = {
   open: boolean;
@@ -17,6 +18,7 @@ export function ConfirmModal({
   onCancel,
   onConfirm,
 }: ConfirmModalProps) {
+  useModalRegistration(open);
   if (!open) return null;
 
   return (

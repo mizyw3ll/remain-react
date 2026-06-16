@@ -8,6 +8,7 @@ import { SettingsModal } from "./SettingsModal";
 import { SettingsUiProvider } from "../context/SettingsUiContext";
 import { useSettingsModalState } from "../context/settingsUi";
 import { NotificationBell } from "./NotificationBell";
+import { useAnyModalOpen } from "../hooks/useModalOpen";
 import { SearchBar } from "./SearchBar";
 import { useVisualPreferences } from "../context/VisualPreferencesContext";
 
@@ -18,6 +19,35 @@ export function ProtectedLayout() {
   const navigate = useNavigate();
   const { open, tab, openModal, closeModal } = useSettingsModalState();
   const { preferences } = useVisualPreferences();
+  const anyModalOpen = useAnyModalOpen();
+
+  useEffect(() => {
+    let mounted = true;
+    const checkCalendarNotifications = async () => {
+      try {
+        const { getCalendarPendingNotificationsApi, createNotificationApi, markCalendarNotifiedApi } = await import("../api");
+        const pending = await getCalendarPendingNotificationsApi();
+        if (!mounted) return;
+        for (const ev of pending) {
+          await createNotificationApi({
+            title: ev.title,
+            body: ev.description ?? undefined,
+            source_type: "calendar_event",
+            source_id: ev.id,
+          });
+          await markCalendarNotifiedApi(ev.id);
+        }
+      } catch {
+        /* silent */
+      }
+    };
+    void checkCalendarNotifications();
+    const id = setInterval(() => void checkCalendarNotifications(), 15000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     if (!preferences.antigravity) return;
@@ -178,18 +208,19 @@ export function ProtectedLayout() {
           </div>
 
           {/* Юридический footer — ст. 10 ФЗ-149, ст. 9 ФЗ-152 */}
+          {!anyModalOpen && (
           <footer
             className="relative z-10 border-t px-4 py-6 text-center md:px-8"
             style={{ borderColor: "var(--border-primary)", background: "var(--bg-primary)" }}
           >
             <div className="mx-auto max-w-4xl space-y-2">
               <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
-                © 2026 Remain · ИП [ФИО] · ИНН [ИНН] · ОГРНИП [ОГРНИП]
+                © 2026 Конструктор бизнес-планов · ИП [ФИО] · ИНН [ИНН] · ОГРНИП [ОГРНИП]
               </p>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
                 Юридический адрес: [Адрес] · Email:{" "}
-                <a href="mailto:support@remain.app" className="underline hover:opacity-80">
-                  support@remain.app
+                <a href="mailto:business_planner@inbox.ru" className="underline hover:opacity-80">
+                  business_planner@inbox.ru
                 </a>
               </p>
               <div className="flex flex-wrap justify-center gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
@@ -205,6 +236,7 @@ export function ProtectedLayout() {
               </div>
             </div>
           </footer>
+          )}
         </div>
       </div>
     </SettingsUiProvider>
