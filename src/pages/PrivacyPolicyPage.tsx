@@ -57,12 +57,12 @@ export function PrivacyPolicyPage() {
               2. Сведения об Операторе
             </h2>
             <div className="space-y-2 text-sm leading-relaxed" style={{ color: v("text-secondary") }}>
-              <p><strong>Наименование:</strong> Индивидуальный предприниматель [ФИО]</p>
-              <p><strong>ИНН:</strong> [ИНН]</p>
-              <p><strong>ОГРНИП:</strong> [ОГРНИП]</p>
-              <p><strong>Адрес места нахождения:</strong> [Юридический адрес]</p>
+              <p><strong>Наименование:</strong> Индивидуальный предприниматель Рыбкин Кирилл Александрович</p>
+              <p><strong>ИНН:</strong> 3525050141</p>
+              <p><strong>ОГРНИП:</strong> 1033500045149</p>
+              <p><strong>Адрес места нахождения:</strong> 160011, г. Вологда, ул. Первомайская, 42</p>
               <p><strong>Контактный email:</strong> business_planner@inbox.ru</p>
-              <p><strong>Почтовый адрес:</strong> [Почтовый адрес для корреспонденции]</p>
+              <p><strong>Почтовый адрес:</strong> 160011, г. Вологда, ул. Первомайская, 42</p>
             </div>
           </section>
 
@@ -252,7 +252,7 @@ export function PrivacyPolicyPage() {
             style={{ borderColor: v("border-secondary"), background: v("bg-secondary") }}
           >
             <p style={{ color: v("text-muted") }}>
-              Оператор: ИП [ФИО] | ИНН [ИНН] | ОГРНИП [ОГРНИП] | Адрес: [Юридический адрес] |
+              Оператор: ИП Рыбкин Кирилл Александрович | ИНН 3525050141 | ОГРНИП 1033500045149 | Адрес: 160011, г. Вологда, ул. Первомайская, 42 |
               Email: business_planner@inbox.ru
             </p>
           </div>
