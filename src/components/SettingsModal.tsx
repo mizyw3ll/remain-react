@@ -1,12 +1,28 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Moon, Sun, X, MousePointer2, Shield, FileCheck, Cookie, Mail, Lock, CheckCircle, Loader2 } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  X,
+  MousePointer2,
+  Shield,
+  FileCheck,
+  Cookie,
+  Mail,
+  Lock,
+  CheckCircle,
+  Loader2,
+  Eye,
+  Sparkles,
+  Grid3x3,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useModalRegistration } from "../hooks/useModalOpen";
 import { useTheme } from "../features/theme/ThemeContext";
 import { useAuth } from "../features/auth/AuthContext";
 import { useVisualPreferences } from "../context/VisualPreferencesContext";
+import { useVisualSettings } from "../features/settings/VisualSettingsContext";
 import { deleteUserApi } from "../api";
 import { requestVerification, changePassword } from "../features/auth/authApi";
 import { ConfirmModal } from "./ConfirmModal";
@@ -74,15 +90,31 @@ export function SettingsModal({ open, tab, onClose }: Props) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: `1px solid var(--border-muted)` }}>
-            <h2 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>Настройки</h2>
-            <button onClick={onClose} className="rounded-xl p-2 transition-colors hover:bg-[var(--bg-hover)]" style={{ color: "var(--text-muted)" }}>
+          <div
+            className="flex items-center justify-between px-6 py-4 shrink-0"
+            style={{ borderBottom: `1px solid var(--border-muted)` }}
+          >
+            <h2 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
+              Настройки
+            </h2>
+            <button
+              onClick={onClose}
+              className="rounded-xl p-2 transition-colors hover:bg-[var(--bg-hover)]"
+              style={{ color: "var(--text-muted)" }}
+            >
               <X size={22} />
             </button>
           </div>
 
           <div className="flex flex-1 overflow-hidden max-md:flex-col">
-            <div className="flex max-md:flex-row max-md:gap-2 max-md:px-4 max-md:pt-2 md:flex-col md:gap-1 md:p-3 md:w-48 md:shrink-0" style={{ borderColor: "var(--border-muted)", borderBottom: "1px solid var(--border-muted)", borderRight: "1px solid var(--border-muted)" }}>
+            <div
+              className="flex max-md:flex-row max-md:gap-2 max-md:px-4 max-md:pt-2 md:flex-col md:gap-1 md:p-3 md:w-48 md:shrink-0"
+              style={{
+                borderColor: "var(--border-muted)",
+                borderBottom: "1px solid var(--border-muted)",
+                borderRight: "1px solid var(--border-muted)",
+              }}
+            >
               <TabBtn active={panel === "main"} onClick={() => setPanel("main")} label="Общие" />
               <TabBtn active={panel === "appearance"} onClick={() => setPanel("appearance")} label="Внешний вид" />
               <TabBtn active={panel === "profile"} onClick={() => setPanel("profile")} label="Профиль" />
@@ -93,10 +125,25 @@ export function SettingsModal({ open, tab, onClose }: Props) {
               {panel === "main" && (
                 <div className="space-y-6">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-4" style={{ color: "var(--text-secondary)" }}>Тема оформления</p>
+                    <p
+                      className="text-sm font-bold uppercase tracking-widest opacity-60 mb-4"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Тема оформления
+                    </p>
                     <div className="grid grid-cols-2 gap-4">
-                      <ThemeBtn active={theme === "dark"} onClick={() => setTheme("dark")} icon={<Moon size={24} />} label="Тёмная" />
-                      <ThemeBtn active={theme === "light"} onClick={() => setTheme("light")} icon={<Sun size={24} />} label="Светлая" />
+                      <ThemeBtn
+                        active={theme === "dark"}
+                        onClick={() => setTheme("dark")}
+                        icon={<Moon size={24} />}
+                        label="Тёмная"
+                      />
+                      <ThemeBtn
+                        active={theme === "light"}
+                        onClick={() => setTheme("light")}
+                        icon={<Sun size={24} />}
+                        label="Светлая"
+                      />
                     </div>
                   </div>
                 </div>
@@ -106,10 +153,22 @@ export function SettingsModal({ open, tab, onClose }: Props) {
 
               {panel === "profile" && (
                 <div className="space-y-6">
-                  <div className="rounded-2xl p-5 space-y-4" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>Аккаунт</p>
+                  <div
+                    className="rounded-2xl p-5 space-y-4"
+                    style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}
+                  >
+                    <p
+                      className="text-xs font-bold uppercase tracking-widest opacity-60"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Аккаунт
+                    </p>
                     <p className="font-mono text-sm font-bold truncate">{user?.email}</p>
-                    <button onClick={() => setLogoutConfirmOpen(true)} className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:bg-white/5" style={{ border: "1px solid var(--border-secondary)" }}>
+                    <button
+                      onClick={() => setLogoutConfirmOpen(true)}
+                      className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:bg-white/5"
+                      style={{ border: "1px solid var(--border-secondary)" }}
+                    >
                       Выйти из системы
                     </button>
                   </div>
@@ -118,7 +177,11 @@ export function SettingsModal({ open, tab, onClose }: Props) {
 
                   <ChangePasswordForm />
 
-                  <button onClick={() => setDeleteOpen(true)} className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:bg-rose-500/10" style={{ border: "1px solid rgba(244, 63, 94, 0.3)", color: "#fda4af" }}>
+                  <button
+                    onClick={() => setDeleteOpen(true)}
+                    className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:bg-rose-500/10"
+                    style={{ border: "1px solid rgba(244, 63, 94, 0.3)", color: "#fda4af" }}
+                  >
                     Удалить аккаунт
                   </button>
                 </div>
@@ -126,17 +189,32 @@ export function SettingsModal({ open, tab, onClose }: Props) {
 
               {panel === "about" && (
                 <div className="space-y-6">
-                  <div className="rounded-2xl p-5 space-y-4" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>О программе</p>
+                  <div
+                    className="rounded-2xl p-5 space-y-4"
+                    style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}
+                  >
+                    <p
+                      className="text-xs font-bold uppercase tracking-widest opacity-60"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      О программе
+                    </p>
                     <div className="space-y-2 text-sm" style={{ color: "var(--text-secondary)" }}>
-                      <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Конструктор бизнес-планов</p>
+                      <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+                        Конструктор бизнес-планов
+                      </p>
                       <p>Версия 1.0.0</p>
                       <p>Сервис для управления бизнес-процессами, финансами и задачами.</p>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-3" style={{ color: "var(--text-muted)" }}>Документы</p>
+                    <p
+                      className="text-xs font-bold uppercase tracking-widest opacity-60 mb-3"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Документы
+                    </p>
                     <Link
                       to="/privacy"
                       onClick={() => localStorage.setItem("openSettings", "true")}
@@ -166,9 +244,22 @@ export function SettingsModal({ open, tab, onClose }: Props) {
                     </Link>
                   </div>
 
-                  <div className="rounded-2xl p-4 text-xs" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-muted)" }}>
-                    <p>© 2026 Конструктор бизнес-планов · ИП [ФИО] · ИНН [ИНН]</p>
-                    <p className="mt-1">Email: <a href="mailto:business_planner@inbox.ru" className="underline hover:opacity-80">business_planner@inbox.ru</a></p>
+                  <div
+                    className="rounded-2xl p-4 text-xs"
+                    style={{
+                      border: "1px solid var(--border-primary)",
+                      background: "var(--bg-secondary)",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <p>© 2026 Конструктор бизнес-планов · ИП Рыбкин Кирилл Александрович · ИНН 3525050141</p>
+                    <p className="mt-1">ОГРНИП 1033500045149 · 160011, г. Вологда, ул. Первомайская, 42</p>
+                    <p className="mt-1">
+                      Email:{" "}
+                      <a href="mailto:business_planner@inbox.ru" className="underline hover:opacity-80">
+                        business_planner@inbox.ru
+                      </a>
+                    </p>
                   </div>
                 </div>
               )}
@@ -205,7 +296,9 @@ function TabBtn({ active, onClick, label }: { active: boolean; onClick: () => vo
     <button
       onClick={onClick}
       className={`rounded-xl px-4 py-3 text-sm font-bold transition-all text-left ${
-        active ? "bg-[var(--bg-active)] text-[var(--text-primary)] shadow-lg shadow-indigo-500/10" : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
+        active
+          ? "bg-[var(--bg-active)] text-[var(--text-primary)] shadow-lg shadow-indigo-500/10"
+          : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
       }`}
     >
       {label}
@@ -213,12 +306,24 @@ function TabBtn({ active, onClick, label }: { active: boolean; onClick: () => vo
   );
 }
 
-function ThemeBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function ThemeBtn({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
     <button
       onClick={onClick}
       className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-6 transition-all active:scale-95 ${
-        active ? "border-indigo-500 bg-indigo-500/10 text-indigo-400" : "border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:border-[var(--border-secondary)]"
+        active
+          ? "border-indigo-500 bg-indigo-500/10 text-indigo-400"
+          : "border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:border-[var(--border-secondary)]"
       }`}
     >
       {icon}
@@ -229,18 +334,45 @@ function ThemeBtn({ active, onClick, icon, label }: { active: boolean; onClick: 
 
 function AppearancePanel() {
   const { preferences, setPreference } = useVisualPreferences();
+  const { settings, toggle } = useVisualSettings();
 
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-5" style={{ color: "var(--text-secondary)" }}>Эффекты интерфейса</p>
+        <p
+          className="text-sm font-bold uppercase tracking-widest opacity-60 mb-5"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Эффекты интерфейса
+        </p>
         <div className="space-y-4">
-          <PreferenceToggle 
+          <PreferenceToggle
             icon={<MousePointer2 size={20} />}
             title="Свечение курсора"
             desc="Фон мягко следует за движениями вашего курсора"
             active={preferences.antigravity}
             onToggle={(v) => setPreference("antigravity", v)}
+          />
+          <PreferenceToggle
+            icon={<Sparkles size={20} />}
+            title="Световые орбы"
+            desc="Анимированные градиентные сферы на фоне"
+            active={settings.auroraOrbs}
+            onToggle={() => toggle("auroraOrbs")}
+          />
+          <PreferenceToggle
+            icon={<Eye size={20} />}
+            title="Частицы"
+            desc="Плавающие светящиеся точки"
+            active={settings.particles}
+            onToggle={() => toggle("particles")}
+          />
+          <PreferenceToggle
+            icon={<Grid3x3 size={20} />}
+            title="Сетка"
+            desc="Тонкая линейная сетка на фоне"
+            active={settings.gridOverlay}
+            onToggle={() => toggle("gridOverlay")}
           />
         </div>
       </div>
@@ -248,23 +380,54 @@ function AppearancePanel() {
   );
 }
 
-function PreferenceToggle({ icon, title, desc, active, onToggle }: { icon: React.ReactNode; title: string; desc: string; active: boolean; onToggle: (v: boolean) => void }) {
+function PreferenceToggle({
+  icon,
+  title,
+  desc,
+  active,
+  onToggle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  active: boolean;
+  onToggle: (v: boolean) => void;
+}) {
   return (
-    <div className="flex items-center justify-between rounded-2xl p-4 transition-all hover:bg-white/5" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+    <div
+      className="flex items-center justify-between rounded-2xl p-4 transition-all hover:bg-white/5"
+      style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}
+    >
       <div className="flex items-center gap-4">
-        <div className="rounded-xl p-2.5" style={{ background: active ? "rgba(129, 140, 248, 0.2)" : "var(--bg-tertiary)", color: active ? "#818cf8" : "var(--text-muted)" }}>
+        <div
+          className="rounded-xl p-2.5"
+          style={{
+            background: active ? "rgba(129, 140, 248, 0.2)" : "var(--bg-tertiary)",
+            color: active ? "#818cf8" : "var(--text-muted)",
+          }}
+        >
           {icon}
         </div>
         <div>
-          <p className="text-[15px] font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>{title}</p>
-          <p className="text-xs font-medium opacity-60" style={{ color: "var(--text-muted)" }}>{desc}</p>
+          <p className="text-[15px] font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
+            {title}
+          </p>
+          <p className="text-xs font-medium opacity-60" style={{ color: "var(--text-muted)" }}>
+            {desc}
+          </p>
         </div>
       </div>
       <button
         onClick={() => onToggle(!active)}
-        className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${active ? "bg-indigo-500" : "bg-zinc-700"}`}
+        className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${
+          active ? "bg-indigo-500" : "bg-zinc-700"
+        }`}
       >
-        <div className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform duration-300 ${active ? "translate-x-5" : ""}`} />
+        <div
+          className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform duration-300 ${
+            active ? "translate-x-5" : ""
+          }`}
+        />
       </button>
     </div>
   );
@@ -287,10 +450,15 @@ function EmailVerification({ user }: { user: { email?: string | null; is_verifie
   }
 
   return (
-    <div className="rounded-2xl p-5 space-y-3" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+    <div
+      className="rounded-2xl p-5 space-y-3"
+      style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}
+    >
       <div className="flex items-center gap-3">
         <Mail size={18} style={{ color: isVerified ? "#16a34a" : "var(--text-muted)" }} />
-        <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>Подтверждение почты</p>
+        <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>
+          Подтверждение почты
+        </p>
       </div>
       {isVerified ? (
         <div className="flex items-center gap-2 text-sm" style={{ color: "#16a34a" }}>
@@ -348,10 +516,16 @@ function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="rounded-2xl p-5 space-y-4" style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}>
+    <form
+      onSubmit={(e) => void handleSubmit(e)}
+      className="rounded-2xl p-5 space-y-4"
+      style={{ border: "1px solid var(--border-primary)", background: "var(--bg-secondary)" }}
+    >
       <div className="flex items-center gap-3">
         <Lock size={18} style={{ color: "var(--text-muted)" }} />
-        <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>Смена пароля</p>
+        <p className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: "var(--text-muted)" }}>
+          Смена пароля
+        </p>
       </div>
       <input
         type="password"
@@ -360,7 +534,11 @@ function ChangePasswordForm() {
         onChange={(e) => setOldPassword(e.target.value)}
         required
         className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-        style={{ border: "1px solid var(--border-primary)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+        style={{
+          border: "1px solid var(--border-primary)",
+          background: "var(--bg-input)",
+          color: "var(--text-primary)",
+        }}
       />
       <input
         type="password"
@@ -370,7 +548,11 @@ function ChangePasswordForm() {
         required
         minLength={8}
         className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-        style={{ border: "1px solid var(--border-primary)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+        style={{
+          border: "1px solid var(--border-primary)",
+          background: "var(--bg-input)",
+          color: "var(--text-primary)",
+        }}
       />
       <input
         type="password"
@@ -380,7 +562,11 @@ function ChangePasswordForm() {
         required
         minLength={8}
         className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-        style={{ border: "1px solid var(--border-primary)", background: "var(--bg-input)", color: "var(--text-primary)" }}
+        style={{
+          border: "1px solid var(--border-primary)",
+          background: "var(--bg-input)",
+          color: "var(--text-primary)",
+        }}
       />
       <button
         type="submit"
