@@ -331,6 +331,18 @@ export function BusinessPlanDetailsPage() {
     aiAbortRef.current = controller;
     try {
       setAiImprovingBlock(true);
+
+      // Сохраняем текущий контент блока перед вызовом ИИ
+      await updatePlanBlockApi(planId, editingBlockId, {
+        title: blockForm.title.trim(),
+        content: blockForm.content.trim(),
+        block_type: blockForm.block_type,
+        rich_content: blockForm.rich_content,
+        media_attachments: blockForm.media_attachments,
+        linked_financial_chart_ids: blockForm.linked_financial_chart_ids,
+        due_date: blockForm.due_date,
+      });
+
       const result = await improveBusinessPlanBlockApi(planId, editingBlockId, controller.signal);
       setAiPreviewTitle("Улучшение блока");
       setAiPreviewContent(result.content);

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
   Plus,
   Download,
+  Upload,
   Trash2,
   Pencil,
   Bell,
@@ -18,6 +19,7 @@ import {
   updateCalendarEventApi,
   deleteCalendarEventApi,
   getCalendarExportUrl,
+  importCalendarApi,
   type CalendarEvent,
 } from "../api";
 import { buttonStyle, inputStyle, tw, v } from "../shared/theme";
@@ -146,6 +148,8 @@ export function CalendarPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("event_date_asc");
   const [deleteTarget, setDeleteTarget] = useState<CalendarEvent | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredEvents = useMemo(() => {
     const list = events.filter((e) => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -272,6 +276,28 @@ export function CalendarPage() {
     }
   }
 
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const result = await importCalendarApi(file);
+      let msg = `Импортировано: ${result.imported}`;
+      if (result.skipped > 0) msg += `, пропущено: ${result.skipped}`;
+      if (result.errors > 0) msg += `, ошибок: ${result.errors}`;
+      toast.success(msg);
+      if (result.details.length > 0) {
+        result.details.forEach((d) => toast(d, { icon: "⚠️" }));
+      }
+      await fetchEvents();
+    } catch {
+      toast.error("Ошибка импорта файла");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -281,18 +307,20 @@ export function CalendarPage() {
           Календарь
         </h1>
         <div className="flex items-center gap-2">
-          <a
-            href={getCalendarExportUrl()}
-            download
+          <input ref={fileInputRef} type="file" accept=".ics" onChange={handleImport} className="hidden" />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
             className={`${tw.buttonSecondary} flex items-center gap-1.5`}
           >
+            <Upload size={16} />
+            {importing ? "Импорт..." : "Импорт"}
+          </button>
+          <a href={getCalendarExportUrl()} download className={`${tw.buttonSecondary} flex items-center gap-1.5`}>
             <Download size={16} />
-            .ics
+            Экспорт
           </a>
-          <button
-            onClick={() => setShowCreate(true)}
-            className={`${tw.buttonPrimary} flex items-center gap-1.5`}
-          >
+          <button onClick={() => setShowCreate(true)} className={`${tw.buttonPrimary} flex items-center gap-1.5`}>
             <Plus size={16} />
             Событие
           </button>

@@ -62,9 +62,9 @@ type AggregatedPoint = {
 };
 
 const TIMEFRAME_CONFIG: Record<Timeframe, TimeframeConfig> = {
-  "1W": { rangeMs: 0, bucket: "week" },
+  "1W": { rangeMs: 7 * 24 * 60 * 60 * 1000, bucket: "day" },
   "1M": { rangeMs: 30 * 24 * 60 * 60 * 1000, bucket: "day" },
-  "3M": { rangeMs: 90 * 24 * 60 * 60 * 1000, bucket: "day" },
+  "3M": { rangeMs: 90 * 24 * 60 * 60 * 1000, bucket: "week" },
   "1Y": { rangeMs: 365 * 24 * 60 * 60 * 1000, bucket: "month" },
 };
 
@@ -99,7 +99,6 @@ function buildChartData(points: ChartPoint[], timeframe: Timeframe): AggregatedP
   const threshold = rangeMs > 0 ? now - rangeMs : 0;
   const filteredPoints = rangeMs > 0 ? points.filter((point) => new Date(point.date).getTime() >= threshold) : points;
 
-  // Sort points by date chronologically
   const sortedPoints = filteredPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const aggregated = new Map<number, AggregatedPoint>();
@@ -111,7 +110,6 @@ function buildChartData(points: ChartPoint[], timeframe: Timeframe): AggregatedP
     const bucketTimestamp = bucketDate.getTime();
     const amount = Number(point.amount);
 
-    // Update running total
     if (point.type === "income") {
       runningTotal += amount;
     } else {
@@ -120,18 +118,17 @@ function buildChartData(points: ChartPoint[], timeframe: Timeframe): AggregatedP
 
     const existing = aggregated.get(bucketTimestamp);
     if (existing) {
-      // Update existing bucket with new total
+      if (point.type === "income") existing.income += amount;
+      else existing.expense += amount;
       existing.total = runningTotal;
     } else {
-      // Create new bucket
-      const base: AggregatedPoint = {
+      aggregated.set(bucketTimestamp, {
         date: getBucketLabel(bucketDate, bucket),
         timestamp: bucketTimestamp,
         income: point.type === "income" ? amount : 0,
         expense: point.type === "expense" ? amount : 0,
         total: runningTotal,
-      };
-      aggregated.set(bucketTimestamp, base);
+      });
     }
   });
 
@@ -628,48 +625,49 @@ export function FinancialPlanDetailsPage() {
         </div>
       </article>
 
-      {analytics && (() => {
-        const curCode = currencies.find((c) => c.id === chart.currency_id)?.code ?? "RUB";
-        const curSymbol = getCurrencySymbol(curCode);
-        return (
-          <article
-            className="space-y-3 rounded-2xl border p-5"
-            style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
-                Обзор
-              </h2>
-              <p className="text-xs" style={{ color: v("text-muted") }}>
-                Быстрая аналитика графика
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "Доход", value: analytics.income_total, fixed: 2 },
-                { label: "Расход", value: analytics.expense_total, fixed: 2 },
-                { label: "Net", value: analytics.net_total, fixed: 2 },
-                { label: "Точек", value: analytics.points_count, fixed: 0 },
-              ].map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-xl border p-3"
-                  style={{ borderColor: v("border-primary"), background: v("bg-card") }}
-                >
-                  <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>
-                    {metric.label}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>
-                    {metric.fixed === 0
-                      ? Math.round(metric.value).toString()
-                      : `${Number(metric.value).toFixed(metric.fixed)} ${curSymbol}`}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </article>
-        );
-      })()}
+      {analytics &&
+        (() => {
+          const curCode = currencies.find((c) => c.id === chart.currency_id)?.code ?? "RUB";
+          const curSymbol = getCurrencySymbol(curCode);
+          return (
+            <article
+              className="space-y-3 rounded-2xl border p-5"
+              style={{ borderColor: v("border-primary"), background: v("bg-secondary") }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold tracking-tight" style={{ color: v("text-primary") }}>
+                  Обзор
+                </h2>
+                <p className="text-xs" style={{ color: v("text-muted") }}>
+                  Быстрая аналитика графика
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  { label: "Доход", value: analytics.income_total, fixed: 2 },
+                  { label: "Расход", value: analytics.expense_total, fixed: 2 },
+                  { label: "Net", value: analytics.net_total, fixed: 2 },
+                  { label: "Точек", value: analytics.points_count, fixed: 0 },
+                ].map((metric) => (
+                  <div
+                    key={metric.label}
+                    className="rounded-xl border p-3"
+                    style={{ borderColor: v("border-primary"), background: v("bg-card") }}
+                  >
+                    <p className="text-xs uppercase tracking-wide" style={{ color: v("text-muted") }}>
+                      {metric.label}
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold" style={{ color: v("text-primary") }}>
+                      {metric.fixed === 0
+                        ? Math.round(metric.value).toString()
+                        : `${Number(metric.value).toFixed(metric.fixed)} ${curSymbol}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          );
+        })()}
 
       <article
         className="rounded-2xl border p-5"
@@ -736,81 +734,213 @@ export function FinancialPlanDetailsPage() {
             </div>
           </div>
         ) : (
-          <div className="relative h-80 w-full overflow-x-auto overflow-y-hidden">
-            <ChartWrapper className="h-full min-w-[600px]">
-              <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={chartData}>
-                  <svg style={{ position: "absolute", width: 0, height: 0 }}>
-                    <defs>
-                      <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={isDark ? "#a3a3a3" : "#5c5c5c"} stopOpacity={0.3} />
-                        <stop offset="95%" stopColor={isDark ? "#a3a3a3" : "#5c5c5c"} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <CartesianGrid stroke={isDark ? "#2a2a2a" : "#e8e2d9"} strokeDasharray="3 3" />
-                  <XAxis dataKey="date" stroke={isDark ? "#525252" : "#a3a3a3"} />
-                  <YAxis stroke={isDark ? "#525252" : "#a3a3a3"} />
-                  <Tooltip
-                    cursor={{ stroke: isDark ? "#3a3a3a" : "#d4ccc0", strokeWidth: 1 }}
-                    contentStyle={{ background: "transparent", border: "none", boxShadow: "none" }}
-                    labelStyle={{ color: "transparent" }}
-                    content={({ active, payload, label }) => {
-                      if (!active || !payload?.length) return null;
-                      const item = payload[0]?.payload as {
-                        income?: number;
-                        expense?: number;
-                        total?: number | null;
-                      };
-                      const curCode = currencies.find((c) => c.id === chart.currency_id)?.code ?? "RUB";
-                      const curSym = getCurrencySymbol(curCode);
-                      return (
-                        <div
-                          className="rounded-xl border p-3 text-xs"
-                          style={{
-                            borderColor: v("border-secondary"),
-                            background: v("bg-secondary"),
-                            color: v("text-secondary"),
-                          }}
-                        >
-                          <p className="mb-2 font-medium" style={{ color: v("text-primary") }}>
-                            {label}
-                          </p>
-                          {typeof item.income === "number" && <p>Доходы: {item.income.toFixed(2)} {curSym}</p>}
-                          {typeof item.expense === "number" && <p>Расходы: {item.expense.toFixed(2)} {curSym}</p>}
-                          {typeof item.total === "number" && (
-                            <p className="mt-1 font-semibold" style={{ color: v("text-primary") }}>
-                              Итог: {item.total.toFixed(2)} {curSym}
+          <>
+            <div className="relative h-80 w-full overflow-x-auto overflow-y-hidden">
+              <ChartWrapper className="h-full min-w-[600px]">
+                <ResponsiveContainer width="100%" height={320}>
+                  <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <svg style={{ position: "absolute", width: 0, height: 0 }}>
+                      <defs>
+                        <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <CartesianGrid
+                      stroke={isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.08)"}
+                      strokeDasharray="3 3"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="date"
+                      stroke={isDark ? "#555080" : "#94a3b8"}
+                      tick={{ fontSize: 11, fill: isDark ? "#7e78a8" : "#64748b" }}
+                      tickLine={false}
+                      axisLine={{ stroke: isDark ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.12)" }}
+                    />
+                    <YAxis
+                      stroke={isDark ? "#555080" : "#94a3b8"}
+                      tick={{ fontSize: 11, fill: isDark ? "#7e78a8" : "#64748b" }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={50}
+                    />
+                    <Tooltip
+                      cursor={{
+                        stroke: isDark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)",
+                        strokeWidth: 1,
+                        strokeDasharray: "4 4",
+                      }}
+                      contentStyle={{
+                        background: isDark ? "rgba(14, 12, 36, 0.95)" : "rgba(255,255,255,0.95)",
+                        border: `1px solid ${isDark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)"}`,
+                        borderRadius: "12px",
+                        boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 4px 16px rgba(0,0,0,0.08)",
+                        padding: "12px 16px",
+                        backdropFilter: "blur(12px)",
+                      }}
+                      labelStyle={{
+                        color: isDark ? "#f0eeff" : "#0f172a",
+                        fontWeight: 600,
+                        marginBottom: 6,
+                        fontSize: 12,
+                      }}
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        const item = payload[0]?.payload as {
+                          income?: number;
+                          expense?: number;
+                          total?: number | null;
+                        };
+                        const curCode = currencies.find((c) => c.id === chart.currency_id)?.code ?? "RUB";
+                        const curSym = getCurrencySymbol(curCode);
+                        return (
+                          <div>
+                            <p
+                              style={{
+                                color: isDark ? "#f0eeff" : "#0f172a",
+                                fontWeight: 600,
+                                marginBottom: 6,
+                                fontSize: 12,
+                              }}
+                            >
+                              {label}
                             </p>
-                          )}
-                        </div>
-                      );
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="total"
-                    stroke="none"
-                    fill="url(#chartGradient)"
-                    fillOpacity={1}
-                    isAnimationActive={true}
-                    animationDuration={500}
-                    animationEasing="ease-out"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    stroke={isDark ? "#a3a3a3" : "#5c5c5c"}
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={500}
-                    animationEasing="ease-out"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartWrapper>
-          </div>
+                            {typeof item.income === "number" && item.income > 0 && (
+                              <p style={{ color: "#10b981", fontSize: 12, marginBottom: 2 }}>
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: "50%",
+                                    background: "#10b981",
+                                    marginRight: 6,
+                                  }}
+                                />
+                                Доходы: {item.income.toFixed(2)} {curSym}
+                              </p>
+                            )}
+                            {typeof item.expense === "number" && item.expense > 0 && (
+                              <p style={{ color: "#f43f5e", fontSize: 12, marginBottom: 2 }}>
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: "50%",
+                                    background: "#f43f5e",
+                                    marginRight: 6,
+                                  }}
+                                />
+                                Расходы: {item.expense.toFixed(2)} {curSym}
+                              </p>
+                            )}
+                            {typeof item.total === "number" && (
+                              <p
+                                style={{
+                                  color: isDark ? "#f0eeff" : "#0f172a",
+                                  fontWeight: 700,
+                                  marginTop: 6,
+                                  paddingTop: 6,
+                                  borderTop: `1px solid ${isDark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)"}`,
+                                  fontSize: 13,
+                                }}
+                              >
+                                Итог: {item.total.toFixed(2)} {curSym}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="income"
+                      stroke="none"
+                      fill="url(#incomeGradient)"
+                      fillOpacity={1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="expense"
+                      stroke="none"
+                      fill="url(#expenseGradient)"
+                      fillOpacity={1}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="income"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      dot={{ fill: "#10b981", strokeWidth: 0, r: 3 }}
+                      activeDot={{ r: 5, stroke: "#10b981", strokeWidth: 2, fill: isDark ? "#0e0c24" : "#fff" }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="expense"
+                      stroke="#f43f5e"
+                      strokeWidth={2}
+                      dot={{ fill: "#f43f5e", strokeWidth: 0, r: 3 }}
+                      activeDot={{ r: 5, stroke: "#f43f5e", strokeWidth: 2, fill: isDark ? "#0e0c24" : "#fff" }}
+                      isAnimationActive={true}
+                      animationDuration={600}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#6366f1"
+                      strokeWidth={2.5}
+                      dot={{ fill: "#6366f1", strokeWidth: 0, r: 3 }}
+                      activeDot={{
+                        r: 6,
+                        stroke: "#6366f1",
+                        strokeWidth: 2,
+                        fill: isDark ? "#0e0c24" : "#fff",
+                        strokeDasharray: "0",
+                      }}
+                      strokeDasharray="0"
+                      isAnimationActive={true}
+                      animationDuration={600}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartWrapper>
+            </div>
+            {/* Legend */}
+            <div
+              className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs"
+              style={{ color: isDark ? "#7e78a8" : "#64748b" }}
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ background: "#10b981" }} />
+                Доходы
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ background: "#f43f5e" }} />
+                Расходы
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#6366f1" }} />
+                Итог
+              </span>
+            </div>
+          </>
         )}
       </article>
 

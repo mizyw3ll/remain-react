@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthModal } from "./components/AuthModal";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import { CookieConsent } from "./components/CookieConsent";
+import { VisualSettingsProvider } from "./features/settings/VisualSettingsContext";
 import { HomePage } from "./pages/HomePage";
 import { BusinessPlansPage } from "./pages/BusinessPlansPage";
 import { FinancialPlansPage } from "./pages/FinancialPlansPage";
@@ -32,7 +33,7 @@ function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
-    <>
+    <VisualSettingsProvider>
       <Routes>
         <Route path="/" element={<HomePage onOpenAuth={() => setAuthModalOpen(true)} />} />
         <Route path="/verify" element={<VerifyEmailPage />} />
@@ -84,7 +85,7 @@ function App() {
           },
         }}
       />
-    </>
+    </VisualSettingsProvider>
   );
 }
 

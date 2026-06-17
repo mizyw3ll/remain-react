@@ -491,7 +491,9 @@ export async function generateBusinessPlanOutlineApi(planId: number, signal?: Ab
 }
 
 export async function improveBusinessPlanBlockApi(planId: number, blockId: number, signal?: AbortSignal) {
-  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/blocks/${blockId}/improve`, undefined, { signal });
+  const { data } = await api.post<AITextResponse>(`/ai/business-plans/${planId}/blocks/${blockId}/improve`, undefined, {
+    signal,
+  });
   return data;
 }
 
@@ -698,6 +700,22 @@ export function getCalendarExportUrl(fromDate?: string, toDate?: string) {
   if (toDate) params.set("to_date", toDate);
   const query = params.toString();
   return `/api/v1/calendar/export.ics${query ? `?${query}` : ""}`;
+}
+
+export type CalendarImportResult = {
+  imported: number;
+  skipped: number;
+  errors: number;
+  details: string[];
+};
+
+export async function importCalendarApi(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post<CalendarImportResult>("/calendar/import.ics", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
 }
 
 // ── Dashboard ──
