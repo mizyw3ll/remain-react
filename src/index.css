@@ -450,46 +450,6 @@ html[data-theme="light"] {
   }
 }
 
-@keyframes geo-rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes geo-pulse {
-  0%,
-  100% {
-    opacity: 0.25;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes line-draw {
-  0% {
-    stroke-dashoffset: 1000;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes constellation-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
 /* Particle dot — pure diffuse light, no visible shape */
 .particle {
   position: absolute;
@@ -497,35 +457,6 @@ html[data-theme="light"] {
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   mix-blend-mode: screen;
-}
-
-/* Geometric wireframe */
-.geo-wireframe {
-  position: absolute;
-  border: 3px solid rgba(99, 102, 241, 0.4);
-  border-radius: 4px;
-  pointer-events: none;
-  animation: geo-pulse 8s ease-in-out infinite;
-  background: rgba(99, 102, 241, 0.06);
-  box-shadow:
-    0 0 30px rgba(99, 102, 241, 0.15),
-    inset 0 0 30px rgba(99, 102, 241, 0.05);
-}
-
-/* Constellation line */
-.constellation-line {
-  position: absolute;
-  height: 2px;
-  pointer-events: none;
-  transform-origin: left center;
-}
-
-/* Floating geometric shape */
-.floating-shape {
-  position: absolute;
-  pointer-events: none;
-  opacity: 0.35;
-  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.3));
 }
 
 /* ============================================
@@ -631,23 +562,6 @@ html[data-theme="light"].theme-liquid-glass {
 html[data-theme="light"] .aurora-grid {
   background-image: linear-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px),
     linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 1px);
-}
-
-.aurora-noise {
-  position: absolute;
-  inset: -50%;
-  width: 200%;
-  height: 200%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 256px 256px;
-  opacity: 0.7;
-  pointer-events: none;
-  mix-blend-mode: overlay;
-}
-html[data-theme="light"] .aurora-noise {
-  opacity: 0.3;
-  mix-blend-mode: soft-light;
 }
 
 .aurora-orb {
@@ -1592,31 +1506,7 @@ textarea::placeholder {
   display: none !important;
 }
 
-/* Geometric shapes */
-.no-geo .geo-wireframe,
-.no-geo .floating-shape,
-.no-geo .constellation-line {
-  display: none !important;
-}
-
 /* Grid overlay */
 .no-grid .aurora-grid {
   display: none !important;
-}
-
-/* Noise texture */
-.no-noise .aurora-noise {
-  display: none !important;
-}
-
-/* Glass effects */
-.no-glass .glass,
-.no-glass .glass-card,
-.no-glass .glass-nav,
-.no-glass .glass-strong,
-.no-glass .glass-subtle {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgba(14, 12, 36, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
