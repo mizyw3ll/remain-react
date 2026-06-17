@@ -25,7 +25,9 @@ export function ProtectedLayout() {
     let mounted = true;
     const checkCalendarNotifications = async () => {
       try {
-        const { getCalendarPendingNotificationsApi, createNotificationApi, markCalendarNotifiedApi } = await import("../api");
+        const { getCalendarPendingNotificationsApi, createNotificationApi, markCalendarNotifiedApi } = await import(
+          "../api"
+        );
         const pending = await getCalendarPendingNotificationsApi();
         if (!mounted) return;
         for (const ev of pending) {
@@ -123,7 +125,646 @@ export function ProtectedLayout() {
           <div className="aurora-noise" />
           <div className="aurora-grid" />
           <div className="antigravity-layer" />
-          
+
+          {/* Orbital light particles — pure diffuse glow, no circles */}
+          <div
+            className="particle"
+            style={{
+              width: "40px",
+              height: "40px",
+              top: "8%",
+              left: "5%",
+              background: "radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)",
+              filter: "blur(6px)",
+              animation: "particle-float-1 7s ease-in-out infinite",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "30px",
+              height: "30px",
+              top: "15%",
+              left: "92%",
+              background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 70%)",
+              filter: "blur(5px)",
+              animation: "particle-float-2 9s ease-in-out infinite 0.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "50px",
+              height: "50px",
+              top: "22%",
+              left: "30%",
+              background: "radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)",
+              filter: "blur(8px)",
+              animation: "particle-float-3 6s ease-in-out infinite 1s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "35px",
+              height: "35px",
+              top: "28%",
+              left: "70%",
+              background: "radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 70%)",
+              filter: "blur(6px)",
+              animation: "particle-float-1 8s ease-in-out infinite 1.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "55px",
+              height: "55px",
+              top: "35%",
+              left: "15%",
+              background: "radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)",
+              filter: "blur(10px)",
+              animation: "particle-float-2 5s ease-in-out infinite 2s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "28px",
+              height: "28px",
+              top: "42%",
+              left: "55%",
+              background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 70%)",
+              filter: "blur(5px)",
+              animation: "particle-float-3 10s ease-in-out infinite 2.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "42px",
+              height: "42px",
+              top: "48%",
+              left: "88%",
+              background: "radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)",
+              filter: "blur(7px)",
+              animation: "particle-float-1 7s ease-in-out infinite 3s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "32px",
+              height: "32px",
+              top: "55%",
+              left: "40%",
+              background: "radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 70%)",
+              filter: "blur(5px)",
+              animation: "particle-float-2 6s ease-in-out infinite 3.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "48px",
+              height: "48px",
+              top: "62%",
+              left: "75%",
+              background: "radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)",
+              filter: "blur(8px)",
+              animation: "particle-float-3 8s ease-in-out infinite 4s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "26px",
+              height: "26px",
+              top: "68%",
+              left: "10%",
+              background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 70%)",
+              filter: "blur(4px)",
+              animation: "particle-float-1 9s ease-in-out infinite 4.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "52px",
+              height: "52px",
+              top: "75%",
+              left: "48%",
+              background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)",
+              filter: "blur(9px)",
+              animation: "particle-float-2 5s ease-in-out infinite 5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "38px",
+              height: "38px",
+              top: "82%",
+              left: "60%",
+              background: "radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 70%)",
+              filter: "blur(6px)",
+              animation: "particle-float-3 7s ease-in-out infinite 5.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "44px",
+              height: "44px",
+              top: "88%",
+              left: "25%",
+              background: "radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)",
+              filter: "blur(7px)",
+              animation: "particle-float-1 8s ease-in-out infinite 6s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "30px",
+              height: "30px",
+              top: "50%",
+              left: "3%",
+              background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 70%)",
+              filter: "blur(5px)",
+              animation: "particle-float-2 10s ease-in-out infinite 6.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "46px",
+              height: "46px",
+              top: "10%",
+              left: "50%",
+              background: "radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)",
+              filter: "blur(8px)",
+              animation: "particle-float-3 6s ease-in-out infinite 7s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "36px",
+              height: "36px",
+              top: "30%",
+              left: "82%",
+              background: "radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 70%)",
+              filter: "blur(6px)",
+              animation: "particle-float-1 9s ease-in-out infinite 7.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "54px",
+              height: "54px",
+              top: "70%",
+              left: "92%",
+              background: "radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)",
+              filter: "blur(10px)",
+              animation: "particle-float-2 5s ease-in-out infinite 8s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "28px",
+              height: "28px",
+              top: "45%",
+              left: "20%",
+              background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 70%)",
+              filter: "blur(4px)",
+              animation: "particle-float-3 11s ease-in-out infinite 8.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "40px",
+              height: "40px",
+              top: "18%",
+              left: "65%",
+              background: "radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)",
+              filter: "blur(7px)",
+              animation: "particle-float-1 7s ease-in-out infinite 9s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "34px",
+              height: "34px",
+              top: "90%",
+              left: "75%",
+              background: "radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 70%)",
+              filter: "blur(5px)",
+              animation: "particle-float-2 8s ease-in-out infinite 9.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "50px",
+              height: "50px",
+              top: "5%",
+              left: "78%",
+              background: "radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)",
+              filter: "blur(8px)",
+              animation: "particle-float-3 6s ease-in-out infinite 10s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "26px",
+              height: "26px",
+              top: "58%",
+              left: "35%",
+              background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 70%)",
+              filter: "blur(4px)",
+              animation: "particle-float-1 9s ease-in-out infinite 10.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "48px",
+              height: "48px",
+              top: "40%",
+              left: "50%",
+              background: "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)",
+              filter: "blur(9px)",
+              animation: "particle-float-2 5s ease-in-out infinite 11s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "32px",
+              height: "32px",
+              top: "78%",
+              left: "15%",
+              background: "radial-gradient(circle, rgba(244,63,94,0.3) 0%, transparent 70%)",
+              filter: "blur(5px)",
+              animation: "particle-float-3 7s ease-in-out infinite 11.5s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "42px",
+              height: "42px",
+              top: "95%",
+              left: "45%",
+              background: "radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)",
+              filter: "blur(7px)",
+              animation: "particle-float-1 8s ease-in-out infinite 12s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="particle"
+            style={{
+              width: "28px",
+              height: "28px",
+              top: "3%",
+              left: "35%",
+              background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 70%)",
+              filter: "blur(5px)",
+              animation: "particle-float-2 10s ease-in-out infinite 12.5s",
+              zIndex: 1,
+            }}
+          />
+
+          {/* Geometric wireframes */}
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "160px",
+              height: "160px",
+              top: "5%",
+              left: "2%",
+              transform: "rotate(45deg)",
+              animationDelay: "0s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(99,102,241,0.6)",
+              boxShadow: "0 0 40px rgba(99,102,241,0.3), inset 0 0 40px rgba(99,102,241,0.1)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "100px",
+              height: "100px",
+              top: "50%",
+              left: "88%",
+              borderRadius: "50%",
+              animationDelay: "1s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(16,185,129,0.5)",
+              boxShadow: "0 0 30px rgba(16,185,129,0.25), inset 0 0 30px rgba(16,185,129,0.08)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "80px",
+              height: "80px",
+              top: "75%",
+              left: "8%",
+              borderRadius: "16px",
+              animationDelay: "2s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(139,92,246,0.55)",
+              boxShadow: "0 0 28px rgba(139,92,246,0.25), inset 0 0 28px rgba(139,92,246,0.08)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "130px",
+              height: "130px",
+              top: "85%",
+              left: "70%",
+              transform: "rotate(30deg)",
+              animationDelay: "3s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(99,102,241,0.5)",
+              boxShadow: "0 0 35px rgba(99,102,241,0.25), inset 0 0 35px rgba(99,102,241,0.08)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "60px",
+              height: "60px",
+              top: "30%",
+              left: "10%",
+              borderRadius: "12px",
+              animationDelay: "4s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(244,63,94,0.5)",
+              boxShadow: "0 0 24px rgba(244,63,94,0.2), inset 0 0 24px rgba(244,63,94,0.06)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "70px",
+              height: "70px",
+              top: "60%",
+              left: "50%",
+              transform: "rotate(15deg)",
+              animationDelay: "5s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(99,102,241,0.5)",
+              boxShadow: "0 0 26px rgba(99,102,241,0.2), inset 0 0 26px rgba(99,102,241,0.06)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "90px",
+              height: "90px",
+              top: "15%",
+              left: "45%",
+              borderRadius: "20px",
+              animationDelay: "6s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(16,185,129,0.5)",
+              boxShadow: "0 0 28px rgba(16,185,129,0.2), inset 0 0 28px rgba(16,185,129,0.06)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "50px",
+              height: "50px",
+              top: "90%",
+              left: "50%",
+              borderRadius: "50%",
+              animationDelay: "7s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(139,92,246,0.5)",
+              boxShadow: "0 0 22px rgba(139,92,246,0.2), inset 0 0 22px rgba(139,92,246,0.06)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "110px",
+              height: "110px",
+              top: "45%",
+              left: "30%",
+              transform: "rotate(60deg)",
+              animationDelay: "8s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(99,102,241,0.5)",
+              boxShadow: "0 0 32px rgba(99,102,241,0.2), inset 0 0 32px rgba(99,102,241,0.06)",
+            }}
+          />
+          <div
+            className="geo-wireframe"
+            style={{
+              width: "75px",
+              height: "75px",
+              top: "20%",
+              left: "80%",
+              borderRadius: "14px",
+              animationDelay: "9s",
+              zIndex: 1,
+              borderWidth: "3px",
+              borderColor: "rgba(244,63,94,0.4)",
+              boxShadow: "0 0 24px rgba(244,63,94,0.18), inset 0 0 24px rgba(244,63,94,0.05)",
+            }}
+          />
+
+          {/* Constellation lines */}
+          <div
+            className="constellation-line"
+            style={{
+              width: "200px",
+              top: "25%",
+              left: "15%",
+              background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent)",
+              transform: "rotate(15deg)",
+              animation: "constellation-pulse 4s ease-in-out infinite",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="constellation-line"
+            style={{
+              width: "150px",
+              top: "45%",
+              left: "60%",
+              background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.4), transparent)",
+              transform: "rotate(-20deg)",
+              animation: "constellation-pulse 5s ease-in-out infinite 1s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="constellation-line"
+            style={{
+              width: "180px",
+              top: "70%",
+              left: "25%",
+              background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.35), transparent)",
+              transform: "rotate(35deg)",
+              animation: "constellation-pulse 6s ease-in-out infinite 2s",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="constellation-line"
+            style={{
+              width: "130px",
+              top: "10%",
+              left: "55%",
+              background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)",
+              transform: "rotate(-10deg)",
+              animation: "constellation-pulse 5s ease-in-out infinite 3s",
+              zIndex: 1,
+            }}
+          />
+
+          {/* Floating geometric shapes */}
+          <svg
+            className="floating-shape"
+            style={{
+              top: "8%",
+              left: "3%",
+              width: "100px",
+              height: "100px",
+              animation: "geo-rotate 25s linear infinite",
+              zIndex: 1,
+              opacity: 0.5,
+              filter: "drop-shadow(0 0 8px rgba(99,102,241,0.6))",
+            }}
+            viewBox="0 0 60 60"
+            fill="none"
+            stroke="#818cf8"
+            strokeWidth="2.5"
+          >
+            <polygon points="30,5 55,50 5,50" />
+          </svg>
+          <svg
+            className="floating-shape"
+            style={{
+              top: "55%",
+              left: "92%",
+              width: "90px",
+              height: "90px",
+              animation: "geo-rotate 30s linear infinite reverse",
+              zIndex: 1,
+              opacity: 0.5,
+              filter: "drop-shadow(0 0 8px rgba(16,185,129,0.6))",
+            }}
+            viewBox="0 0 50 50"
+            fill="none"
+            stroke="#34d399"
+            strokeWidth="2.5"
+          >
+            <rect x="8" y="8" width="34" height="34" rx="2" />
+          </svg>
+          <svg
+            className="floating-shape"
+            style={{
+              top: "75%",
+              left: "5%",
+              width: "80px",
+              height: "80px",
+              animation: "geo-rotate 20s linear infinite",
+              zIndex: 1,
+              opacity: 0.5,
+              filter: "drop-shadow(0 0 8px rgba(139,92,246,0.6))",
+            }}
+            viewBox="0 0 40 40"
+            fill="none"
+            stroke="#a78bfa"
+            strokeWidth="2.5"
+          >
+            <circle cx="20" cy="20" r="16" />
+          </svg>
+          <svg
+            className="floating-shape"
+            style={{
+              top: "35%",
+              left: "50%",
+              width: "70px",
+              height: "70px",
+              animation: "geo-rotate 35s linear infinite reverse",
+              zIndex: 1,
+              opacity: 0.5,
+              filter: "drop-shadow(0 0 8px rgba(244,63,94,0.5))",
+            }}
+            viewBox="0 0 40 40"
+            fill="none"
+            stroke="#fda4af"
+            strokeWidth="2.5"
+          >
+            <polygon points="20,3 37,37 3,37" />
+          </svg>
+          <svg
+            className="floating-shape"
+            style={{
+              top: "15%",
+              left: "60%",
+              width: "60px",
+              height: "60px",
+              animation: "geo-rotate 25s linear infinite",
+              zIndex: 1,
+              opacity: 0.5,
+              filter: "drop-shadow(0 0 8px rgba(16,185,129,0.5))",
+            }}
+            viewBox="0 0 30 30"
+            fill="none"
+            stroke="#6ee7b7"
+            strokeWidth="2.5"
+          >
+            <rect x="3" y="3" width="24" height="24" rx="4" />
+          </svg>
+
           {/* SVG Filter for Moving Fluid Waves */}
           <svg className="hidden">
             <filter id="fishing-net-filter" x="-20%" y="-20%" width="140%" height="140%">
@@ -209,33 +850,34 @@ export function ProtectedLayout() {
 
           {/* Юридический footer — ст. 10 ФЗ-149, ст. 9 ФЗ-152 */}
           {!anyModalOpen && (
-          <footer
-            className="relative z-10 border-t px-4 py-6 text-center md:px-8"
-            style={{ borderColor: "var(--border-primary)", background: "var(--bg-primary)" }}
-          >
-            <div className="mx-auto max-w-4xl space-y-2">
-              <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
-                © 2026 Конструктор бизнес-планов · ИП [ФИО] · ИНН [ИНН] · ОГРНИП [ОГРНИП]
-              </p>
-              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                Юридический адрес: [Адрес] · Email:{" "}
-                <a href="mailto:business_planner@inbox.ru" className="underline hover:opacity-80">
-                  business_planner@inbox.ru
-                </a>
-              </p>
-              <div className="flex flex-wrap justify-center gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
-                <Link to="/privacy" className="underline hover:opacity-80">
-                  Политика конфиденциальности
-                </Link>
-                <Link to="/terms" className="underline hover:opacity-80">
-                  Пользовательское соглашение
-                </Link>
-                <Link to="/cookie-policy" className="underline hover:opacity-80">
-                  Политика cookie
-                </Link>
+            <footer
+              className="relative z-10 border-t px-4 py-6 text-center md:px-8"
+              style={{ borderColor: "var(--border-primary)", background: "var(--bg-primary)" }}
+            >
+              <div className="mx-auto max-w-4xl space-y-2">
+                <p className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
+                  © 2026 Конструктор бизнес-планов · ИП Рыбкин Кирилл Александрович · ИНН 3525050141 · ОГРНИП
+                  1033500045149
+                </p>
+                <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  Юридический адрес: 160011, г. Вологда, ул. Первомайская, 42 · Email:{" "}
+                  <a href="mailto:business_planner@inbox.ru" className="underline hover:opacity-80">
+                    business_planner@inbox.ru
+                  </a>
+                </p>
+                <div className="flex flex-wrap justify-center gap-3 text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  <Link to="/privacy" className="underline hover:opacity-80">
+                    Политика конфиденциальности
+                  </Link>
+                  <Link to="/terms" className="underline hover:opacity-80">
+                    Пользовательское соглашение
+                  </Link>
+                  <Link to="/cookie-policy" className="underline hover:opacity-80">
+                    Политика cookie
+                  </Link>
+                </div>
               </div>
-            </div>
-          </footer>
+            </footer>
           )}
         </div>
       </div>
